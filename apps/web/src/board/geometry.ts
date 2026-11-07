@@ -19,7 +19,7 @@ export const VIEWBOX = '0 0 1180 1270';
 export interface Rect { x: number; y: number; w: number; h: number; }
 
 /** Pano çerçevesi (koyu) ile bej yüzey */
-export const FRAME: Rect = { x: 8, y: 55, w: 1014, h: 1160 };
+export const FRAME: Rect = { x: 50, y: 40, w: 911, h: 1158 };
 export const PANEL: Rect = { x: 70, y: 65, w: 869, h: 1088 };
 
 /** Yuvarlak düğ (soket) yarıçapları */
@@ -208,12 +208,13 @@ export interface ContactorDef {
   front: Rect;                    // gövde (ön yüz)
 }
 
-const FRONT_H = 151;
+const FRONT_H = 155;
 export const CONTACTORS: ContactorDef[] = [
-  { id: 'c1', trayL: 156, trayR: 281, front: { x: 162, y: 737, w: 78, h: FRONT_H } },
-  { id: 'c2', trayL: 358, trayR: 478, front: { x: 364, y: 737, w: 78, h: FRONT_H } },
-  { id: 'c3', trayL: 552, trayR: 671, front: { x: 558, y: 737, w: 78, h: FRONT_H } },
-  { id: 'c4', trayL: 746, trayR: 867, front: { x: 752, y: 737, w: 78, h: FRONT_H } },
+  // foto: gövde sütunlar arasında değil — sol sütun +38'den sağ sütun +8'e uzanır (sağa yapışık)
+  { id: 'c1', trayL: 156, trayR: 281, front: { x: 194, y: 737, w: 94, h: FRONT_H } },
+  { id: 'c2', trayL: 358, trayR: 478, front: { x: 396, y: 737, w: 94, h: FRONT_H } },
+  { id: 'c3', trayL: 552, trayR: 671, front: { x: 590, y: 737, w: 94, h: FRONT_H } },
+  { id: 'c4', trayL: 746, trayR: 867, front: { x: 784, y: 737, w: 94, h: FRONT_H } },
 ];
 
 /** Kontaktör tepsi sıraları (üstten alta): bobin, m1, m2, k1, k2, x1, x2, x3 */

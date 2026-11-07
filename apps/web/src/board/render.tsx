@@ -50,10 +50,11 @@ function SocketLabels() {
     if (!s.label && !s.glyph) continue;
     const y = s.y + (s.r ?? G.R_KNOB) + 15;
     if (s.glyph === 'lamp') {
+      /* foto: ⊗ lamba işareti soketin sağ-alt komşuluğunda durur (altında değil) */
       items.push(
         <g key={s.id}>
-          <circle cx={s.x} cy={y - 3} r={6.5} fill="none" stroke={INK} strokeWidth={1.5} />
-          <path d={`M ${s.x - 4.6} ${y - 7.6} L ${s.x + 4.6} ${y + 1.6} M ${s.x + 4.6} ${y - 7.6} L ${s.x - 4.6} ${y + 1.6}`} stroke={INK} strokeWidth={1.5} fill="none" />
+          <circle cx={s.x + 16} cy={s.y + 14} r={6.5} fill="none" stroke={INK} strokeWidth={1.5} />
+          <path d={`M ${s.x + 11.4} ${s.y + 9.4} L ${s.x + 20.6} ${s.y + 18.6} M ${s.x + 20.6} ${s.y + 9.4} L ${s.x + 11.4} ${s.y + 18.6}`} stroke={INK} strokeWidth={1.5} fill="none" />
         </g>,
       );
     } else {
@@ -149,6 +150,17 @@ function PrSpdt({ nc, com, no, y }: { nc: number; com: number; no: number; y: nu
       <path d={`M ${nc - PAD} ${y} L ${nc - 4} ${y}`} />
       <path d={`M ${no + PAD} ${y} L ${no + 4} ${y}`} />
     </g>
+  );
+}
+
+/** el çizimi dalgalı köprü — iki yumuşak Q eğrisi, 3 soketten geçer */
+function PrWave({ nc, com, no, y }: { nc: number; com: number; no: number; y: number }) {
+  const a = nc, m = com, b = no;
+  return (
+    <path
+      d={`M ${a} ${y} Q ${(a + m) / 2} ${y + 7} ${m} ${y} Q ${(m + b) / 2} ${y - 7} ${b} ${y}`}
+      stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round"
+    />
   );
 }
 
@@ -280,7 +292,8 @@ function Selector() {
 
 function SchoolText() {
   return (
-    <g fontFamily={MS} fontWeight={800} fill={INK}>
+    /* foto: damgalı stencil yazı — mono, %30 büyük, geniş aralıklı */
+    <g fontFamily="Consolas, monospace" fontSize={21} fontWeight={900} letterSpacing={2.5} fill={INK}>
       <text x={G.SCHOOL.x} y={G.SCHOOL.y}>TOPHANE TEKNİK ve</text>
       <text x={G.SCHOOL.x} y={G.SCHOOL.y + G.SCHOOL.lineH}>ENDÜSTRİ MESLEK LİSESİ</text>
     </g>
@@ -503,9 +516,9 @@ function D2TrayPrints() {
         <rect x={t.zrBox.x} y={t.zrBox.y} width={t.zrBox.w} height={t.zrBox.h} fill="none" stroke={INK} strokeWidth={1.4} />
         <text x={t.zrBox.x + t.zrBox.w / 2} y={t.zrBox.y + 14} textAnchor="middle" fontFamily={MS} fontSize={10} fontWeight={700} fill={INK}>ZR</text>
       </g>
-      {/* foto: iki köprüden biri düz, biri dalgalı */}
+      {/* foto: iki köprüden biri düz, biri dalgalı (1. sıra düz, 2. sıra el çizimi dalga) */}
       <PrNc a={t.rowX.nc} b={t.rowX.no} y={t.rows[0].y} />
-      <PrSpdt nc={t.rowX.nc} com={t.rowX.com} no={t.rowX.no} y={t.rows[1].y} />
+      <PrWave nc={t.rowX.nc} com={t.rowX.com} no={t.rowX.no} y={t.rows[1].y} />
     </g>
   );
 }
@@ -566,7 +579,7 @@ function ContactorUnit({ k, on }: { k: G.ContactorDef; on: boolean }) {
     <g>
       {/* x sıralarının büyük yardımcı kutu baskısı */}
       <g filter="url(#handInk)">
-        <rect x={left + 12} y={G.C_ROW_Y[5] - 20} width={right - left - 24} height={(G.C_ROW_Y[7] - G.C_ROW_Y[5]) + 40} fill="none" stroke={INK} strokeWidth={1.6} />
+        <rect x={left + 12} y={G.C_ROW_Y[5] - 20} width={right - left - 24} height={(G.C_ROW_Y[7] - G.C_ROW_Y[5]) + 28} fill="none" stroke={INK} strokeWidth={1.6} />
         {/* sıra baskıları */}
         <PrCoil a={left} b={right} y={G.C_ROW_Y[0]} />
         <PrNo a={left} b={right} y={G.C_ROW_Y[1]} />
@@ -606,9 +619,9 @@ function ContactorUnit({ k, on }: { k: G.ContactorDef; on: boolean }) {
       <text x={f.x + f.w / 2} y={f.y + f.h - 6} textAnchor="middle" fontFamily={MS} fontSize={9} fontWeight={700} fill="#6a6d72">SIEMENS</text>
       {/* etiket: fotoda kalın siyah harfler kontaktörlerin altına yakın */}
       <text x={f.x + f.w / 2} y={905} textAnchor="middle" fontFamily={MS} fontSize={21} fontWeight={800} fill={INK}>{k.id.toUpperCase()}</text>
-      {/* foto: sütun en altta siyah soket çifti — dekoratif */}
-      <FakeKnob x={k.trayL} y={G.C_ROW_Y[7] + 21} color={G.KNOB_COLOR.black} />
-      <FakeKnob x={k.trayR} y={G.C_ROW_Y[7] + 21} color={G.KNOB_COLOR.black} />
+      {/* foto: sütun en altta siyah soket çifti — dekoratif, x-kutusunun altında */}
+      <FakeKnob x={k.trayL} y={G.C_ROW_Y[7] + 19} color={G.KNOB_COLOR.black} />
+      <FakeKnob x={k.trayR} y={G.C_ROW_Y[7] + 19} color={G.KNOB_COLOR.black} />
       <title>{k.id.toUpperCase()} — kontaktör</title>
     </g>
   );
@@ -621,7 +634,7 @@ function BoardLabels() {
       {G.BUTTONS.map((b) => (
         <text key={b.id} x={84} y={b.y + 7} textAnchor="middle" fontSize={21}>{b.id}</text>
       ))}
-      <text x={505} y={676} textAnchor="middle" fontSize={21}>e</text>
+      <text x={500} y={552} textAnchor="middle" fontSize={21}>e</text>
       <text x={G.D1_TRAY.label.x} y={G.D1_TRAY.label.y} textAnchor="middle" fontSize={21}>d1</text>
       <text x={G.D2_TRAY.label.x} y={G.D2_TRAY.label.y} textAnchor="middle" fontSize={21}>d2</text>
     </g>
@@ -777,9 +790,9 @@ export function Board() {
           <stop offset="45%" stopColor="#c2c5c9" />
           <stop offset="100%" stopColor="#a5a8ad" />
         </linearGradient>
-        <radialGradient id="panelSkin" cx="50%" cy="22%" r="105%">
-          <stop offset="0%" stopColor="#ecdfae" />
-          <stop offset="70%" stopColor="#ddcf9a" />
+        <radialGradient id="panelSkin" cx="50%" cy="22%" r="115%">
+          <stop offset="0%" stopColor="#eee3bd" />
+          <stop offset="70%" stopColor="#e4d7ac" />
           <stop offset="100%" stopColor="#d3c394" />
         </radialGradient>
         {/* elle çizilmiş mürekkep: hafif dağınıklık — CAD düzlüğünü kırar */}
