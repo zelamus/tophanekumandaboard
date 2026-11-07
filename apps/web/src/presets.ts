@@ -32,7 +32,7 @@ export const PRESETS: Preset[] = [
     kisa: 'b1 (S0) durdur butonuyla harici kırmızı lamba (H1) yanar; S0 basılıyken lamba söner.',
     aciklama: [
       'Kumanda kesicisini (F1) kapalı tut.',
-      'Fazı (Rc) S0 butonunun ortak ucuna çek: sup.Rc → b1.c1',
+      'Fazı (R) S0 butonunun ortak ucuna çek: sup.Rc → b1.c1',
       'S0 kapalı ucundan harici lambanın (H1) faz ucuna: b1.nc → ext.fazR',
       'Lambanın toprak ucunu nötr Mp’ye bağla: ext.gnd → sup.Mp',
       'b1’e (S0) bas → kapalı kontak açılır → H1 söner.',

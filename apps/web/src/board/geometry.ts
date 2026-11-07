@@ -94,7 +94,7 @@ export const TERMINALS_TOP: SocketDef[] = [
   { id: 'sup.R',  x: termCol[0], y: 225, color: KNOB_COLOR.black,  label: 'R' },
   { id: 'sup.S',  x: termCol[1], y: 225, color: KNOB_COLOR.red,    label: 'S' },
   { id: 'sup.T',  x: termCol[2], y: 225, color: KNOB_COLOR.yellow, label: 'T' },
-  { id: 'sup.Rc', x: termCol[3], y: 225, color: KNOB_COLOR.black,  label: 'Rc' },
+  { id: 'sup.Rc', x: termCol[3], y: 225, color: KNOB_COLOR.red,    label: 'R' },   // gerçek kartta ikinci R (kırmızı soket)
   { id: 'sup.X',  x: termCol[4], y: 225, color: KNOB_COLOR.black,  glyph: 'lamp' },
 ];
 
@@ -104,7 +104,7 @@ export const TERMINALS_BOT: SocketDef[] = [
   { id: 'sup.V',  x: termCol[1], y: 285, color: KNOB_COLOR.yellow, label: 'V' },
   { id: 'sup.W',  x: termCol[2], y: 285, color: KNOB_COLOR.yellow, label: 'W' },
   { id: 'sup.Mp', x: termCol[3], y: 285, color: KNOB_COLOR.blue,   label: 'Mp' },
-  { id: 'sup.X2', x: termCol[4], y: 285, color: KNOB_COLOR.black,  glyph: 'lamp' },
+  { id: 'sup.X2', x: termCol[4], y: 285, color: KNOB_COLOR.black },                // sim bağlantı ucu — gerçek kartta lamba simgesi yalnız üst sıra ucunda
 ];
 
 /* ---------------- e (termik röle) ---------------- */
@@ -229,18 +229,18 @@ export function contactorSockets(k: ContactorDef): SocketDef[] {
   const out: SocketDef[] = [
     { id: `${k.id}.a1`, x: k.trayL, y: C_ROW_Y[0], color: KNOB_COLOR.yellow, r: R_KNOB }, // bobin
     { id: `${k.id}.a2`, x: k.trayR, y: C_ROW_Y[0], color: KNOB_COLOR.yellow, r: R_KNOB },
-    put(1, 'm1', KNOB_COLOR.black),
-    putR(1, 'm1', KNOB_COLOR.black),
-    put(2, 'm2', KNOB_COLOR.black),
-    putR(2, 'm2', KNOB_COLOR.black),
+    put(1, 'm1', KNOB_COLOR.yellow),   // gerçek kartta sarı posta sıraları
+    putR(1, 'm1', KNOB_COLOR.yellow),
+    put(2, 'm2', KNOB_COLOR.yellow),
+    putR(2, 'm2', KNOB_COLOR.yellow),
     { id: `${k.id}.k1.a`, x: k.trayL, y: C_ROW_Y[3], color: KNOB_COLOR.red, r: R_KNOB },
     { id: `${k.id}.k1.b`, x: k.trayR, y: C_ROW_Y[3], color: KNOB_COLOR.red, r: R_KNOB },
     { id: `${k.id}.k2.a`, x: k.trayL, y: C_ROW_Y[4], color: KNOB_COLOR.red, r: R_KNOB },
     { id: `${k.id}.k2.b`, x: k.trayR, y: C_ROW_Y[4], color: KNOB_COLOR.red, r: R_KNOB },
   ];
-  out.push(put(5, 'x1', KNOB_COLOR.black), putR(5, 'x1', KNOB_COLOR.black));
-  out.push(put(6, 'x2', KNOB_COLOR.black), putR(6, 'x2', KNOB_COLOR.black));
-  out.push(put(7, 'x3', KNOB_COLOR.black), putR(7, 'x3', KNOB_COLOR.black));
+  out.push(put(5, 'x1', KNOB_COLOR.red), putR(5, 'x1', KNOB_COLOR.red));   // kutulu NO soketleri gerçekte kırmızı
+  out.push(put(6, 'x2', KNOB_COLOR.red), putR(6, 'x2', KNOB_COLOR.red));
+  out.push(put(7, 'x3', KNOB_COLOR.red), putR(7, 'x3', KNOB_COLOR.red));
   return out;
 }
 

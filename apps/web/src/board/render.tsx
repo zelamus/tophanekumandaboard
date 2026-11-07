@@ -74,7 +74,7 @@ function PrNo({ a, b, y }: { a: number; b: number; y: number }) {
   const m = (a + b) / 2;
   return (
     <g stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round">
-      <path d={`M ${a + PAD} ${y} L ${m - DGAP} ${y}`} />
+      <path d={`M ${a + PAD} ${y} Q ${(a + PAD + m - DGAP) / 2} ${y + 1.8} ${m - DGAP} ${y}`} />
       <path d={`M ${m - DGAP} ${y} L ${m + 2} ${y - 12} L ${m + 2} ${y + 1}`} />
       <path d={`M ${m + DGAP} ${y} L ${b - PAD} ${y}`} />
       <path d={`M ${m - DGAP} ${y} L ${m - DGAP} ${y - 11}`} />
@@ -82,10 +82,11 @@ function PrNo({ a, b, y }: { a: number; b: number; y: number }) {
   );
 }
 
-/** Kapalı (NC) kontak baskısı: düz hat */
+/** Kapalı (NC) kontak baskısı: elle çizilmiş gibi hafif inişli hat */
 function PrNc({ a, b, y }: { a: number; b: number; y: number }) {
+  const m = (a + b) / 2;
   return (
-    <path d={`M ${a + PAD} ${y} L ${b - PAD} ${y}`} stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round" />
+    <path d={`M ${a + PAD} ${y} Q ${m} ${y + 2.4} ${b - PAD} ${y}`} stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round" />
   );
 }
 
@@ -95,7 +96,7 @@ function PrNcOpen({ a, b, y }: { a: number; b: number; y: number }) {
   return (
     <g stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round">
       <path d={`M ${a + PAD} ${y} L ${m - 6} ${y}`} />
-      <path d={`M ${m + 6} ${y} L ${b - PAD} ${y}`} />
+      <path d={`M ${m + 6} ${y} Q ${(m + 6 + b - PAD) / 2} ${y + 2} ${b - PAD} ${y}`} />
       <path d={`M ${m - 6} ${y - 5} L ${m - 6} ${y + 5} M ${m + 6} ${y - 5} L ${m + 6} ${y + 5}`} />
     </g>
   );
@@ -106,7 +107,7 @@ function PrNcT({ a, b, y }: { a: number; b: number; y: number }) {
   const m = (a + b) / 2;
   return (
     <g>
-      <path d={`M ${a + PAD} ${y} L ${b - PAD} ${y}`} stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round" />
+      <path d={`M ${a + PAD} ${y} Q ${m} ${y + 2.4} ${b - PAD} ${y}`} stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round" />
       <text x={m} y={y - 6} textAnchor="middle" fontFamily={MS} fontSize={11} fontWeight={700} fill={INK}>t→</text>
     </g>
   );
@@ -156,7 +157,7 @@ function PrTimed({ a, b, y }: { a: number; b: number; y: number }) {
   const m = (a + b) / 2;
   return (
     <g stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round">
-      <path d={`M ${a + PAD} ${y} L ${b - PAD} ${y}`} />
+      <path d={`M ${a + PAD} ${y} Q ${m} ${y + 2.2} ${b - PAD} ${y}`} />
       <path d={`M ${m} ${y} L ${m} ${y - 13} M ${m - 5} ${y - 9} L ${m} ${y - 13} L ${m + 5} ${y - 9}`} />
     </g>
   );
@@ -251,11 +252,13 @@ function Selector() {
   const p = G.SELECTOR;
   return (
     <g>
-      <rect x={p.plate.x} y={p.plate.y} width={p.plate.w} height={p.plate.h} rx={9} fill="#3a3a40" stroke="#191a1e" strokeWidth={1.5} />
+      {/* gerçek kart: açık gri/beyaz plaka + siyah kol */}
+      <rect x={p.plate.x} y={p.plate.y} width={p.plate.w} height={p.plate.h} rx={9} fill="#d8d7d3" stroke="#5d5f63" strokeWidth={1.5} />
+      <rect x={p.plate.x + 5} y={p.plate.y + 5} width={p.plate.w - 10} height={p.plate.h - 10} rx={6} fill="#e7e6e2" stroke="#9a9c9f" strokeWidth={1} />
       <circle cx={p.knob.x} cy={p.knob.y} r={p.knob.r} fill="#23252b" stroke="#111" strokeWidth={1.5} />
       <path d={`M ${p.knob.x} ${p.knob.y} L ${p.knob.x} ${p.knob.y - 16}`} stroke="#e8e8e8" strokeWidth={3} strokeLinecap="round" />
-      <text x={p.knob.x} y={p.plate.y + 12} textAnchor="middle" fontFamily={MS} fontSize={10} fontWeight={700} fill="#d8d8d8">0</text>
-      <text x={p.knob.x} y={p.plate.y + p.plate.h - 2} textAnchor="middle" fontFamily={MS} fontSize={10} fontWeight={700} fill="#d8d8d8">1</text>
+      <text x={p.knob.x} y={p.plate.y + 12} textAnchor="middle" fontFamily={MS} fontSize={10} fontWeight={700} fill="#2b2b2e">0</text>
+      <text x={p.knob.x} y={p.plate.y + p.plate.h - 2} textAnchor="middle" fontFamily={MS} fontSize={10} fontWeight={700} fill="#2b2b2e">1</text>
     </g>
   );
 }
@@ -300,6 +303,11 @@ function EUnit({ sim }: { sim: SimOutput | null }) {
   const tripped = sim?.dev.termik.armed === false;
   return (
     <g>
+      {/* gövde üstünden çıkan kablo halkaları (3UA biriminde teller yukarı fışkırır) */}
+      <path d={`M ${u.body.x + 20} ${u.body.y + 5} Q ${u.body.x + 4} ${u.body.y - 22} ${u.body.x + 24} ${u.body.y - 38}`} stroke="#1a1a1c" strokeWidth={4.5} fill="none" strokeLinecap="round" />
+      <path d={`M ${u.body.x + 44} ${u.body.y + 5} Q ${u.body.x + 34} ${u.body.y - 26} ${u.body.x + 52} ${u.body.y - 40}`} stroke="#1a1a1c" strokeWidth={4.5} fill="none" strokeLinecap="round" />
+      <ellipse cx={u.body.x + 24} cy={u.body.y - 40} rx={7} ry={3} fill="#23231f" />
+      <ellipse cx={u.body.x + 52} cy={u.body.y - 42} rx={7} ry={3} fill="#23231f" />
       <rect x={u.body.x} y={u.body.y} width={u.body.w} height={u.body.h} rx={7} fill="#b9bcc1" stroke="#5c5f64" strokeWidth={1.5} />
       <rect x={u.body.x + 4} y={u.face.y - 6} width={u.body.w - 8} height={(u.face.y - 6) - u.body.y} fill="#a3a6ab" />
       <rect x={u.face.x} y={u.face.y} width={u.face.w} height={u.face.h} rx={3} fill="#e9e9e6" stroke="#8f9296" strokeWidth={1.2} />
@@ -323,6 +331,8 @@ function ETrayPrints() {
   return (
     <g>
       <rect x={t.box.x} y={t.box.y} width={t.box.w} height={t.box.h} fill="none" stroke={INK} strokeWidth={1.6} />
+      {/* kenardaki silik kalem yazısı — gerçek kartta "Rm şah" */}
+      <text x={t.box.x + t.box.w + 12} y={t.box.y + 74} fontFamily={MS} fontSize={13} fontStyle="italic" fontWeight={600} fill="#6b6350" opacity={0.85}>Rm şah</text>
       {t.rows.map((row) => {
         const a = t.cols[0], b = t.cols[1], y = row.y;
         if (row.kind === 'ncOpen') return <PrNcOpen key={row.id} a={a} b={b} y={y} />;
@@ -381,12 +391,12 @@ function D2Unit({ sim }: { sim: SimOutput | null }) {
       <path d={`M ${u.cableStub.x - 10} ${u.cableStub.y - 16} Q ${u.cableStub.x - 20} ${u.cableStub.y + 12} ${u.body.x + 20} ${u.body.y + 6}`} stroke="#1a1a1c" strokeWidth={4.5} fill="none" strokeLinecap="round" />
       <ellipse cx={u.cableStub.x - 10} cy={u.cableStub.y - 18} rx={7} ry={3} fill="#23231f" />
       <rect x={u.body.x} y={u.body.y} width={u.body.w} height={u.body.h} rx={5} fill="#d7d9dc" stroke="#585b60" strokeWidth={1.5} />
-      {/* beyaz etiket + ekran */}
+      {/* dijital kronometre: gerçek kartta KIRMIZI 7-segment göstergesi */}
       <rect x={u.body.x + 10} y={u.body.y + 30} width={u.body.w - 20} height={110} rx={3} fill="#efefec" stroke="#9ea1a5" strokeWidth={1.2} />
-      <rect x={u.lcd.x} y={u.lcd.y} width={u.lcd.w} height={u.lcd.h} rx={2} fill="#1d2b1f" stroke="#000" strokeWidth={1.2} />
-      <text x={u.lcd.x + u.lcd.w / 2} y={u.lcd.y + 15} textAnchor="middle" fontFamily="'Consolas', monospace" fontSize={12} fill="#7fe08a">{sec.toFixed(1)}</text>
+      <rect x={u.lcd.x} y={u.lcd.y} width={u.lcd.w} height={u.lcd.h} rx={2} fill="#2a0b08" stroke="#180604" strokeWidth={1.2} />
+      <text x={u.lcd.x + u.lcd.w / 2} y={u.lcd.y + 15} textAnchor="middle" fontFamily="'Consolas', monospace" fontSize={12} fontWeight={700} fill="#ff5040">{sec.toFixed(1)}</text>
       {[0, 1, 2].map((i) => (
-        <circle key={i} cx={u.lcd.x + 8 + i * 14} cy={u.lcd.y + u.lcd.h + 12} r={4.5} fill="#4b4e53" stroke="#2c2e31" strokeWidth={1} />
+        <circle key={i} cx={u.lcd.x + 8 + i * 14} cy={u.lcd.y + u.lcd.h + 12} r={4.5} fill="#1d1d20" stroke="#000" strokeWidth={1} />
       ))}
       <text x={u.body.x + u.body.w - 14} y={u.body.y + 18} textAnchor="end" fontFamily={MS} fontSize={9} fontWeight={700} fill="#5c5f64">ZR</text>
     </g>
@@ -514,23 +524,24 @@ function BoardLabels() {
    motor
    ================================================================ */
 
-function Motor({ running, dir }: { running: boolean; dir: 1 | 0 | -1 }) {
+function Motor({ running }: { running: boolean }) {
   const M = G.MOTOR;
   const b = M.body;
   return (
-    <g>
-      {/* mil */}
+    <g data-running={running ? '1' : '0'}>
+      {/* mil (gerçek kartta sola bakan somunluk uç) */}
       <rect x={M.shaft.x} y={M.shaft.y} width={M.shaft.w} height={M.shaft.h} rx={3} fill="#4a4d52" stroke="#2b2d31" strokeWidth={1.2} />
-      {/* dönen kaspnak görüntüsü */}
-      <g className={running ? (dir === -1 ? 'spin running reverse' : 'spin running') : 'spin'}>
-        <circle cx={M.pulley.x} cy={M.pulley.y} r={M.pulley.r} fill="#70747a" stroke="#3a3d42" strokeWidth={1.6} />
-        <path d={`M ${M.pulley.x - M.pulley.r + 3} ${M.pulley.y} L ${M.pulley.x + M.pulley.r - 3} ${M.pulley.y}`} stroke="#3a3d42" strokeWidth={2.4} />
-        <path d={`M ${M.pulley.x} ${M.pulley.y - M.pulley.r + 3} L ${M.pulley.x} ${M.pulley.y + M.pulley.r - 3}`} stroke="#3a3d42" strokeWidth={2.4} />
-      </g>
-      {/* gövde */}
+      <circle cx={M.shaft.x + 3} cy={M.shaft.y + M.shaft.h / 2} r={9} fill="#9aa0a6" stroke="#3a3d42" strokeWidth={1.2} />
+      {/* gövde — soğutma kanatçıklarını (yatay oluklar) tak */}
       <rect x={b.x} y={b.y} width={b.w} height={b.h} rx={10} fill={`url(#motorSkin)`} stroke="#7c7f84" strokeWidth={1.6} />
-      {/* sağ kapak gölgesi */}
+      {[1, 2, 3, 4, 5].map((i) => (
+        <line key={i} x1={b.x + 8} y1={b.y + i * (b.h - 16) / 6} x2={b.x + b.w - 12} y2={b.y + i * (b.h - 16) / 6} stroke="#8d9094" strokeWidth={2.2} opacity={0.55} />
+      ))}
+      {/* sağ kapak (fan kapağı) + kabartma */}
       <rect x={b.x + b.w - 42} y={b.y + 4} width={38} height={b.h - 8} rx={8} fill="#a9adb2" stroke="#8d9095" strokeWidth={1} />
+      {[1, 2, 3, 4].map((i) => (
+        <line key={i} x1={b.x + b.w - 42 + i * 7.6} y1={b.y + 8} x2={b.x + b.w - 42 + i * 7.6} y2={b.y + b.h - 8} stroke="#7f8287" strokeWidth={1.6} opacity={0.5} />
+      ))}
       <text x={M.label.x} y={M.label.y} textAnchor="middle" fontFamily={MS} fontSize={20} fontWeight={800} fill="#6d7075" letterSpacing={2}>SIEMENS</text>
       {/* klemens kutusu + çıkış kablosu */}
       <rect x={M.tBox.x} y={M.tBox.y} width={M.tBox.w} height={M.tBox.h} rx={4} fill="#b6b9be" stroke="#84878c" strokeWidth={1.4} />
@@ -660,6 +671,21 @@ export function Board() {
       <rect x={G.FRAME.x + 6} y={G.FRAME.y + 10} width={G.FRAME.w} height={G.FRAME.h} rx={10} fill="rgba(0,0,0,0.18)" />
       <rect x={G.FRAME.x} y={G.FRAME.y} width={G.FRAME.w} height={G.FRAME.h} rx={10} fill={G.FRAME_COLOR} stroke="#0e0b08" strokeWidth={3} />
       <rect x={G.PANEL.x} y={G.PANEL.y} width={G.PANEL.w} height={G.PANEL.h} rx={4} fill="url(#panelSkin)" stroke={G.PANEL_EDGE} strokeWidth={2} />
+      {/* kullanma izleri: leke, çizik — gerçek kart boyası yıpranmış */}
+      <g pointerEvents="none">
+        <g fill="#6f5b34" opacity={0.05}>
+          <ellipse cx={300} cy={760} rx={90} ry={26} />
+          <ellipse cx={540} cy={330} rx={60} ry={18} />
+          <ellipse cx={880} cy={1100} rx={110} ry={30} />
+          <ellipse cx={150} cy={480} rx={40} ry={70} />
+          <ellipse cx={1010} cy={620} rx={50} ry={22} />
+          <ellipse cx={640} cy={880} rx={150} ry={28} />
+        </g>
+        <g stroke="#8a754c" opacity={0.06} strokeLinecap="round" fill="none">
+          <path d={`M ${G.PANEL.x + 40} ${G.PANEL.y + 130} L ${G.PANEL.x + 30} ${G.PANEL.y + 1350}`} strokeWidth={9} />
+          <path d={`M ${G.PANEL.x + G.PANEL.w - 60} ${G.PANEL.y + 200} L ${G.PANEL.x + G.PANEL.w - 48} ${G.PANEL.y + 900}`} strokeWidth={7} />
+        </g>
+      </g>
 
       {/* üst bölge */}
       <Emergency />
@@ -691,7 +717,7 @@ export function Board() {
       <BoardLabels />
 
       {/* motor en üstte */}
-      <Motor running={sim?.motor.running === true} dir={sim?.motor.dir ?? 0} />
+      <Motor running={sim?.motor.running === true} />
 
       {/* harici sinyal lambası */}
       <ExtLamp sim={sim} />
