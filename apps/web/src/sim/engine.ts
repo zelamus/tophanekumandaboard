@@ -230,6 +230,8 @@ export class RelayEngine {
     //  • ≥1 faz VE bir terminalde N: akım L→sargı→star→sargı→N yolunu tamamlar
     //    (iki sargı seri, ~2.5×In) → termik ~6 sn'de atar.
     //  • yalnız 1 faz (nötr yok): dönüş yolu yok → akım yok → termik ısınmaz.
+    //  • ÇAKIŞMA: faz-faz ve faz-nötr koşulları aynı anda mümkünse EN KÖTÜ
+    //    (en hızlı) sınıf geçerli → 2 sn (faultNeutral'dan üstün alır).
     const distinctPhases = new Set([up, vp, wp].filter((p): p is Pot => p !== null)).size;
     const neutralReturn = [u, v, w].some((tid) => reach.get(tid)?.has('N') === true);
     const faultPhases = !running && distinctPhases >= 2;
