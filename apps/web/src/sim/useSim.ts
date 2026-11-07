@@ -98,9 +98,9 @@ export function useSimLoop(): void {
       raf = requestAnimationFrame(tick);
       const st = getState();
 
-      // Doküman/preset yükleme, kabloları temizleme veya termik sıfırlama
-      // simEpoch'u arttırdıysa: bobin + ZR iç durumunu sıfırla, imza önbelleğini boşalt
-      // ve uğuldama sayacını da sıfırla (yoksa sıfırlama sonraki frame'de yeniden atar)
+      // Doküman/preset yükleme veya kabloları temizleme simEpoch'u arttırdıysa:
+      // bobin + ZR iç durumunu sıfırla, imza önbelleğini boşalt ve uğuldama
+      // sayacını da sıfırla (yoksa kablo bozuksa sıfırlama sonraki frame'de yine atar)
       if (epochRef.current !== st.simEpoch) {
         epochRef.current = st.simEpoch;
         engineRef.current.reset();

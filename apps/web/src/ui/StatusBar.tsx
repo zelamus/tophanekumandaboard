@@ -13,6 +13,8 @@ function chips(sim: SimOutput | null, zr: ZrConf): React.ReactNode[] {
   const out: React.ReactNode[] = [];
   if (sim.motor.running) {
     out.push(<span key="m" className="chip ok">Motor: çalışıyor ({sim.motor.dir === 1 ? 'ileri' : 'geri'})</span>);
+  } else if (sim.motor.overCurrent) {
+    out.push(<span key="m" className="chip warn">Motor uğuluyor (faz hatası) — termik ~5 sn içinde atacak</span>);
   } else if (sim.motor.missingPhase) {
     out.push(<span key="m" className="chip warn">Motor: faz eksik</span>);
   } else {

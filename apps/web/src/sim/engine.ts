@@ -9,8 +9,8 @@
 //  4. Zaman rölesi (ZR) gerçek zamanlı çalışır: 'düz' mod enerjiliyken sayar,
 //     gecikme sonunda kontak kapanır; 'ters' mod (off-delay) enerjide anında
 //     kapanır, enerjisi kesildikten sonra gecikme kadar kapalı kalır.
-//  5. Termik röle atınca yalnızca gecikmeli NC yardımcı kontağı (e.tc) açılır;
-//     ana faz köprüleri kapalı kalmaya devam eder (gerçek kart davranışı).
+//  5. Termik röle atınca yardımcı NC kontakları (e.tc + e.tn) açılır; ana faz
+//     köprüleri (e.m1-m3) kapalı kalmaya devam eder (gerçek kart davranışı).
 //     Termik durumu mağazadan (SolveArgs.termikArmed) gelir — tek doğruluk kaynağı.
 
 import type { ContactEdge, DeviceRuntime, Pot, SimOutput, TimerConfig } from './model';
@@ -74,6 +74,8 @@ export class RelayEngine {
   zrTail = 0;
   /** Aktif ZR kipi — kip değişince iç ZR durumu sıfırlanır */
   private zrMode: TimerConfig['mode'] | null = null;
+  /** ters kipte enerji kesilip tail sayarken re-enerjilemeyi ayırt eder */
+  private zrHolding = false;
 
   reset(): void {
     this.coils = { c1: false, c2: false, c3: false, c4: false, d1: false };
@@ -81,6 +83,7 @@ export class RelayEngine {
     this.zrClosed = false;
     this.zrTail = 0;
     this.zrMode = null;
+    this.zrHolding = false;
   }
 
   solve(args: SolveArgs): SimOutput {
@@ -144,6 +147,7 @@ export class RelayEngine {
       this.zrElapsed = 0;
       this.zrTail = 0;
       this.zrClosed = false;
+      this.zrHolding = false;
     }
     if (args.zr.mode === 'düz') {
       if (zrEn) {
@@ -156,10 +160,13 @@ export class RelayEngine {
       dev.zr = { energized: zrEn, elapsed: this.zrElapsed, closed: this.zrClosed };
     } else {
       if (zrEn) {
+        if (this.zrHolding) this.zrElapsed = 0; // tail'lerken yeniden enerjilendi → yeni sayım
+        this.zrHolding = false;
         this.zrElapsed += args.dtMs;
         this.zrTail = args.zr.delayMs; // enerjiliyken tutma süresi hep taze
         this.zrClosed = true;
       } else if (this.zrTail > 0) {
+        this.zrHolding = true;
         this.zrTail -= args.dtMs;
         this.zrClosed = true;
         if (this.zrTail <= 0) {
