@@ -224,15 +224,22 @@ export class RelayEngine {
     const fwd = all && distinct && FORWARD_ORDERS.has(seq);
     const bwd = all && distinct && REVERSE_ORDERS.has(seq);
     const running = fwd || bwd;
-    // Sargı akımı: uçlarda EN AZ İKİ farklı potansiyel ve motor dönmüyorsa
-    // sargıdan akım geçer (uğuldama / kilitli rotor). Yalnız 1 faz bağlıyken
-    // dönüş yolu yoktur → akım yok → termik ısınmaz.
-    const distinctPots = new Set([up, vp, wp].filter((p): p is Pot => p !== null)).size;
+    // Sargı akımı modeli (ters-zaman kaba sınıflandırma):
+    //  • uçlarda ≥2 FARKLI faz ve motor dönmüyor (faz-faz hatası / kilitli rotor):
+    //    akım ~5×In → termik ~2 sn'de atar.
+    //  • ≥1 faz VE bir terminalde N: akım L→sargı→star→sargı→N yolunu tamamlar
+    //    (iki sargı seri, ~2.5×In) → termik ~6 sn'de atar.
+    //  • yalnız 1 faz (nötr yok): dönüş yolu yok → akım yok → termik ısınmaz.
+    const distinctPhases = new Set([up, vp, wp].filter((p): p is Pot => p !== null)).size;
+    const neutralReturn = [u, v, w].some((tid) => reach.get(tid)?.has('N') === true);
+    const faultPhases = !running && distinctPhases >= 2;
+    const faultNeutral = !running && distinctPhases >= 1 && neutralReturn;
     const motor = {
       running,
       dir: (all && distinct ? (fwd ? 1 : -1) : 0) as MotorDir,
       missingPhase: (!all && (up !== null || vp !== null || wp !== null)) || (all && !distinct),
-      overCurrent: distinctPots >= 2 && !running,
+      overCurrent: faultPhases || faultNeutral,
+      stallTripDelayMs: faultPhases ? 2000 : 6000,
     };
 
     // --- 5) Kısa devre tespiti: aynı uçta çakışan potansiyeller ---

@@ -144,10 +144,14 @@ export function useSimLoop(): void {
       // kısa devre → termik hemen atar
       if (out.shorts.length > 0 && st.termikArmed) A.termikTrip();
 
-      // sargı akımı (2+ farklı faz ama motor dönmüyor — uğuldama): ~5 sn sonra termik
-      if (out.motor.overCurrent) stallRef.current += dt;
-      else stallRef.current = 0;
-      if (stallRef.current >= 5000 && st.termikArmed) A.termikTrip();
+      // sargı akımı (uğuldama) — ters-zaman kaba sınıf: kilitli rotor (faz-faz)
+      // ~2 sn'de atar; faz-nötr dönüş yolu ~6 sn'de; arıza kalkınca sayaç sıfırlanır
+      if (out.motor.overCurrent) {
+        stallRef.current += dt;
+        if (stallRef.current >= out.motor.stallTripDelayMs && st.termikArmed) A.termikTrip();
+      } else {
+        stallRef.current = 0;
+      }
 
       // değişim imzası — aynıysa mağaza güncellenmez
       const potKey = [...out.pot].map(([k, v]) => `${k}:${v.join('')}`).join('|');

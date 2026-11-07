@@ -206,7 +206,7 @@ await loadPreset('t5');
 {
   const r = await page.evaluate(async () => {
     const { RelayEngine } = await import('/src/sim/engine.ts');
-    const potOf = { L1: 'sup.R', L2: 'sup.S', L3: 'sup.T' };
+    const potOf = { L1: 'sup.R', L2: 'sup.S', L3: 'sup.T', N: 'sup.Mp' };
     const mt = ['sup.U', 'sup.V', 'sup.W'];
     const mk = (orders) => {
       const wires = [];
@@ -236,9 +236,10 @@ await loadPreset('t5');
     return {
       forward: mk(['L1', 'L2', 'L3']),    // running: true, dir: 1, overCurrent: false
       reverse: mk(['L1', 'L3', 'L2']),    // running: true, dir: -1, overCurrent: false
-      duplicate: mk(['L1', 'L1', 'L3']),  // running: false, missingPhase: true, overCurrent: true
-      missing: mk(['L1', 'L2', null]),    // running: false, missingPhase: true, overCurrent: true (uğuldama)
+      duplicate: mk(['L1', 'L1', 'L3']),  // running: false, missingPhase: true, overCurrent: true, delay ~2000
+      missing: mk(['L1', 'L2', null]),    // running: false, missingPhase: true, overCurrent: true, delay ~2000
       onePhase: mk(['L1', null, null]),   // running: false, missingPhase: true, overCurrent: false (akım yolu yok)
+      phaseN: mk(['L1', 'N', null]),      // faz+nötr dönüş yolu → overCurrent: true, delay ~6000
     };
   });
   out.motorOrders = r;
