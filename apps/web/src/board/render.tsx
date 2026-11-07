@@ -111,7 +111,7 @@ function PrNcT({ a, b, y }: { a: number; b: number; y: number }) {
   return (
     <g>
       <path d={`M ${a + PAD} ${y} Q ${m} ${y + 2.4} ${b - PAD} ${y}`} stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round" />
-      <text x={m} y={y - 6} textAnchor="middle" fontFamily={MS} fontSize={11} fontWeight={700} fill={INK}>t→</text>
+      <text x={m} y={y - 6} textAnchor="middle" fontFamily={MS} fontSize={11} fontWeight={700} fill={INK}>t~Z</text>
     </g>
   );
 }
@@ -405,6 +405,62 @@ function D1TrayPrints() {
 }
 
 /* ================================================================
+   küçük 7-segment kronometre ekranı (d2)
+   ================================================================ */
+
+const SEGMAP: Record<string, string[]> = {
+  '0': ['a', 'b', 'c', 'd', 'e', 'f'],
+  '1': ['b', 'c'],
+  '2': ['a', 'b', 'g', 'e', 'd'],
+  '3': ['a', 'b', 'g', 'c', 'd'],
+  '4': ['f', 'g', 'b', 'c'],
+  '5': ['a', 'f', 'g', 'c', 'd'],
+  '6': ['a', 'f', 'g', 'e', 'c', 'd'],
+  '7': ['a', 'b', 'c'],
+  '8': ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+  '9': ['a', 'b', 'c', 'f', 'g'],
+};
+
+/** Tek rakam: 7 segment bar — sığın dolduran dikdörtgenler */
+function SegDigit({ ch, ox, oy, s }: { ch: string; ox: number; oy: number; s: number }) {
+  const seg = SEGMAP[ch] ?? [];
+  const w = s * 0.62, h = s, t = s * 0.185;
+  const bars: Array<[string, number, number, number, number]> = [
+    ['a', ox + t / 2, oy, w - t, t],
+    ['f', ox, oy + t / 2, t, h / 2 - t * 0.85],
+    ['b', ox + w - t, oy + t / 2, t, h / 2 - t * 0.85],
+    ['g', ox + t / 2, oy + h / 2 - t / 2, w - t, t],
+    ['e', ox, oy + h / 2 + t * 0.35, t, h / 2 - t * 0.85],
+    ['c', ox + w - t, oy + h / 2 + t * 0.35, t, h / 2 - t * 0.85],
+    ['d', ox + t / 2, oy + h - t, w - t, t],
+  ];
+  return (
+    <g transform="skewX(-2.4)">
+      {bars.map(([k, x, y, bw, bh]) => (
+        <rect key={k} x={x + 3} y={y} width={bw} height={bh} fill={seg.includes(k) ? '#ff5040' : 'rgba(255,80,64,0.08)'} stroke="none" />
+      ))}
+    </g>
+  );
+}
+
+function SegDisplay({ x, y, h, value }: { x: number; y: number; h: number; value: string }) {
+  const s = h * 0.86;
+  const digitW = s * 0.62 + 1.5;
+  let cx = x;
+  const nodes: React.ReactNode[] = [];
+  for (const ch of value) {
+    if (ch === '.') {
+      nodes.push(<circle key={`dot-${cx}`} cx={cx + 2.5} cy={y + h - 2.5} r={1.5} fill="#ff5040" />);
+      cx += 4.5;
+    } else {
+      nodes.push(<SegDigit key={`d-${cx}`} ch={ch} ox={cx} oy={y} s={s} />);
+      cx += digitW;
+    }
+  }
+  return <g>{nodes}</g>;
+}
+
+/* ================================================================
    d2 (zaman rölesi ZR) gövdesi + tepsi
    ================================================================ */
 
@@ -419,7 +475,8 @@ function D2Unit({ sim }: { sim: SimOutput | null }) {
       {/* dijital kronometre: gerçek kartta KIRMIZI 7-segment göstergesi */}
       <rect x={u.body.x + 10} y={u.body.y + 30} width={u.body.w - 20} height={110} rx={3} fill="#efefec" stroke="#9ea1a5" strokeWidth={1.2} />
       <rect x={u.lcd.x} y={u.lcd.y} width={u.lcd.w} height={u.lcd.h} rx={2} fill="#2a0b08" stroke="#180604" strokeWidth={1.2} />
-      <text x={u.lcd.x + u.lcd.w / 2} y={u.lcd.y + 15} textAnchor="middle" fontFamily="'Consolas', monospace" fontSize={12} fontWeight={700} fill="#ff5040">{sec.toFixed(1)}</text>
+      {/* gerçek kartta kırmızı 7-segment gösterge */}
+      <SegDisplay x={u.lcd.x + 5} y={u.lcd.y + 1.5} h={u.lcd.h - 3} value={sec.toFixed(1)} />
       {[0, 1, 2].map((i) => (
         <circle key={i} cx={u.lcd.x + 8 + i * 14} cy={u.lcd.y + u.lcd.h + 12} r={4.5} fill="#1d1d20" stroke="#000" strokeWidth={1} />
       ))}
@@ -481,6 +538,19 @@ function ButtonUnit({ b, pressed }: { b: G.ButtonDef; pressed: boolean }) {
    kontaktörler c1–c4: tepsi + gövde
    ================================================================ */
 
+/** dekoratif soket — gerçek kart düzenini tamamlar; sim ucu DEĞİL (tıklanmaz, kabloya girmez) */
+function FakeKnob({ x, y, color }: { x: number; y: number; color: string }) {
+  return (
+    <g pointerEvents="none">
+      <ellipse cx={x} cy={y + 1.6} rx={10.4} ry={7.6} fill="rgba(0,0,0,0.28)" />
+      <circle cx={x} cy={y - 1} r={9.6} fill="#8c8f93" />
+      <circle cx={x} cy={y} r={8} fill={color} stroke="#100f12" strokeWidth={1.5} />
+      <circle cx={x} cy={y} r={5} fill="none" stroke="#0c0c10" strokeOpacity={0.6} strokeWidth={1} />
+      <circle cx={x} cy={y} r={2.2} fill="#101014" />
+    </g>
+  );
+}
+
 function ContactorUnit({ k, on }: { k: G.ContactorDef; on: boolean }) {
   const f = k.front;
   const left = k.trayL, right = k.trayR;
@@ -521,6 +591,9 @@ function ContactorUnit({ k, on }: { k: G.ContactorDef; on: boolean }) {
       ))}
       {/* gövde — gümüş gri (foto: Siemens gümüş gövde) */}
       <rect x={f.x} y={f.y + 12} width={f.w} height={f.h - 12} rx={6} fill="url(#silverBody)" stroke="#77797d" strokeWidth={1.5} />
+      {/* foto: kontak altında 2×4 sarı posta; kilitli uçların üstü dekoratif çiftle 4. sırayı tamamlar */}
+      <FakeKnob x={f.x + 16} y={G.C_ROW_Y[0] - 19.5} color={G.KNOB_COLOR.yellow} />
+      <FakeKnob x={f.x + 62} y={G.C_ROW_Y[0] - 19.5} color={G.KNOB_COLOR.yellow} />
       <rect x={f.x + 3} y={f.y + 70} width={f.w - 6} height={f.h - 76} rx={3} fill="#e9e9ec" stroke="#87888d" strokeWidth={1.2} />
       {/* siyah anahtar + plaka */}
       <rect x={f.x + 10} y={f.y + 70 + 26} width={11} height={17} rx={2} fill="#1d1d20" stroke="#000" strokeWidth={1} />
@@ -529,6 +602,9 @@ function ContactorUnit({ k, on }: { k: G.ContactorDef; on: boolean }) {
       <text x={f.x + f.w / 2} y={f.y + f.h - 6} textAnchor="middle" fontFamily={MS} fontSize={7.5} fontWeight={700} fill="#8b8d92">SIEMENS</text>
       {/* etiket */}
       <text x={f.x + f.w + 16} y={f.y + f.h - 22} fontFamily={MS} fontSize={21} fontWeight={800} fill={INK}>{k.id.toUpperCase()}</text>
+      {/* foto: sütun en altta siyah soket çifti — dekoratif */}
+      <FakeKnob x={k.trayL} y={G.C_ROW_Y[7] + 21} color={G.KNOB_COLOR.black} />
+      <FakeKnob x={k.trayR} y={G.C_ROW_Y[7] + 21} color={G.KNOB_COLOR.black} />
       <title>{k.id.toUpperCase()} — kontaktör</title>
     </g>
   );
@@ -720,8 +796,8 @@ export function Board() {
           <ellipse cx={640} cy={880} rx={150} ry={28} />
         </g>
         <g stroke="#8a754c" opacity={0.06} strokeLinecap="round" fill="none">
-          <path d={`M ${G.PANEL.x + 40} ${G.PANEL.y + 130} L ${G.PANEL.x + 30} ${G.PANEL.y + 1350}`} strokeWidth={9} />
-          <path d={`M ${G.PANEL.x + G.PANEL.w - 60} ${G.PANEL.y + 200} L ${G.PANEL.x + G.PANEL.w - 48} ${G.PANEL.y + 900}`} strokeWidth={7} />
+          <path d={`M ${G.PANEL.x + 40} ${G.PANEL.y + 130} L ${G.PANEL.x + 30} ${G.PANEL.y + 950}`} strokeWidth={9} />
+          <path d={`M ${G.PANEL.x + G.PANEL.w - 60} ${G.PANEL.y + 200} L ${G.PANEL.x + G.PANEL.w - 48} ${G.PANEL.y + 750}`} strokeWidth={7} />
         </g>
         {/* köşe montaj vidası delikleri */}
         <g fill="#3b3122" opacity={0.35}>
