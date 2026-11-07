@@ -31,6 +31,9 @@ function Knob({ s, selected }: KnobProps) {
   return (
     <g className="term" onClick={(e) => { e.stopPropagation(); A.clickTerminal(s.id); }}>
       <circle cx={s.x} cy={s.y} r={r + 3.5} fill="transparent" />
+      {/* metal somun gölgesi */}
+      <ellipse cx={s.x} cy={s.y + 1.8} rx={r + 1.2} ry={r - 0.4} fill="rgba(0,0,0,0.28)" />
+      <circle cx={s.x} cy={s.y - 1} r={r + 1.8} fill="#8c8f93" />
       <circle cx={s.x} cy={s.y} r={r} fill={s.color} stroke="#100f12" strokeWidth={1.6} />
       <circle cx={s.x} cy={s.y} r={r * 0.6} fill="none" stroke="#0c0c10" strokeOpacity={0.6} strokeWidth={1.1} />
       <circle cx={s.x} cy={s.y} r={2.6} fill={selected ? '#6b5113' : '#101014'} />
@@ -55,7 +58,7 @@ function SocketLabels() {
       );
     } else {
       items.push(
-        <text key={s.id} x={s.x} y={y} textAnchor="middle" fontFamily={MS} fontSize={13} fontWeight={700} fill={INK}>{s.label}</text>,
+        <text key={s.id} x={s.x} y={y} textAnchor="middle" fontFamily={MS} fontSize={16} fontWeight={700} fill={INK}>{s.label}</text>,
       );
     }
   }
@@ -203,17 +206,23 @@ function Cables({ cables }: { cables: Cable[] }) {
 
 function Emergency() {
   const p = G.EMERGENCY;
+  const cx = p.plate.x + p.plate.w / 2;
+  const cy = p.plate.y + p.plate.h / 2;
+  const rPlate = Math.min(p.plate.w, p.plate.h) / 2;
   return (
     <g>
-      <rect x={p.plate.x} y={p.plate.y} width={p.plate.w} height={p.plate.h} rx={26} fill="#e7c93c" stroke="#8f7a17" strokeWidth={1.5} />
-      <text x={p.dome.x} y={p.plate.y + 19} textAnchor="middle" fontFamily={MS} fontSize={13} fontWeight={800} fill={INK}>S</text>
+      {/* gerçek kart: yuvarlak sarı plaka + üzerinde yay boyunca EMERGENCY */}
+      <circle cx={cx} cy={cy} r={rPlate} fill="#e7c93c" stroke="#8f7a17" strokeWidth={1.5} />
+      <circle cx={cx} cy={cy} r={rPlate - 7} fill="#ddb725" stroke="#c2a422" strokeWidth={1} />
       <circle cx={p.dome.x} cy={p.dome.y} r={p.dome.r} fill="#b9321f" stroke="#5e1508" strokeWidth={2} />
       <circle cx={p.dome.x} cy={p.dome.y} r={p.dome.r - 9} fill="#d24433" />
       <circle cx={p.dome.x - 8} cy={p.dome.y - 9} r={7} fill="#e2614f" opacity={0.85} />
-      <text
-        x={p.dome.x} y={p.plate.y + p.plate.h - 6} textAnchor="middle" fontFamily={MS}
-        fontSize={11.5} fontWeight={800} fill={INK} transform={`rotate(-6 ${p.dome.x} ${p.plate.y + p.plate.h - 10})`}
-      >EMERGENCY</text>
+      <defs>
+        <path id="emArc" d={`M ${cx - 47} ${cy + 42} Q ${cx} ${cy + 63} ${cx + 47} ${cy + 42}`} />
+      </defs>
+      <text fontFamily={MS} fontSize={13} fontWeight={800} fill={INK} letterSpacing={1.5}>
+        <textPath href="#emArc" startOffset="50%" textAnchor="middle">EMERGENCY</textPath>
+      </text>
     </g>
   );
 }
@@ -236,12 +245,12 @@ function Breakers() {
         <rect x={117} y={G.RECESS.y + 8} width={66} height={G.RECESS.h - 16} rx={3} fill="transparent" />
         <title>F3 — motor kesicisi (3P)</title>
       </g>
-      {/* F1 — kumanda kesicisi (1P) */}
-      <rect x={190} y={G.RECESS.y + 8} width={22} height={G.RECESS.h - 16} rx={3} fill="#e4e3df" stroke="#8b8a86" strokeWidth={1} />
+      {/* F1 — kumanda kesicisi (1P): fotoda tek muhafaza okunur; beyaz modüle gövdeyle aynı plaka */}
+      <rect x={180} y={G.RECESS.y + 8} width={34} height={G.RECESS.h - 16} rx={3} fill="#d8d7d3" stroke="#8b8a86" strokeWidth={1} />
       <g className="clickable" onClick={(e) => { e.stopPropagation(); A.toggleBreaker('control'); }}>
-        <rect x={195.5} y={222} width={11} height={11} rx={1.5} fill="#f6f6f3" />
-        <rect x={195.5} y={st.breakers.control ? 226 : 251} width={11} height={26} rx={2} fill="#f9f9f6" stroke="#9a9a95" strokeWidth={1} />
-        <rect x={195.5} y={265} width={11} height={11} rx={1.5} fill="#cfcfce" />
+        <rect x={195.5} y={222} width={11} height={11} rx={1.5} fill="#efefec" />
+        <rect x={195.5} y={st.breakers.control ? 226 : 251} width={11} height={26} rx={2} fill="#23232a" stroke="#000" strokeWidth={1} />
+        <rect x={195.5} y={265} width={11} height={11} rx={1.5} fill="#c5c4bf" />
         <title>F1 — kumanda kesicisi (1P)</title>
       </g>
     </g>
@@ -273,8 +282,12 @@ function SchoolText() {
 }
 
 function Lamps({ sim }: { sim: SimOutput | null }) {
+  const first = G.LAMPS[0].x, last = G.LAMPS[G.LAMPS.length - 1].x;
   return (
     <g>
+      {/* gerçek kartta lambalar tek metal şerit üzerinde */}
+      <rect x={first - 40} y={G.LAMP_Y - 27} width={last - first + 80} height={54} rx={12} fill="#c9cbcf" stroke="#7f8287" strokeWidth={1.4} />
+      <rect x={first - 34} y={G.LAMP_Y - 21} width={last - first + 68} height={42} rx={9} fill="#dfe0e2" stroke="#a8abaf" strokeWidth={1} />
       {G.LAMPS.map((l) => {
         const on = sim?.lamps[l.key] === true;
         return (
@@ -308,10 +321,22 @@ function EUnit({ sim }: { sim: SimOutput | null }) {
       <path d={`M ${u.body.x + 44} ${u.body.y + 5} Q ${u.body.x + 34} ${u.body.y - 26} ${u.body.x + 52} ${u.body.y - 40}`} stroke="#1a1a1c" strokeWidth={4.5} fill="none" strokeLinecap="round" />
       <ellipse cx={u.body.x + 24} cy={u.body.y - 40} rx={7} ry={3} fill="#23231f" />
       <ellipse cx={u.body.x + 52} cy={u.body.y - 42} rx={7} ry={3} fill="#23231f" />
+      {/* gövde altından sarkan kablo halkası */}
+      <path d={`M ${u.body.x + 10} ${u.body.y + u.body.h - 8} Q ${u.body.x - 12} ${u.body.y + u.body.h + 24} ${u.body.x + 4} ${u.body.y + u.body.h + 18}`} stroke="#1a1a1c" strokeWidth={4} fill="none" strokeLinecap="round" />
       <rect x={u.body.x} y={u.body.y} width={u.body.w} height={u.body.h} rx={7} fill="#b9bcc1" stroke="#5c5f64" strokeWidth={1.5} />
       <rect x={u.body.x + 4} y={u.face.y - 6} width={u.body.w - 8} height={(u.face.y - 6) - u.body.y} fill="#a3a6ab" />
       <rect x={u.face.x} y={u.face.y} width={u.face.w} height={u.face.h} rx={3} fill="#e9e9e6" stroke="#8f9296" strokeWidth={1.2} />
-      <text x={u.face.x + 8} y={u.face.y + 16} fontFamily={MS} fontSize={9} fill="#6b6e72">3VA 250V~</text>
+      <text x={u.face.x + 8} y={u.face.y + 16} fontFamily={MS} fontSize={9} fill="#6b6e72">3UA 250V~</text>
+      {/* büyük yuvarlak ayar kadranı — yüzeyin sol-altında, reset düğmesi sağda kalır */}
+      <g id="termik-kadran">
+        <circle cx={u.face.x + 22} cy={u.face.y + 58} r={16} fill="#f4f4f1" stroke="#8f9296" strokeWidth={1.3} />
+        <circle cx={u.face.x + 22} cy={u.face.y + 58} r={10.5} fill="#dddedb" stroke="#a5a8ab" strokeWidth={1} />
+        <line x1={u.face.x + 22} y1={u.face.y + 58} x2={u.face.x + 30} y2={u.face.y + 50} stroke="#b9321f" strokeWidth={2.6} strokeLinecap="round" />
+        <circle cx={u.face.x + 22} cy={u.face.y + 58} r={2} fill="#3c3f44" />
+        {[0, 1, 2, 3, 4].map((i) => (
+          <line key={i} x1={u.face.x + 22 + (i - 2) * 6.5} y1={u.face.y + 38.5} x2={u.face.x + 22 + (i - 2) * 6.5} y2={u.face.y + 41.5} stroke="#6b6e72" strokeWidth={1} />
+        ))}
+      </g>
       {/* kırmızı sıfırlama düğmesi — attığında dışarı çıkar */}
       <g className="clickable" onClick={(e) => { e.stopPropagation(); A.termikArm(); }}>
         <circle cx={u.reset.x} cy={u.reset.y + (tripped ? -3 : 0)} r={u.reset.r} fill="#b9321f" stroke="#5e1508" strokeWidth={1.8} />
@@ -459,24 +484,24 @@ function ButtonUnit({ b, pressed }: { b: G.ButtonDef; pressed: boolean }) {
 function ContactorUnit({ k, on }: { k: G.ContactorDef; on: boolean }) {
   const f = k.front;
   const left = k.trayL, right = k.trayR;
-  const screwsY = [818, 869];
-  const screwsX = [f.x + 10, f.x + 27, f.x + 44, f.x + 61];
   return (
     <g>
       {/* x sıralarının büyük yardımcı kutu baskısı */}
-      <rect x={left + 12} y={G.C_ROW_Y[5] - 20} width={right - left - 24} height={(G.C_ROW_Y[7] - G.C_ROW_Y[5]) + 40} fill="none" stroke={INK} strokeWidth={1.6} />
-      {/* sıra baskıları */}
-      <PrCoil a={left} b={right} y={G.C_ROW_Y[0]} />
-      <PrNo a={left} b={right} y={G.C_ROW_Y[1]} />
-      <PrNo a={left} b={right} y={G.C_ROW_Y[2]} />
-      <PrNc a={left} b={right} y={G.C_ROW_Y[3]} />
-      <PrNc a={left} b={right} y={G.C_ROW_Y[4]} />
-      <PrAux a={left} b={right} y={G.C_ROW_Y[5]} />
-      <PrAux a={left} b={right} y={G.C_ROW_Y[6]} />
-      <PrAux a={left} b={right} y={G.C_ROW_Y[7]} />
-      {/* tepsi→gövde bağlantı baskısı */}
-      <path d={`M ${left + 4} ${G.C_ROW_Y[0] - 14} Q ${left + 30} ${G.C_ROW_Y[0] - 34} ${f.x + 30} ${f.y + f.h}`} stroke={INK} strokeWidth={1.5} fill="none" />
-      <path d={`M ${right - 4} ${G.C_ROW_Y[0] - 14} Q ${right - 26} ${G.C_ROW_Y[0] - 34} ${f.x + 52} ${f.y + f.h}`} stroke={INK} strokeWidth={1.5} fill="none" />
+      <g filter="url(#handInk)">
+        <rect x={left + 12} y={G.C_ROW_Y[5] - 20} width={right - left - 24} height={(G.C_ROW_Y[7] - G.C_ROW_Y[5]) + 40} fill="none" stroke={INK} strokeWidth={1.6} />
+        {/* sıra baskıları */}
+        <PrCoil a={left} b={right} y={G.C_ROW_Y[0]} />
+        <PrNo a={left} b={right} y={G.C_ROW_Y[1]} />
+        <PrNo a={left} b={right} y={G.C_ROW_Y[2]} />
+        <PrNc a={left} b={right} y={G.C_ROW_Y[3]} />
+        <PrNc a={left} b={right} y={G.C_ROW_Y[4]} />
+        <PrAux a={left} b={right} y={G.C_ROW_Y[5]} />
+        <PrAux a={left} b={right} y={G.C_ROW_Y[6]} />
+        <PrAux a={left} b={right} y={G.C_ROW_Y[7]} />
+        {/* tepsi→gövde bağlantı baskısı */}
+        <path d={`M ${left + 4} ${G.C_ROW_Y[0] - 14} Q ${left + 30} ${G.C_ROW_Y[0] - 34} ${f.x + 30} ${f.y + f.h}`} stroke={INK} strokeWidth={1.5} fill="none" />
+        <path d={`M ${right - 4} ${G.C_ROW_Y[0] - 14} Q ${right - 26} ${G.C_ROW_Y[0] - 34} ${f.x + 52} ${f.y + f.h}`} stroke={INK} strokeWidth={1.5} fill="none" />
+      </g>
       {/* kanca kablo (pabuç) */}
       <path d={`M ${f.x + 24} ${f.y + f.h - 3} Q ${f.x - 4} ${G.C_ROW_Y[0] + 6} ${left} ${G.C_ROW_Y[0]}`} stroke="#23231f" strokeWidth={4} fill="none" strokeLinecap="round" />
       {/* üst kablo girişleri */}
@@ -486,21 +511,24 @@ function ContactorUnit({ k, on }: { k: G.ContactorDef; on: boolean }) {
       {[f.x + 18, f.x + 40, f.x + 62].map((x) => (
         <ellipse key={x} cx={x} cy={f.y - 24} rx={7.5} ry={3} fill="#23231f" />
       ))}
-      {/* gövde */}
-      <rect x={f.x} y={f.y} width={f.w} height={f.h} rx={6} fill="#2c2c30" stroke="#161618" strokeWidth={1.5} />
+      {/* üst siyah klemens kapağı + yoğun kablo demeti (gerçekte teller üstte fışkırır) */}
+      <rect x={f.x} y={f.y} width={f.w} height={14} rx={4} fill="#1c1c1e" stroke="#0c0c0e" strokeWidth={1.2} />
+      {[f.x + 10, f.x + 24, f.x + 38, f.x + 52, f.x + 66].map((x, i) => (
+        <path key={x} d={`M ${x - 2} ${f.y - 24} Q ${x + (i % 2 ? 6 : -3)} ${f.y - 12} ${x} ${f.y + 4}`} stroke="#1f1f21" strokeWidth={5.2} fill="none" strokeLinecap="round" />
+      ))}
+      {[f.x + 10, f.x + 38, f.x + 66].map((x) => (
+        <ellipse key={x} cx={x} cy={f.y - 25} rx={9} ry={3.5} fill="#23231f" />
+      ))}
+      {/* gövde — gümüş gri (foto: Siemens gümüş gövde) */}
+      <rect x={f.x} y={f.y + 12} width={f.w} height={f.h - 12} rx={6} fill="url(#silverBody)" stroke="#77797d" strokeWidth={1.5} />
       <rect x={f.x + 3} y={f.y + 70} width={f.w - 6} height={f.h - 76} rx={3} fill="#e9e9ec" stroke="#87888d" strokeWidth={1.2} />
-      {screwsY.map((sy) => screwsX.map((sx) => (
-        <g key={`${sx}-${sy}`}>
-          <circle cx={sx} cy={sy} r={3.2} fill="#a9aaae" stroke="#5e5f63" strokeWidth={1} />
-          <path d={`M ${sx - 2.2} ${sy} L ${sx + 2.2} ${sy}`} stroke="#5e5f63" strokeWidth={0.9} />
-        </g>
-      )))}
       {/* siyah anahtar + plaka */}
       <rect x={f.x + 10} y={f.y + 70 + 26} width={11} height={17} rx={2} fill="#1d1d20" stroke="#000" strokeWidth={1} />
       <rect x={f.x + 17} y={f.y + 70 + 42} width={36} height={15} rx={2} fill="#fbfbf8" stroke="#a3a3a0" strokeWidth={0.9} />
       <text x={f.x + 35} y={f.y + 70 + 53} textAnchor="middle" fontFamily={MS} fontSize={8} fill="#54565a">{on ? 'IN' : '0'}</text>
+      <text x={f.x + f.w / 2} y={f.y + f.h - 6} textAnchor="middle" fontFamily={MS} fontSize={7.5} fontWeight={700} fill="#8b8d92">SIEMENS</text>
       {/* etiket */}
-      <text x={f.x + f.w + 16} y={f.y + f.h - 22} fontFamily={MS} fontSize={15} fontWeight={800} fill={INK}>{k.id.toUpperCase()}</text>
+      <text x={f.x + f.w + 16} y={f.y + f.h - 22} fontFamily={MS} fontSize={21} fontWeight={800} fill={INK}>{k.id.toUpperCase()}</text>
       <title>{k.id.toUpperCase()} — kontaktör</title>
     </g>
   );
@@ -511,11 +539,11 @@ function BoardLabels() {
   return (
     <g pointerEvents="none" fontFamily={MS} fontWeight={800} fill={INK}>
       {G.BUTTONS.map((b) => (
-        <text key={b.id} x={84} y={b.y + 6} textAnchor="middle" fontSize={15}>{b.id}</text>
+        <text key={b.id} x={84} y={b.y + 7} textAnchor="middle" fontSize={21}>{b.id}</text>
       ))}
-      <text x={502} y={562} textAnchor="middle" fontSize={15}>e</text>
-      <text x={G.D1_TRAY.label.x} y={G.D1_TRAY.label.y} textAnchor="middle" fontSize={15}>d1</text>
-      <text x={G.D2_TRAY.label.x} y={G.D2_TRAY.label.y} textAnchor="middle" fontSize={15}>d2</text>
+      <text x={502} y={562} textAnchor="middle" fontSize={21}>e</text>
+      <text x={G.D1_TRAY.label.x} y={G.D1_TRAY.label.y} textAnchor="middle" fontSize={21}>d1</text>
+      <text x={G.D2_TRAY.label.x} y={G.D2_TRAY.label.y} textAnchor="middle" fontSize={21}>d2</text>
     </g>
   );
 }
@@ -657,11 +685,21 @@ export function Board() {
           <stop offset="55%" stopColor="#b2b5b9" />
           <stop offset="100%" stopColor="#8f9297" />
         </radialGradient>
+        <linearGradient id="silverBody" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#d9dbde" />
+          <stop offset="45%" stopColor="#c2c5c9" />
+          <stop offset="100%" stopColor="#a5a8ad" />
+        </linearGradient>
         <radialGradient id="panelSkin" cx="50%" cy="22%" r="105%">
-          <stop offset="0%" stopColor="#eadfae" />
-          <stop offset="70%" stopColor="#e2d19b" />
-          <stop offset="100%" stopColor="#d3c088" />
+          <stop offset="0%" stopColor="#e9d79f" />
+          <stop offset="70%" stopColor="#dcCf93" />
+          <stop offset="100%" stopColor="#c6b173" />
         </radialGradient>
+        {/* elle çizilmiş mürekkep: hafif dağınıklık — CAD düzlüğünü kırar */}
+        <filter id="handInk" x="-6%" y="-6%" width="112%" height="112%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="7" result="n" />
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
       </defs>
 
       {/* arka plan (duvar) */}
@@ -685,6 +723,20 @@ export function Board() {
           <path d={`M ${G.PANEL.x + 40} ${G.PANEL.y + 130} L ${G.PANEL.x + 30} ${G.PANEL.y + 1350}`} strokeWidth={9} />
           <path d={`M ${G.PANEL.x + G.PANEL.w - 60} ${G.PANEL.y + 200} L ${G.PANEL.x + G.PANEL.w - 48} ${G.PANEL.y + 900}`} strokeWidth={7} />
         </g>
+        {/* köşe montaj vidası delikleri */}
+        <g fill="#3b3122" opacity={0.35}>
+          {[
+            [G.PANEL.x + 18, G.PANEL.y + 16], [G.PANEL.x + G.PANEL.w - 18, G.PANEL.y + 16],
+            [G.PANEL.x + 18, G.PANEL.y + G.PANEL.h - 16], [G.PANEL.x + G.PANEL.w - 18, G.PANEL.y + G.PANEL.h - 16],
+          ].map(([sx, sy]) => <circle key={`${sx}-${sy}`} cx={sx} cy={sy} r={3.4} />)}
+        </g>
+        {/* kurşun kalem notları: C2-C3 arası rakamlar + b4 üstü işaret */}
+        <g fill="#8b8172" opacity={0.65} fontStyle="italic">
+          <text x={517} y={1006} fontFamily={MS} fontSize={11}>44</text>
+          <text x={524} y={1032} fontFamily={MS} fontSize={10}>9</text>
+          <text x={122} y={622} fontFamily={MS} fontSize={11}>11</text>
+          <path d="M 100 612 Q 108 606 116 613" stroke="#8b8172" strokeWidth={1.2} fill="none" opacity={0.65} />
+        </g>
       </g>
 
       {/* üst bölge */}
@@ -693,13 +745,13 @@ export function Board() {
       <Breakers />
       <SchoolText />
 
-      {/* cihaz gövdeleri (kabloların altında) */}
+      {/* cihaz gövdeleri (kabloların altında) — baskı katmanı elle-çizilmiş mürekkep */}
       <EUnit sim={sim} />
-      <ETrayPrints />
+      <g filter="url(#handInk)"><ETrayPrints /></g>
       <D1Unit />
-      <D1TrayPrints />
+      <g filter="url(#handInk)"><D1TrayPrints /></g>
       <D2Unit sim={sim} />
-      <D2TrayPrints />
+      <g filter="url(#handInk)"><D2TrayPrints /></g>
       {G.BUTTONS.map((b) => <ButtonUnit key={b.id} b={b} pressed={st.pressed[b.id as 'b1']} />)}
       {G.CONTACTORS.map((k) => <ContactorUnit key={k.id} k={k} on={sim?.dev.contactors[k.id as 'c1'] === true} />)}
 

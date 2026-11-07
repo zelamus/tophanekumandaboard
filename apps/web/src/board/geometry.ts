@@ -143,7 +143,7 @@ export function eSockets(): SocketDef[] {
 /* ---------------- d1 (takma röle) ---------------- */
 
 export const D1_UNIT = {
-  body: { x: 560, y: 400, w: 90, h: 125 },
+  body: { x: 560, y: 400, w: 84, h: 125 },
   cableStub: { x: 605, y: 400 }, // gövde üstünden panel girişi
 };
 
@@ -152,14 +152,14 @@ export const D1_TRAY = {
   spdt: { y: 644, nc: { x: 556.5, y: 645, id: 'd1.nc' }, com: { x: 612, y: 642, id: 'd1.com' }, no: { x: 666, y: 643, id: 'd1.no' } },
   comColor: KNOB_COLOR.blue,
   ncColor: KNOB_COLOR.red,
-  noColor: KNOB_COLOR.black,
+  noColor: KNOB_COLOR.red, // fotoda kırmızı-mavi-kırmızı sırası
   label: { x: 603, y: 540 },
 };
 
 /* ---------------- d2 (zaman rölesi ZR) ---------------- */
 
 export const D2_UNIT = {
-  body: { x: 750, y: 355, w: 155, h: 170 },
+  body: { x: 750, y: 355, w: 124, h: 170 }, // ince beyaz DIN gövde (foto ≈124 geniş)
   lcd: { x: 817, y: 441, w: 44, h: 20 },
   cableStub: { x: 828, y: 355 },
 };
@@ -247,12 +247,11 @@ export function contactorSockets(k: ContactorDef): SocketDef[] {
 /* ---------------- motor ---------------- */
 
 export const MOTOR = {
-  body: { x: 683, y: 48, w: 312, h: 192 },       // gri SIEMENS gövde
-  shaft: { x: 640, y: 137, w: 46, h: 15 },        // sol mil (merkez y ≈ 144)
-  pulley: { x: 652, y: 144.5, r: 15 },            // dönen kayış kasnağı
-  tBox: { x: 795, y: 205, w: 95, h: 83 },         // klemens kutusu
-  hole: { x: 790, y: 312 },                       // kablo pano giriş deliği
-  label: { x: 855, y: 128 },                      // SIEMENS yazısı
+  body: { x: 700, y: 70, w: 238, h: 190 },       // gri SIEMENS gövde (foto ≈238×190, panonun içinde)
+  shaft: { x: 652, y: 157, w: 48, h: 15 },        // sol mil (merkez y ≈ 164.5)
+  tBox: { x: 802, y: 228, w: 92, h: 78 },         // klemens kutusu
+  hole: { x: 792, y: 334 },                       // kablo pano giriş deliği
+  label: { x: 826, y: 152 },                      // SIEMENS yazısı
 };
 
 /* ---------------- harici sinyal lambası (pano dışı) ---------------- */
