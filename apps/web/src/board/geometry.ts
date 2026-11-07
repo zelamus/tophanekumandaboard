@@ -53,8 +53,8 @@ export const EMERGENCY = {
 
 /** 0/1 seçici anahtar (süs) */
 export const SELECTOR = {
-  plate: { x: 234, y: 115, w: 36, h: 80 },
-  knob: { x: 252, y: 153, r: 11 },
+  plate: { x: 234, y: 115, w: 55, h: 85 },  // foto: daha dolgun kare plaka (~55×85)
+  knob: { x: 254, y: 150, r: 11 },
 };
 
 /** Kesici yuvası (girinti) — 3P motor + 1P kumanda kesici */
@@ -143,8 +143,8 @@ export function eSockets(): SocketDef[] {
 /* ---------------- d1 (takma röle) ---------------- */
 
 export const D1_UNIT = {
-  body: { x: 560, y: 400, w: 84, h: 125 },
-  cableStub: { x: 605, y: 400 }, // gövde üstünden panel girişi
+  body: { x: 560, y: 360, w: 56, h: 175 },  // foto: ince-uzun (~55×175) gövde
+  cableStub: { x: 596, y: 326 },            // tel halkaların tepe noktası
 };
 
 export const D1_TRAY = {
@@ -153,7 +153,7 @@ export const D1_TRAY = {
   comColor: KNOB_COLOR.blue,
   ncColor: KNOB_COLOR.red,
   noColor: KNOB_COLOR.red, // fotoda kırmızı-mavi-kırmızı sırası
-  label: { x: 603, y: 540 },
+  label: { x: 603, y: 552 }, // gövde altı bandında (body 360..535)
 };
 
 /* ---------------- d2 (zaman rölesi ZR) ---------------- */
@@ -233,10 +233,11 @@ export function contactorSockets(k: ContactorDef): SocketDef[] {
     putR(1, 'm1', KNOB_COLOR.yellow),
     put(2, 'm2', KNOB_COLOR.yellow),
     putR(2, 'm2', KNOB_COLOR.yellow),
+    // foto: k1/k2 "yarısı siyah partnerli" kırmızı sıralar — B sütunu siyah
     { id: `${k.id}.k1.a`, x: k.trayL, y: C_ROW_Y[3], color: KNOB_COLOR.red, r: R_KNOB },
-    { id: `${k.id}.k1.b`, x: k.trayR, y: C_ROW_Y[3], color: KNOB_COLOR.red, r: R_KNOB },
+    { id: `${k.id}.k1.b`, x: k.trayR, y: C_ROW_Y[3], color: KNOB_COLOR.black, r: R_KNOB },
     { id: `${k.id}.k2.a`, x: k.trayL, y: C_ROW_Y[4], color: KNOB_COLOR.red, r: R_KNOB },
-    { id: `${k.id}.k2.b`, x: k.trayR, y: C_ROW_Y[4], color: KNOB_COLOR.red, r: R_KNOB },
+    { id: `${k.id}.k2.b`, x: k.trayR, y: C_ROW_Y[4], color: KNOB_COLOR.black, r: R_KNOB },
   ];
   out.push(put(5, 'x1', KNOB_COLOR.red), putR(5, 'x1', KNOB_COLOR.red));   // kutulu NO soketleri gerçekte kırmızı
   out.push(put(6, 'x2', KNOB_COLOR.red), putR(6, 'x2', KNOB_COLOR.red));
