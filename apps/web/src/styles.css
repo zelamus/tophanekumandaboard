@@ -146,6 +146,7 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .btn .bhit { cursor: pointer; }
 .btn .bhit:hover circle { filter: brightness(1.15); }
 .spin.running { animation: rot 1.1s linear infinite; transform-box: fill-box; transform-origin: center; }
+.spin.running.reverse { animation-direction: reverse; }
 @keyframes rot { to { transform: rotate(360deg); } }
 
 /* ---------------- durum çubuğu ---------------- */

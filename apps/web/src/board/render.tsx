@@ -514,7 +514,7 @@ function BoardLabels() {
    motor
    ================================================================ */
 
-function Motor({ running }: { running: boolean }) {
+function Motor({ running, dir }: { running: boolean; dir: 1 | 0 | -1 }) {
   const M = G.MOTOR;
   const b = M.body;
   return (
@@ -522,7 +522,7 @@ function Motor({ running }: { running: boolean }) {
       {/* mil */}
       <rect x={M.shaft.x} y={M.shaft.y} width={M.shaft.w} height={M.shaft.h} rx={3} fill="#4a4d52" stroke="#2b2d31" strokeWidth={1.2} />
       {/* dönen kaspnak görüntüsü */}
-      <g className={running ? 'spin running' : 'spin'}>
+      <g className={running ? (dir === -1 ? 'spin running reverse' : 'spin running') : 'spin'}>
         <circle cx={M.pulley.x} cy={M.pulley.y} r={M.pulley.r} fill="#70747a" stroke="#3a3d42" strokeWidth={1.6} />
         <path d={`M ${M.pulley.x - M.pulley.r + 3} ${M.pulley.y} L ${M.pulley.x + M.pulley.r - 3} ${M.pulley.y}`} stroke="#3a3d42" strokeWidth={2.4} />
         <path d={`M ${M.pulley.x} ${M.pulley.y - M.pulley.r + 3} L ${M.pulley.x} ${M.pulley.y + M.pulley.r - 3}`} stroke="#3a3d42" strokeWidth={2.4} />
@@ -691,7 +691,7 @@ export function Board() {
       <BoardLabels />
 
       {/* motor en üstte */}
-      <Motor running={sim?.motor.running === true} />
+      <Motor running={sim?.motor.running === true} dir={sim?.motor.dir ?? 0} />
 
       {/* harici sinyal lambası */}
       <ExtLamp sim={sim} />

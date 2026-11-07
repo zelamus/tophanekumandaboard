@@ -36,7 +36,7 @@ export interface DeviceRuntime {
 
 export interface TimerConfig {
   delayMs: number;
-  mode: 'düz' | 'ters'; // düz: enerjilenince gecikmeli kapanır; ters: hemen kapanır gecikmeli açılır
+  mode: 'düz' | 'ters'; // düz: enerjide gecikmeli kapanır (on-delay); ters: enerjide hemen kapanır, enerjiden sonra gecikmeli açılır (off-delay)
 }
 
 export interface SimOutput {
@@ -51,5 +51,7 @@ export interface SimOutput {
   /** harici sinyal lambası LED'leri */
   ext: { yellow: boolean; red: boolean; green: boolean };
   /** motor */
-  motor: { running: boolean; dir: 1 | -1; missingPhase: boolean };
+  motor: { running: boolean; dir: 1 | 0 | -1; missingPhase: boolean };
+  /** bobin relaxation 12 adımda oturmadı (kontaktör çakması — devre salınıyor) */
+  unstable: boolean;
 }

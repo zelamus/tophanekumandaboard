@@ -38,6 +38,8 @@ export interface AppState {
   selTerminal: string | null;
   selCable: string | null;
   sim: SimOutput | null;
+  /** Doküman/preset yükleme ya da kablo temizliğinde artar → sim motoru sıfırlanır */
+  simEpoch: number;
 }
 
 const listeners = new Set<() => void>();
@@ -54,6 +56,7 @@ let state: AppState = {
   selTerminal: null,
   selCable: null,
   sim: null,
+  simEpoch: 0,
 };
 
 function notify(): void { listeners.forEach((f) => f()); }
@@ -112,7 +115,7 @@ export const A = {
   cancelSel(): void { patch({ selTerminal: null, selCable: null }); },
 
   clearWires(): void {
-    patch({ cables: [], selTerminal: null, selCable: null });
+    patch({ cables: [], selTerminal: null, selCable: null, simEpoch: state.simEpoch + 1 });
   },
 
   pressButton(id: 'b1' | 'b2' | 'b3' | 'b4'): void {
@@ -129,7 +132,7 @@ export const A = {
     patch({ breakers: { ...state.breakers, [k]: !state.breakers[k] } });
   },
 
-  termikArm(): void { patch({ termikArmed: true }); },
+  termikArm(): void { patch({ termikArmed: true, simEpoch: state.simEpoch + 1 }); },
   termikTrip(): void { patch({ termikArmed: false }); },
 
   setZr(zr: Partial<ZrConf>): void {
@@ -138,17 +141,19 @@ export const A = {
 
   setSim(sim: SimOutput): void { patch({ sim }); },
 
-  /** Kayıt/prefabrik dokümanını yükler */
+  /** Kayıt/prefabrik dokümanını yükler — sim motoru yeni devreden başlar */
   loadDoc(doc: DocShape | null): void {
     if (!doc || doc.v !== 1) return;
     patch({
       cables: (doc.cables ?? []).filter((c) => c && c.a && c.b),
+      pressed: { b1: false, b2: false, b3: false, b4: false },
       breakers: { motor: doc.breakers?.motor ?? true, control: doc.breakers?.control ?? true },
       zr: { delayMs: doc.zr?.delayMs ?? 3000, mode: doc.zr?.mode ?? 'düz' },
       termikArmed: doc.termikArmed ?? true,
       selTerminal: null,
       selCable: null,
       mode: 'kablo',
+      simEpoch: state.simEpoch + 1,
     });
   },
 

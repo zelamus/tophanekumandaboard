@@ -52,7 +52,8 @@ export const PRESETS: Preset[] = [
       'Kumanda devresi: Rc → e.tc.a | e.tc.b → b2.c1 | b2.no → c1.a1 | c1.a2 → Mp',
       'H1 kırmızı (K1 NC 21-22): e.tc.b → c1.k1.a | c1.k1.b → ext.fazR | ext.gnd → Mp',
       'H2 yeşil (K1 NO 13-14): e.tc.b → c1.x2.a | c1.x2.b → ext.fazG',
-      'Güç devresi: Rc(açık) + R/S/T → e.m1/m2/m3.a → c1.m1/m2/x1.a',
+      'Güç: F3 (motor kesicisi) açıkken R/S/T beslemesi pano içinden e.m1/m2/m3.a uçlarına geçer; bu yola kablo çekmeyin.',
+      'Öğrenci güç kabloları: e.m1.b → c1.m1.a | e.m2.b → c1.m2.a | e.m3.b → c1.x1.a',
       'c1.m1.b → U | c1.m2.b → V | c1.x1.b → W  (3. faz termik m3 üzerinden x1 NO’ya)',
       'b2 basılı kaldıkça motor döner; bırakınca durur.',
     ],
@@ -69,10 +70,8 @@ export const PRESETS: Preset[] = [
       // H2 yeşil: çalışıyor
       { a: 'e.tc.b', b: 'c1.x2.a', color: K },
       { a: 'c1.x2.b', b: 'ext.fazG', color: K },
-      // güç (3 faz)
-      { a: 'sup.R', b: 'e.m1.a', color: K },
-      { a: 'sup.S', b: 'e.m2.a', color: S },
-      { a: 'sup.T', b: 'e.m3.a', color: M },
+      // güç (3 faz) — R/S/T→e.m*.a beslemesi F3 pano içi kenarından gelir,
+      // ayrıca kablo çekilirse kesici bypass edilir
       { a: 'e.m1.b', b: 'c1.m1.a', color: K },
       { a: 'e.m2.b', b: 'c1.m2.a', color: S },
       { a: 'e.m3.b', b: 'c1.x1.a', color: M },
@@ -111,10 +110,8 @@ export const PRESETS: Preset[] = [
       // H2 yeşil: çalışıyor
       { a: 'e.tc.b', b: 'c1.x2.a', color: K },
       { a: 'c1.x2.b', b: 'ext.fazG', color: K },
-      // güç,
-      { a: 'sup.R', b: 'e.m1.a', color: K },
-      { a: 'sup.S', b: 'e.m2.a', color: S },
-      { a: 'sup.T', b: 'e.m3.a', color: M },
+      // güç — R/S/T→e.m*.a beslemesi F3 pano içi kenarından gelir,
+      // ayrıca kablo çekilirse kesici bypass edilir
       { a: 'e.m1.b', b: 'c1.m1.a', color: K },
       { a: 'e.m2.b', b: 'c1.m2.a', color: S },
       { a: 'e.m3.b', b: 'c1.x1.a', color: M },

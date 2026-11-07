@@ -6,10 +6,12 @@
 //     ulaştığı uçlar BFS ile bulunur.
 //  3. Bobinler "faz + nötr" kuralına göre enerjilenir; bobin değişince kontak
 //     konumları değişir; graf tekrar çözülür — çözüm durana kadar (en çok 12 adım).
-//  4. Zaman rölesi (ZR) gerçek zamanlı çalışır: enerjiliyken sayaç ilerler,
-//     enerjisi kesilince sıfırlanır.
+//  4. Zaman rölesi (ZR) gerçek zamanlı çalışır: 'düz' mod enerjiliyken sayar,
+//     gecikme sonunda kontak kapanır; 'ters' mod (off-delay) enerjide anında
+//     kapanır, enerjisi kesildikten sonra gecikme kadar kapalı kalır.
 //  5. Termik röle atınca yalnızca gecikmeli NC yardımcı kontağı (e.tc) açılır;
 //     ana faz köprüleri kapalı kalmaya devam eder (gerçek kart davranışı).
+//     Termik durumu mağazadan (SolveArgs.termikArmed) gelir — tek doğruluk kaynağı.
 
 import type { ContactEdge, DeviceRuntime, Pot, SimOutput, TimerConfig } from './model';
 import { PHASES } from './model';
@@ -19,8 +21,8 @@ export interface CoilState {
   c1: boolean; c2: boolean; c3: boolean; c4: boolean; d1: boolean;
 }
 
-/** Motorun döndüğü yön: 1 = ileri, -1 = geri */
-export type MotorDir = 1 | -1;
+/** Motorun döndüğü yön: 1 = ileri, -1 = geri, 0 = durdu (yön anlamsız) */
+export type MotorDir = 1 | 0 | -1;
 
 export interface SolveProbes {
   /** Sabit indikatör lambalarının besleme uçları (faz varsa yanar) */
@@ -47,6 +49,8 @@ export interface SolveArgs {
   wires: readonly { a: string; b: string }[];
   /** Cihaz kontakları — bobin/ZR/termik durumuna göre ileten */
   contacts: (coils: CoilState, zrClosed: boolean, termikArmed: boolean) => ContactEdge[];
+  /** Termik röle durumu — mağazadan beslenir (tek doğruluk kaynağı) */
+  termikArmed: boolean;
   /** Besleme uçları (kesici kapalıysa listededir) */
   sources: readonly { tid: string; pot: Pot }[];
   /** Bu çözümde geçen süre (ms) — ZR sayacı için */
@@ -57,6 +61,7 @@ export interface SolveArgs {
 }
 
 const FORWARD_ORDERS: ReadonlySet<string> = new Set(['L1,L2,L3', 'L2,L3,L1', 'L3,L1,L2']);
+const REVERSE_ORDERS: ReadonlySet<string> = new Set(['L1,L3,L2', 'L3,L2,L1', 'L2,L1,L3']);
 
 const sameCoils = (a: CoilState, b: CoilState): boolean =>
   a.c1 === b.c1 && a.c2 === b.c2 && a.c3 === b.c3 && a.c4 === b.c4 && a.d1 === b.d1;
@@ -65,24 +70,22 @@ export class RelayEngine {
   coils: CoilState = { c1: false, c2: false, c3: false, c4: false, d1: false };
   zrElapsed = 0;
   zrClosed = false;
-  termikArmed = true;
+  /** 'ters' modda enerji kesildikten sonra kontağın kapalı kalacağı kalan süre (ms) */
+  zrTail = 0;
 
   reset(): void {
     this.coils = { c1: false, c2: false, c3: false, c4: false, d1: false };
     this.zrElapsed = 0;
     this.zrClosed = false;
-    this.termikArmed = true;
+    this.zrTail = 0;
   }
-
-  termikTrip(): void { this.termikArmed = false; }
-  termikReset(): void { this.termikArmed = true; }
 
   solve(args: SolveArgs): SimOutput {
     const dev: DeviceRuntime = {
       contactors: { c1: this.coils.c1, c2: this.coils.c2, c3: this.coils.c3, c4: this.coils.c4 },
       d1: this.coils.d1,
       zr: { energized: false, elapsed: this.zrElapsed, closed: this.zrClosed },
-      termik: { armed: this.termikArmed },
+      termik: { armed: args.termikArmed },
     };
 
     // --- 1) Kablolar sabit graf: her adımda kontaklar yeniden kurulur ---
@@ -100,8 +103,9 @@ export class RelayEngine {
 
     // --- 2) Bobin çözümleninceye kadar graf + BFS tekrar edilir ---
     let reach: Map<string, Set<Pot>> = new Map();
+    let unstable = false;
     for (let iter = 0; iter < 12; iter++) {
-      reach = this.reachable(adj, args.contacts(this.coils, this.zrClosed, this.termikArmed), args.sources);
+      reach = this.reachable(adj, args.contacts(this.coils, this.zrClosed, args.termikArmed), args.sources);
       const energize = makeEnergizer(reach);
       const next: CoilState = {
         c1: energize(...args.probes.coils.c1),
@@ -115,20 +119,53 @@ export class RelayEngine {
       dev.contactors = { c1: next.c1, c2: next.c2, c3: next.c3, c4: next.c4 };
       dev.d1 = next.d1;
       if (stable) break;
+      if (iter === 11) unstable = true;
+    }
+    if (unstable) {
+      // Çözüm 12 adımda oturmadı (bobin kendi NC kontağıyla besleniyordu vb.):
+      // SON bobin durumuyla kontak grafiğini bir kez daha kur — böylece
+      // pot/lamba/motor çıktıları görüntülenen bobinlerle tutarlı kalır.
+      reach = this.reachable(adj, args.contacts(this.coils, this.zrClosed, args.termikArmed), args.sources);
     }
 
     // --- 3) Zaman rölesi zamanlaması (gerçek zaman, frame başına bir kez) ---
+    //  düz  (on-delay):  enerjide sayaç akar; delayMs sonunda kontak kapanır,
+    //                    enerji kesilince sayaç ve kontak sıfırlanır.
+    //  ters (off-delay): enerjide kontak HEMEN kapanır; enerji kesilince
+    //                    delayMs kadar kapalı kalır, sonra açılır.
     const zrEn = makeEnergizer(reach)(...args.probes.coils.zr);
-    if (zrEn) {
-      this.zrElapsed += args.dtMs;
-      this.zrClosed = args.zr.mode === 'düz'
-        ? this.zrElapsed >= args.zr.delayMs
-        : this.zrElapsed < args.zr.delayMs;
+    if (args.zr.mode === 'düz') {
+      if (zrEn) {
+        this.zrElapsed += args.dtMs;
+        this.zrClosed = this.zrElapsed >= args.zr.delayMs;
+      } else {
+        this.zrElapsed = 0;
+        this.zrClosed = false;
+      }
+      dev.zr = { energized: zrEn, elapsed: this.zrElapsed, closed: this.zrClosed };
     } else {
-      this.zrElapsed = 0;
-      this.zrClosed = false;
+      if (zrEn) {
+        this.zrElapsed += args.dtMs;
+        this.zrTail = args.zr.delayMs; // enerjiliyken tutma süresi hep taze
+        this.zrClosed = true;
+      } else if (this.zrTail > 0) {
+        this.zrTail -= args.dtMs;
+        this.zrClosed = true;
+        if (this.zrTail <= 0) {
+          this.zrTail = 0;
+          this.zrElapsed = 0;
+          this.zrClosed = false;
+        }
+      } else {
+        this.zrClosed = false;
+        this.zrElapsed = 0;
+      }
+      dev.zr = {
+        energized: zrEn,
+        elapsed: zrEn ? this.zrElapsed : this.zrTail, // enerjide sayaç, tutarken kalan süre
+        closed: this.zrClosed,
+      };
     }
-    dev.zr = { energized: zrEn, elapsed: this.zrElapsed, closed: this.zrClosed };
 
     // --- 4) Lamba / motor çıktıları ---
     const hasPhase = (t: string): boolean =>
@@ -148,17 +185,22 @@ export class RelayEngine {
       green: gndN && hasPhase(args.probes.ext.green),
     };
 
-    // Motor: üç uçta da faz olmalı; faz sırası yönü belirler
+    // Motor: üç uçta da faz olmalı; faz sırası yönü belirler. Gerçek üç fazlı
+    // asenkron motor hem ileri hem geri (döngüsel) sırada döner; birbiriyle
+    // tekrar eden faz dizisi (ör. L1,L1,L2) ise motor dönmez.
     const [u, v, w] = args.probes.motor;
     const up = firstPhase(reach, u);
     const vp = firstPhase(reach, v);
     const wp = firstPhase(reach, w);
     const all = up !== null && vp !== null && wp !== null;
+    const distinct = all ? new Set([up, vp, wp]).size === 3 : false;
     const seq = all ? `${up},${vp},${wp}` : '';
+    const fwd = all && distinct && FORWARD_ORDERS.has(seq);
+    const bwd = all && distinct && REVERSE_ORDERS.has(seq);
     const motor = {
-      running: all && FORWARD_ORDERS.has(seq),
-      dir: (FORWARD_ORDERS.has(seq) ? 1 : -1) as MotorDir,
-      missingPhase: !all && (up !== null || vp !== null || wp !== null),
+      running: all && distinct && (fwd || bwd),
+      dir: (all && distinct ? (fwd ? 1 : -1) : 0) as MotorDir,
+      missingPhase: (!all && (up !== null || vp !== null || wp !== null)) || (all && !distinct),
     };
 
     // --- 5) Kısa devre tespiti: aynı uçta çakışan potansiyeller ---
@@ -172,7 +214,7 @@ export class RelayEngine {
     const pot = new Map<string, Pot[]>();
     for (const [k, set] of reach) pot.set(k, [...set].sort());
 
-    return { pot, dev, lamps, ext, motor, shorts };
+    return { pot, dev, lamps, ext, motor, shorts, unstable };
   }
 
   /** Bir potansiyelin graf üzerinde ulaştığı tüm uçlar */

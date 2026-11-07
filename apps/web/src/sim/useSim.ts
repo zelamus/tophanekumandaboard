@@ -1,5 +1,6 @@
 // RAF döngüsü: kablolara + cihaz durumlarına göre RelayEngine.solve çağrılır.
 // Kısa devre otomatik olarak termiği atar (e.tc açılır → kumanda kopar).
+// Motor tek faza düşerse (uğuldama) ~5 sn içinde yine termik atar.
 
 import { useEffect, useRef } from 'react';
 import { RelayEngine } from './engine';
@@ -26,8 +27,9 @@ const SWITCHES = ['b1', 'b2', 'b3', 'b4'] as const;
 const COILS = ['c1', 'c2', 'c3', 'c4'] as const;
 
 /** Cihaz iç bağlantılarını (kontakları) kurar.
- *  NOT: termik durumu mağazada tutulur (A.termikArm/termikTrip); motor kendi
- *  alanını kullanmaz. */
+ *  NOT: termik durumu mağazada tutulur (A.termikArm/termikTrip) ve mağazadan
+ *  solve'a (termikArmed) geçer — tek doğruluk kaynağı.
+ *  Termik yedek kontakları: tn + tc (95-96 NC) attığında ikisi de açılır. */
 function deviceContacts(coils: CoilState, zrClosed: boolean, termikArmed: boolean): ContactEdge[] {
   const s = getState();
   const edges: ContactEdge[] = [];
@@ -42,8 +44,8 @@ function deviceContacts(coils: CoilState, zrClosed: boolean, termikArmed: boolea
     edges.push({ a: `${b}.c2`, b: `${b}.no`, closed: pressed });
   }
 
-  // e — termik röle
-  edges.push({ a: 'e.tn.a', b: 'e.tn.b', closed: true });
+  // e — termik röle (95-96 NC: attığında AÇILIR)
+  edges.push({ a: 'e.tn.a', b: 'e.tn.b', closed: termikArmed });
   edges.push({ a: 'e.tc.a', b: 'e.tc.b', closed: termikArmed });
   for (const m of ['m1', 'm2', 'm3'] as const) {
     edges.push({ a: `e.${m}.a`, b: `e.${m}.b`, closed: true });
@@ -84,6 +86,8 @@ function deviceContacts(coils: CoilState, zrClosed: boolean, termikArmed: boolea
 export function useSimLoop(): void {
   const engineRef = useRef<RelayEngine>(new RelayEngine());
   const sigRef = useRef<string>('');
+  const epochRef = useRef<number>(-1);
+  const stallRef = useRef(0);
 
   useEffect(() => {
     let raf = 0;
@@ -92,12 +96,24 @@ export function useSimLoop(): void {
     const tick = (t: number) => {
       raf = requestAnimationFrame(tick);
       const st = getState();
-      const dt = Math.min(80, t - last);
+
+      // Doküman/preset yükleme, kabloları temizleme veya termik sıfırlama
+      // simEpoch'u arttırdıysa: bobin + ZR iç durumunu sıfırla, imza önbelleğini boşalt
+      if (epochRef.current !== st.simEpoch) {
+        epochRef.current = st.simEpoch;
+        engineRef.current.reset();
+        sigRef.current = '';
+      }
+
+      // Doğalı dt (5 dk tavan): sekme gizliyken RAF donsa bile geçen gerçek
+      // süre ZR sayacına işlenir; tavan yalnız bozuk/ileri zıplayan saate karşı korur.
+      const dt = Math.min(300000, t - last);
       last = t;
 
       const out = engineRef.current.solve({
         wires: st.cables.map((w) => ({ a: w.a, b: w.b })),
         contacts: deviceContacts,
+        termikArmed: st.termikArmed,
         sources: (() => {
           const list: { tid: string; pot: Pot }[] = [
             { tid: 'sup.R', pot: 'L1' },
@@ -118,6 +134,11 @@ export function useSimLoop(): void {
       // kısa devre → termik hemen atar
       if (out.shorts.length > 0 && st.termikArmed) A.termikTrip();
 
+      // tek faz / tekrarlı faz (uğuldama): ~5 sn sonra termik atar
+      if (out.motor.missingPhase) stallRef.current += dt;
+      else stallRef.current = 0;
+      if (stallRef.current >= 5000 && st.termikArmed) A.termikTrip();
+
       // değişim imzası — aynıysa mağaza güncellenmez
       const potKey = [...out.pot].map(([k, v]) => `${k}:${v.join('')}`).join('|');
       const d = out.dev;
@@ -128,6 +149,7 @@ export function useSimLoop(): void {
         d.d1, d.zr.closed, d.zr.energized, Math.round(d.zr.elapsed),
         d.termik.armed, out.motor.running, out.motor.dir, out.motor.missingPhase,
         out.shorts.length,
+        out.unstable,
         potKey,
       ].join(',');
       if (sig !== sigRef.current) {
