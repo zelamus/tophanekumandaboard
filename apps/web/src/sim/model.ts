@@ -51,7 +51,7 @@ export interface SimOutput {
   /** harici sinyal lambası LED'leri */
   ext: { yellow: boolean; red: boolean; green: boolean };
   /** motor */
-  motor: { running: boolean; dir: 1 | 0 | -1; missingPhase: boolean };
+  motor: { running: boolean; dir: 1 | 0 | -1; missingPhase: boolean; overCurrent: boolean };
   /** bobin relaxation 12 adımda oturmadı (kontaktör çakması — devre salınıyor) */
   unstable: boolean;
 }

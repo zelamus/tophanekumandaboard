@@ -1,6 +1,6 @@
 // RAF döngüsü: kablolara + cihaz durumlarına göre RelayEngine.solve çağrılır.
 // Kısa devre otomatik olarak termiği atar (e.tc açılır → kumanda kopar).
-// Motor tek faza düşerse (uğuldama) ~5 sn içinde yine termik atar.
+// Motor faz akısı bozulursa (uğuldama — sargı akımı) ~5 sn içinde yine termik atar.
 
 import { useEffect, useRef } from 'react';
 import { RelayEngine } from './engine';
@@ -99,10 +99,12 @@ export function useSimLoop(): void {
 
       // Doküman/preset yükleme, kabloları temizleme veya termik sıfırlama
       // simEpoch'u arttırdıysa: bobin + ZR iç durumunu sıfırla, imza önbelleğini boşalt
+      // ve uğuldama sayacını da sıfırla (yoksa sıfırlama sonraki frame'de yeniden atar)
       if (epochRef.current !== st.simEpoch) {
         epochRef.current = st.simEpoch;
         engineRef.current.reset();
         sigRef.current = '';
+        stallRef.current = 0;
       }
 
       // Doğalı dt (5 dk tavan): sekme gizliyken RAF donsa bile geçen gerçek
@@ -134,8 +136,8 @@ export function useSimLoop(): void {
       // kısa devre → termik hemen atar
       if (out.shorts.length > 0 && st.termikArmed) A.termikTrip();
 
-      // tek faz / tekrarlı faz (uğuldama): ~5 sn sonra termik atar
-      if (out.motor.missingPhase) stallRef.current += dt;
+      // sargı akımı (2+ farklı faz ama motor dönmüyor — uğuldama): ~5 sn sonra termik
+      if (out.motor.overCurrent) stallRef.current += dt;
       else stallRef.current = 0;
       if (stallRef.current >= 5000 && st.termikArmed) A.termikTrip();
 

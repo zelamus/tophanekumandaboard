@@ -23,6 +23,7 @@ function chips(sim: SimOutput | null): React.ReactNode[] {
   });
   if (sim.dev.d1) out.push(<span key="d1" className="chip ok">d1 çekişti</span>);
   if (sim.dev.zr.energized) out.push(<span key="zr" className="chip">ZR sayıyor: {(sim.dev.zr.elapsed / 1000).toFixed(1)} sn</span>);
+  else if (sim.dev.zr.closed) out.push(<span key="zrh" className="chip">ZR tutuyor: kalan {(sim.dev.zr.elapsed / 1000).toFixed(1)} sn</span>);
   if (!sim.dev.termik.armed) out.push(<span key="tr" className="chip warn">Termik attı</span>);
   if (sim.unstable) out.push(<span key="uns" className="chip warn">Kontaktör çakıyor — devre salınıyor</span>);
   return out;

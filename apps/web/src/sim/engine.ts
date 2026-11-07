@@ -72,12 +72,15 @@ export class RelayEngine {
   zrClosed = false;
   /** 'ters' modda enerji kesildikten sonra kontağın kapalı kalacağı kalan süre (ms) */
   zrTail = 0;
+  /** Aktif ZR kipi — kip değişince iç ZR durumu sıfırlanır */
+  private zrMode: TimerConfig['mode'] | null = null;
 
   reset(): void {
     this.coils = { c1: false, c2: false, c3: false, c4: false, d1: false };
     this.zrElapsed = 0;
     this.zrClosed = false;
     this.zrTail = 0;
+    this.zrMode = null;
   }
 
   solve(args: SolveArgs): SimOutput {
@@ -134,6 +137,13 @@ export class RelayEngine {
     //  ters (off-delay): enerjide kontak HEMEN kapanır; enerji kesilince
     //                    delayMs kadar kapalı kalır, sonra açılır.
     const zrEn = makeEnergizer(reach)(...args.probes.coils.zr);
+    // Kip değişimi (düz↔ters): iç ZR durumunu sıfırla — eski tail yeni kipe sızmasın
+    if (this.zrMode !== args.zr.mode) {
+      this.zrMode = args.zr.mode;
+      this.zrElapsed = 0;
+      this.zrTail = 0;
+      this.zrClosed = false;
+    }
     if (args.zr.mode === 'düz') {
       if (zrEn) {
         this.zrElapsed += args.dtMs;
@@ -197,10 +207,16 @@ export class RelayEngine {
     const seq = all ? `${up},${vp},${wp}` : '';
     const fwd = all && distinct && FORWARD_ORDERS.has(seq);
     const bwd = all && distinct && REVERSE_ORDERS.has(seq);
+    const running = fwd || bwd;
+    // Sargı akımı: uçlarda EN AZ İKİ farklı potansiyel ve motor dönmüyorsa
+    // sargıdan akım geçer (uğuldama / kilitli rotor). Yalnız 1 faz bağlıyken
+    // dönüş yolu yoktur → akım yok → termik ısınmaz.
+    const distinctPots = new Set([up, vp, wp].filter((p): p is Pot => p !== null)).size;
     const motor = {
-      running: all && distinct && (fwd || bwd),
+      running,
       dir: (all && distinct ? (fwd ? 1 : -1) : 0) as MotorDir,
       missingPhase: (!all && (up !== null || vp !== null || wp !== null)) || (all && !distinct),
+      overCurrent: distinctPots >= 2 && !running,
     };
 
     // --- 5) Kısa devre tespiti: aynı uçta çakışan potansiyeller ---

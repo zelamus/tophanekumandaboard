@@ -152,19 +152,21 @@ await loadPreset('t4');
   const r = await page.evaluate(async () => {
     const kka = window.__kka;
     kka.A.clickTerminal('sup.R');
-    kka.A.clickTerminal('sup.U'); // yalnız 1 faz motora gider
+    kka.A.clickTerminal('sup.U'); // yalnız 1 faz → akım yolu yok, termik ısınmaz
     await new Promise((res) => setTimeout(res, 1500));
     const early = kka.getState(); // ~1.5 sn: hâlâ armed
-    await new Promise((res) => setTimeout(res, 4200));
-    const late = kka.getState(); // ~5.7 sn: termik atmış olmalı
+    kka.A.clickTerminal('sup.S');
+    kka.A.clickTerminal('sup.V'); // 2 faz → sargıdan akım akar (uğuldama)
+    await new Promise((res) => setTimeout(res, 5300)); // 5 sn eşiği İKİNCİ fazdan sonra başlar
+    const late = kka.getState(); // ~6.8 sn: termik atmış olmalı
     kka.A.clearWires();
     kka.A.termikArm();
     return {
-      early: { missing: early.sim?.motor.missingPhase, armed: early.termikArmed },
+      early: { missing: early.sim?.motor.missingPhase, overCurrent: early.sim?.motor.overCurrent, armed: early.termikArmed },
       late: { storeArmed: late.termikArmed, devArmed: late.sim?.dev.termik.armed },
     };
   });
-  out.stall = r; // beklenen: early {missing:true, armed:true}; late {storeArmed:false, devArmed:false}
+  out.stall = r; // beklenen: early {missing:true, overCurrent:false, armed:true}; late {storeArmed:false, devArmed:false}
 }
 
 /* ---- kayıt API'si ---- */
@@ -232,13 +234,40 @@ await loadPreset('t5');
       }).motor;
     };
     return {
-      forward: mk(['L1', 'L2', 'L3']),    // running: true, dir: 1
-      reverse: mk(['L1', 'L3', 'L2']),    // running: true, dir: -1
-      duplicate: mk(['L1', 'L1', 'L3']),  // running: false, missingPhase: true, dir: 0
-      missing: mk(['L1', 'L2', null]),    // running: false, missingPhase: true
+      forward: mk(['L1', 'L2', 'L3']),    // running: true, dir: 1, overCurrent: false
+      reverse: mk(['L1', 'L3', 'L2']),    // running: true, dir: -1, overCurrent: false
+      duplicate: mk(['L1', 'L1', 'L3']),  // running: false, missingPhase: true, overCurrent: true
+      missing: mk(['L1', 'L2', null]),    // running: false, missingPhase: true, overCurrent: true (uğuldama)
+      onePhase: mk(['L1', null, null]),   // running: false, missingPhase: true, overCurrent: false (akım yolu yok)
     };
   });
   out.motorOrders = r;
+}
+
+/* ---- ZR kip değişimi: eski tail yeni kipe sızmamalı (sentezik) ---- */
+{
+  const r = await page.evaluate(async () => {
+    const { RelayEngine } = await import('/src/sim/engine.ts');
+    const probes = {
+      indicators: { red: 'x.a', green: 'x.b', yellow: 'x.c', ctrl: 'x.d' },
+      lamp5: ['x.e', 'x.f'],
+      ext: { yellow: 'x.g', red: 'x.h', green: 'x.i', gnd: 'x.j' },
+      motor: ['sup.U', 'sup.V', 'sup.W'],
+      coils: { c1: ['x.1', 'x.2'], c2: ['x.3', 'x.4'], c3: ['x.5', 'x.6'], c4: ['x.7', 'x.8'], d1: ['x.9', 'x.10'], zr: ['d2.a1', 'd2.a2'] },
+    };
+    const src = [{ tid: 'sup.Rc', pot: 'L1' }, { tid: 'sup.Mp', pot: 'N' }];
+    const onWires = [{ a: 'sup.Rc', b: 'd2.a1' }, { a: 'd2.a2', b: 'sup.Mp' }];
+    const e = new RelayEngine();
+    const arg = (mode, wires, dt) => ({
+      wires, contacts: () => [], termikArmed: true, sources: src, dtMs: dt,
+      zr: { delayMs: 800, mode }, probes,
+    });
+    const t1 = e.solve(arg('ters', onWires, 100)); // enerjide → anında kapalı, tail tazelendi
+    const t2 = e.solve(arg('düz', [], 100));       // kip düz'e döndü → iç durum sıfır; bobinsiz
+    const t3 = e.solve(arg('ters', [], 100));      // tekrar ters; bobinsiz, tail 0 → kapalı OLMAMALI
+    return { t1: t1.dev.zr.closed, t2: t2.dev.zr.closed, t3: t3.dev.zr.closed };
+  });
+  out.zrModeSwitch = r; // beklenen: true / false / false (fix yoksa t3: true sızardı)
 }
 
 /* ---- salınım tespiti: kendi NC kontağıyla beslenen bobin → unstable ---- */
