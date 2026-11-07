@@ -84,7 +84,7 @@ export const PRESETS: Preset[] = [
     id: 't6',
     name: 'TEMRİN 6 — Mühürlemeli Sürekli Çalıştırma',
     gorsel: 'Görsel 1.44 (s.49)',
-    kisa: 'b2 (S1) ile başlatılır, b3 kontak c1.x3 ile mühürlenir → motor sürekli çalışır; b1 (S0) ile durur.',
+    kisa: 'b2 (S1) ile başlatılır; c1.x3 mühürleme kontağı sürekli çalışmayı sağlar; b1 (S0) ile durur.',
     aciklama: [
       'Kumanda: Rc → e.tc.a → b1.c1 (S0 durdur NC) → b2.c1 (S1 başlat NO) → c1.a1',
       'c1.a2 → Mp; b1.nc → c1.x3.a | c1.x3.b → c1.a1 (mühürleme K1 NO)',

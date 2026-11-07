@@ -14,7 +14,7 @@ function chips(sim: SimOutput | null, zr: ZrConf): React.ReactNode[] {
   if (sim.motor.running) {
     out.push(<span key="m" className="chip ok">Motor: çalışıyor ({sim.motor.dir === 1 ? 'ileri' : 'geri'})</span>);
   } else if (sim.motor.overCurrent) {
-    out.push(<span key="m" className="chip warn">Motor uğuluyor (faz hatası) — termik yakında atacak</span>);
+    out.push(<span key="m" className="chip warn">Motor uğuluyor ({sim.motor.stallTripDelayMs <= 2500 ? 'faz-faz hatası' : 'dönüş yolu: faz-nötr'}) — termik yakında atacak</span>);
   } else if (sim.motor.missingPhase) {
     out.push(<span key="m" className="chip warn">Motor: faz eksik</span>);
   } else {
@@ -28,7 +28,9 @@ function chips(sim: SimOutput | null, zr: ZrConf): React.ReactNode[] {
   if (sim.dev.zr.energized) {
     out.push(zr.mode === 'ters'
       ? <span key="zr" className="chip">ZR çekili (ters) — bırakınca {(zr.delayMs / 1000).toFixed(1)} sn tutar</span>
-      : <span key="zr" className="chip">ZR sayıyor: {(sim.dev.zr.elapsed / 1000).toFixed(1)} sn</span>);
+      : sim.dev.zr.closed
+        ? <span key="zr" className="chip ok">ZR çekili (gecikme doldu)</span>
+        : <span key="zr" className="chip">ZR sayıyor: {(sim.dev.zr.elapsed / 1000).toFixed(1)} sn</span>);
   } else if (sim.dev.zr.closed) {
     out.push(<span key="zrh" className="chip">ZR tutuyor: kalan {(sim.dev.zr.elapsed / 1000).toFixed(1)} sn</span>);
   }

@@ -1,6 +1,7 @@
 // RAF döngüsü: kablolara + cihaz durumlarına göre RelayEngine.solve çağrılır.
 // Kısa devre otomatik olarak termiği atar (e.tc açılır → kumanda kopar).
-// Motor faz akısı bozulursa (uğuldama — sargı akımı) ~5 sn içinde yine termik atar.
+// Motor faz hatası (sargı akımı): faz-faz ~2 sn, faz-nötr dönüş yolu ~6 sn
+// içinde termik atar (ters-zaman kaba sınıflandırma).
 
 import { useEffect, useRef } from 'react';
 import { RelayEngine } from './engine';
