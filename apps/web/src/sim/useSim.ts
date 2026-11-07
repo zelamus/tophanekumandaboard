@@ -114,9 +114,10 @@ export function useSimLoop(): void {
         stallRef.current = 0;
       }
 
-      // Doğalı dt (5 dk tavan): sekme gizliyken RAF donsa bile geçen gerçek
-      // süre ZR sayacına işlenir; tavan yalnız bozuk/ileri zıplayan saate karşı korur.
-      const dt = Math.min(300000, t - last);
+      // RAf zaman damgası monotondur: gizli sekmede geçen gerçek süre dahil,
+      // ZR sayacı ve uğuldama sayacı zamanı tam olarak alır (tavan yok —
+      // uzun duraklamada kontağın devreye girmesi fiziksel davranıştır).
+      const dt = Math.max(0, t - last);
       last = t;
 
       const out = engineRef.current.solve({

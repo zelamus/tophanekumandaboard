@@ -136,6 +136,7 @@ export class RelayEngine {
     //                    enerji kesilince sayaç ve kontak sıfırlanır.
     //  ters (off-delay): enerjide kontak HEMEN kapanır; enerji kesilince
     //                    delayMs kadar kapalı kalır, sonra açılır.
+    const zrClosedBefore = this.zrClosed; // relaxation'da kullanılan kontak değeri
     const zrEn = makeEnergizer(reach)(...args.probes.coils.zr);
     // Kip değişimi (düz↔ters): iç ZR durumunu sıfırla — eski tail yeni kipe sızmasın
     if (this.zrMode !== args.zr.mode) {
@@ -175,6 +176,11 @@ export class RelayEngine {
         elapsed: zrEn ? this.zrElapsed : this.zrTail, // enerjide sayaç, tutarken kalan süre
         closed: this.zrClosed,
       };
+    }
+    // ZR kontağı bu karede değiştiyse: devre eşdeğerini yeniden kur — lamba/
+    // motor/pot çıktıları YENİ kontakla aynı karede gelsin (1 kare gecikme yok).
+    if (this.zrClosed !== zrClosedBefore) {
+      reach = this.reachable(adj, args.contacts(this.coils, this.zrClosed, args.termikArmed), args.sources);
     }
 
     // --- 4) Lamba / motor çıktıları ---
