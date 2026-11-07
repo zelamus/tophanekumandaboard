@@ -49,7 +49,7 @@ uç koordinatları ve soket ID'leri değişmez (kablolama kayıtları kırılır
 ### Orta kolon cihazları (üç ayrı grup)
 - **e** (termik röle): gerçek Siemens 3UA tarzı termik röle DUVARDA MONTAJLI — büyük ayar kadranı, gri gövde. ALTTA elle çizilmiş terminaller — foto-crop ile doğrulanmış tek envanter [R5]: en üstte küçük "t~Z" yazısı; tepsi sıraları: 1. sıra SİYAH çift (tn kapı çizimi), 2. sıra KIRMIZI çift (tc), sonra SARI çift ×3 (m1/m2/m3 köprüleri) — 1 siyah + 1 kırmızı + 3 sarı. "e" etiketi kalın sağda; kenarda "Rm şah" kalem notu silik.
 - **d1** (takma röle): beyaz DIN gövde — yüzün ALT bölgesinde TEAL etiket bandı (foto R4 crop doğrulandı) — üstten çıkan İKİ SİYAH TEL halkası. Altında sarı çift + sargı simgesi; altında sol KIRMIZI + orta MAVİ + sağ Dİ-KOYU sıra (NC bağlantı çizgileri).
-- **d2/ZR** (dijital zaman rölesi): beyaz yüzüklü DİJİTAL kronometre, küçük KIRMIZI 7-segment göstergesi + altında ~4 koyu tuş. Altında (foto-kırpma ile doğrulandı): üstte SİYAH soket çifti (⊤ işaretli hat), altında SARI soket çifti, küçük "ZR" yazılı kutu, sonra iki temas sırası — sol KIRMIZI, orta MAVİ, sağ Dİ-PEN daha KOYU (photo: sağ uç kırmızı DEĞİL, soluncadan koyu/kara; iki çizgiden biri düz, biri dalgalı). [REV R3b: "2 sarı sıra / kırmızı-mavi-kırmızı" yazımı düzeltildi — foto buydu; GLM/DeepSeek foto-okumaları da aynı]
+- **d2/ZR** (dijital zaman rölesi): TEK KOLON slim beyaz DIN gövde (foto R5: ~785..870 × 350..520), küçük KIRMIZI 7-segment göstergesi (~810,402,~42×27) + altında tuş kümesi + üst/alt VİDA terminal sıraları. Altında (foto-kırpma ile doğrulandı): üstte SİYAH soket çifti (⊤ işaretli hat), altında SARI soket çifti, dik kutu İÇİNDE "ZR", sonra iki temas sırası — sol KIRMIZI, orta MAVİ, sağ Dİ-PEN daha KOYU (photo: sağ uç kırmızı DEĞİL, soluncadan koyu/kara; iki çizgiden biri düz, biri dalgalı). [REV R3b: "2 sarı sıra / kırmızı-mavi-kırmızı" yazımı düzeltildi — foto buydu; GLM/DeepSeek foto-okumaları da aynı]
 
 ### Motor (sağ üst)
 - Gerçek Siemens üç fazlı motor: gümüş-gri, yatay montaj, ŞAFT SOLA bakar (dişli ucu), gövdede soğutma kanatçıkları, sağ FAN KAPAĞI çerçevenin üzerine taşar (foto R4 piksel-ölçüm: kapak sağ ucu ~x965 > çerçeve 961), ÜSTTE büyük KARE klemens kapağı (kabartma SIEMENS yazısı kapak üstünde), gövde altında küçük klemens kutusu ve aşağı kıvrılan BEYAZ kablo (pano girişi ~(765,344)).
@@ -74,14 +74,19 @@ uç koordinatları ve soket ID'leri değişmez (kablolama kayıtları kırılır
 
 - Krem zemin + koyu çerçeve + gölge ✓
 - EMERGENCY sarı yuvarlak plaka + kırmızı mantar; yazı SOL-ALT yayı izler ✓
-- Seçme şalteri: geniş açık plaka (~84×80), büyük KOYU kol, 0 üst-orta / 1 sağ-orta ✓
 - 5 pilot daire kırmızı/yeşil/amber/kırmızı/beyaz — HEPSİ AYRI AYRI krom çerçeveli; FOTOĞRAFTA TEK METAL ŞERİT YOK, aralarda bej panel görünür [R4: DeepSeek foto doğrulaması — eski "tek şerit" ifadesi yanlıştı]
-- MCB: açık bej/beyaz muhafaza, kalın kollar, yanda panel vidaları ✓
+- Seçme şalteri: plaka ~62×86, büyük siyah göbek + dolgun kol; 0 üst-sağ / 1 sağ-orta; mini SIEMENS alt-sol ✓ [R5]
+- MCB: açık bej/beyaz muhafaza, İÇ KAVİTE KOYU, AÇIK kollar, yanda panel vidaları ✓
 - b1-b4 + sağında kırmızı/siyah soket kümesi + köprü çizgileri ✓
-- e grubu: KOYU gövdeli 3UA röle (duvar montajı, kadran + kırmızı reset + açık yüz); altında bıçak ayırıcı + t~Z (solda ~382,578) + SİYAH çift (tn) + KIRMIZI çift (tc) + SARI çift ×3 (zigzag termik çentikli köprü); büyük termik kutu baskısı yalnız 3 sarı sırayı sarar ✓
+- e grubu: KOYU gövdeli 3UA röle (duvar montajı, üst koyu kadran + kırmızı reset); altında bıçak ayırıcı + t~Z (~404,579) + SİYAH çift (tn) + KIRMIZI çift (tc) + SARI çift ×3 (zigzag termik çentikli köprü); büyük termik kutu baskısı yalnız 3 sarı sırayı sarar ✓ [R5: t~Z +22px sağa]
 - d1: kısa-dolgun beyaz DIN gövde (~72×132), yüz altında TEAL bant, altta siyah terminal bloğu + sol DIN kıskacı; sarı çift + dik bobin (X); kırmızı-mavi-koyu sıra ✓
-- d2: geniş beyaz gövde (~170), üst/alt VİDA terminal sıraları + kırmızı 7-seg + ~4 koyu tuş + siyah çift (üst, ⊤ hat) + sarı çift (dik bobin İÇİNDE "ZR") + kırmızı-mavi-KOYU çift sıra (düz + dalgalı) ✓
-- Motor: büyük gövde (~249×240), sağa taşan geniş fan kapağı + ÜSTTE kare SIEMENS klemens kapağı + BEYAZ kablo + sola şaft ✓
+- **d2**: TEK KOLON slim gövde (~85), üst/alt VİDA terminal sıraları + kırmızı 7-seg + tuş kümesi + siyah çift (üst, ⊤ hat) + sarı çift (dik bobin İÇİNDE "ZR") + kırmızı-mavi-KOYU çift sıra (düz + dalgalı) ✓ [R5: 85 geniş — DeepSeek'in 168'i foto-hatasıydı]
+- Motor: gövde (~688..968 × 45..280), sağ FAN kapağı çerçeveye taşar (dikey panjur), ön yüzde KÖŞEBÜKİLÜ cıvatalar + kabartma KOYU "SIEMENS" (kare kapak YOK — R5 boyu hata düzeltildi), sol KISA stub + YUVARLAK end-bell diski (706..775), alt-solda küçük klemens kutusu + BEYAZ kablo → pano deliği (~765,325); gloş radyan soğutma olukları ✓
+- e ünitesi: KOYU DIN gövde (~375..475 × 345..480) — üst terminal bandında KOYU Ayar kadranı + kırmızı iğne, küçük beyaz etiket yüzünde kırmızı reset + mavi düğme TEK SIRADA, alt terminal bloğu ✓ [R5: büyük beyaz kadran + geniş gövde vardı — foto-hatasıydı]
+- Okul yazısı: mono stencil, SAĞA HİZALI (satır bitişi ~x310), fontSize ~19 / ls ~0.5 (satır genişliği ~198), satırlar y≈337/356 ✓ [R5: 21px sol hizalıydı]
+- Etiket bandı: e/d1/d2 TEK BANT y≈525-529 — e~(446), d1~(688), d2~(863) ✓ [R5: üç ayrı yerdeydiler]
+- Seçici: plaka ~62×86 kenarında, büyük siyah göbek (r~19) + dolgun kol sol-aşağı; 0 ÜST-SAĞ / 1 SAĞ-ORTA; alt-sol mini SIEMENS ✓ [R5: 84×80 vardı]
+- Kesici: açık muhafaza, İÇ KAVİTE KOYU + AÇIK kollar + yanda panel vidaları ✓
 - C1-C4: KOYU gövde (foto R4) + açık yüz + alt-sağda AÇIK etiketler; sıralar 1 sarı + 2 siyah + 2 kırmızı + kutuda 3 siyah + merkezî dikey hat ✓
 - Üst sağda TAKILAN "SİNYAL LAMBAŞI" kartı: site-ek β (harici lamba simülasyon aracı — panoda yok, bilinçli ekleme; PANODAN puanlamada sayılmasın).
 

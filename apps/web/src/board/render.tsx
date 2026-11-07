@@ -240,9 +240,9 @@ function Emergency() {
       <circle cx={p.dome.x} cy={p.dome.y} r={p.dome.r} fill="#b9321f" stroke="#5e1508" strokeWidth={2} />
       <circle cx={p.dome.x} cy={p.dome.y} r={p.dome.r - 9} fill="#d24433" />
       <circle cx={p.dome.x - 8} cy={p.dome.y - 9} r={7} fill="#e2614f" opacity={0.85} />
-      {/* foto: yazı sol-alt yayı izler ve plaka alt kenarına hafif taşar */}
+      {/* foto: yazı sol-ALT cemberi ICINDE, plaka kenarina tasmaz */}
       <defs>
-        <path id="emArc" d={`M ${cx - 58} ${cy + 8} Q ${cx - 4} ${cy + 66} ${cx + 56} ${cy + 34}`} />
+        <path id="emArc" d={`M ${cx - 54} ${cy + 4} Q ${cx - 4} ${cy + 52} ${cx + 50} ${cy + 22}`} />
       </defs>
       <text fontFamily={MS} fontSize={15} fontWeight={800} fill={INK} letterSpacing={1.2}>
         <textPath href="#emArc" startOffset="50%" textAnchor="middle">EMERGENCY</textPath>
@@ -260,14 +260,15 @@ function Breakers() {
       {/* foto: muhafazanın iki yanında panel vidaları */}
       <circle cx={G.RECESS.x + 4} cy={G.RECESS.y + G.RECESS.h / 2} r={2.4} fill="#c9cbce" stroke="#7d8085" strokeWidth={0.8} />
       <circle cx={G.RECESS.x + G.RECESS.w - 4} cy={G.RECESS.y + G.RECESS.h / 2} r={2.4} fill="#c9cbce" stroke="#7d8085" strokeWidth={0.8} />
-      {/* F3 — motor kesicisi (3P) */}
+      {/* F3 — motor kesicisi (3P): foto KOYU kavite + AÇIK kollar */}
       <rect x={116} y={226} width={48} height={55} rx={2} fill="#f2f1ed" stroke="#8b8a86" strokeWidth={1} />
       <g className="clickable" onClick={(e) => { e.stopPropagation(); A.toggleBreaker('motor'); }}>
         {[120, 131, 142].map((x) => (
           <g key={x}>
             <rect x={x} y={230} width={10} height={7} rx={1} fill="#efefec" />
-            <rect x={x - 1} y={st.breakers.motor ? 233 : 249} width={10} height={17} rx={1.5} fill="#23232a" stroke="#000" strokeWidth={0.8} />
-            <rect x={x - 1} y={271} width={10} height={7} rx={1} fill="#c5c4bf" />
+            <rect x={x - 1} y={234} width={12} height={22} rx={1.5} fill="#33363a" stroke="#0c0c0e" strokeWidth={0.8} />
+            <rect x={x} y={st.breakers.motor ? 236 : 250} width={10} height={17} rx={2} fill="#e6e6e2" stroke="#9a9c9f" strokeWidth={0.7} />
+            <rect x={x - 1} y={263} width={10} height={7} rx={1} fill="#c5c4bf" />
           </g>
         ))}
         <rect x={116} y={226} width={48} height={55} rx={2} fill="transparent" />
@@ -277,8 +278,9 @@ function Breakers() {
       <rect x={172} y={226} width={22} height={55} rx={2} fill="#f2f1ed" stroke="#8b8a86" strokeWidth={1} />
       <g className="clickable" onClick={(e) => { e.stopPropagation(); A.toggleBreaker('control'); }}>
         <rect x={176} y={230} width={10} height={7} rx={1} fill="#efefec" />
-        <rect x={175} y={st.breakers.control ? 233 : 249} width={10} height={17} rx={1.5} fill="#23232a" stroke="#000" strokeWidth={0.8} />
-        <rect x={175} y={271} width={10} height={7} rx={1} fill="#c5c4bf" />
+        <rect x={175} y={234} width={12} height={22} rx={1.5} fill="#33363a" stroke="#0c0c0e" strokeWidth={0.8} />
+        <rect x={176} y={st.breakers.control ? 236 : 250} width={10} height={17} rx={2} fill="#e6e6e2" stroke="#9a9c9f" strokeWidth={0.7} />
+        <rect x={175} y={263} width={10} height={7} rx={1} fill="#c5c4bf" />
         <title>F1 — kumanda kesicisi (1P)</title>
       </g>
     </g>
@@ -293,11 +295,12 @@ function Selector() {
       <rect x={p.plate.x} y={p.plate.y} width={p.plate.w} height={p.plate.h} rx={9} fill="#d8d7d3" stroke="#5d5f63" strokeWidth={1.5} />
       <rect x={p.plate.x + 5} y={p.plate.y + 5} width={p.plate.w - 10} height={p.plate.h - 10} rx={6} fill="#e7e6e2" stroke="#9a9c9f" strokeWidth={1} />
       <circle cx={p.knob.x} cy={p.knob.y} r={p.knob.r} fill="#23252b" stroke="#111" strokeWidth={1.5} />
-      {/* kol: fotoda koyu ve uzun, sağ-aşağı bakar */}
-      <path d={`M ${p.knob.x} ${p.knob.y} L ${p.knob.x - 20} ${p.knob.y + 15}`} stroke="#17171b" strokeWidth={9} strokeLinecap="round" />
-      {/* 0 üst-orta, 1 sağ-orta (foto) */}
-      <text x={p.knob.x} y={p.plate.y + 22} textAnchor="middle" fontFamily={MS} fontSize={11} fontWeight={700} fill="#2b2b2e">0</text>
-      <text x={p.plate.x + p.plate.w - 12} y={p.knob.y + 4} textAnchor="middle" fontFamily={MS} fontSize={11} fontWeight={700} fill="#2b2b2e">1</text>
+      {/* kol: fotoda dolgun siyah, sol-aşağı bakar */}
+      <path d={`M ${p.knob.x} ${p.knob.y} L ${p.knob.x - 10} ${p.knob.y + 18}`} stroke="#17171b" strokeWidth={9} strokeLinecap="round" />
+      {/* 0 üst-sağ, 1 sağ-orta (foto) */}
+      <text x={p.plate.x + p.plate.w - 10} y={p.plate.y + 16} textAnchor="middle" fontFamily={MS} fontSize={10} fontWeight={700} fill="#2b2b2e">0</text>
+      <text x={p.plate.x + p.plate.w - 5} y={p.plate.y + 50} textAnchor="middle" fontFamily={MS} fontSize={10} fontWeight={700} fill="#2b2b2e">1</text>
+      <text x={p.plate.x + 8} y={p.plate.y + p.plate.h - 5} fontFamily={MS} fontSize={6.5} fontWeight={700} fill="#8a8c90">SIEMENS</text>
       {/* plaka altındaki küçük kazıma baskı (okunamıyor) — çok silik */}
       <g stroke={INK} strokeWidth={1} fill="none" opacity={0.16} strokeLinecap="round">
         <path d={`M ${p.plate.x + 5} ${p.plate.y + p.plate.h + 12} q 5 -4 10 0 t 10 0 t 10 0`} />
@@ -309,12 +312,14 @@ function Selector() {
 
 function SchoolText() {
   return (
-    /* foto: damgalı stencil yazı — mono, %30 büyük, geniş aralıklı */
-    <g fontFamily="Consolas, monospace" fontSize={21} fontWeight={900} letterSpacing={2.5} fill={INK}>
-      <text x={G.SCHOOL.x} y={G.SCHOOL.y}>TOPHANE TEKNİK ve</text>
-      <text x={G.SCHOOL.x} y={G.SCHOOL.y + G.SCHOOL.lineH}>ENDÜSTRİ MESLEK LİSESİ</text>
+    /* foto R5: damgalı stencil yazı — mono, SAĞA HİZALI (satır bitişi ~x310), ~19px / ls 0.5 */
+    <g fontFamily="Consolas, monospace" fontSize={19} fontWeight={900} letterSpacing={0.5} fill={INK} textAnchor="end">
+      <text x={G.SCHOOL.xEnd} y={G.SCHOOL.y}>TOPHANE TEKNİK ve</text>
+      <text x={G.SCHOOL.xEnd} y={G.SCHOOL.y + G.SCHOOL.lineH}>ENDÜSTRİ MESLEK LİSESİ</text>
       {/* okul yazısının altındaki silik kurşun kalem imza (foto) */}
-      <path d="M 132 362 c 5 -9 11 -9 15 -2 c 3 6 8 5 12 -2 c 4 -6 8 -2 9 3 q 6 4 14 2" stroke="#6e6a5e" strokeWidth={1.2} fill="none" opacity={0.2} />
+      <g textAnchor="start">
+        <path d="M 112 368 c 5 -9 11 -9 15 -2 c 3 6 8 5 12 -2 c 4 -6 8 -2 9 3 q 6 4 14 2" stroke="#6e6a5e" strokeWidth={1.2} fill="none" opacity={0.2} />
+      </g>
     </g>
   );
 }
@@ -330,7 +335,7 @@ function Lamps({ sim }: { sim: SimOutput | null }) {
             {/* foto: koyu bezel + dış gümüş ince çember */}
             <circle cx={l.x} cy={G.LAMP_Y} r={G.LAMP_R + 4} fill="none" stroke="#b9bcc1" strokeWidth={0.9} />
             <circle cx={l.x} cy={G.LAMP_Y} r={G.LAMP_R + 2.5} fill="#3f443e" stroke="#23261f" strokeWidth={1.4} />
-            <circle cx={l.x} cy={G.LAMP_Y} r={G.LAMP_R} fill={on ? shade(l.color, 0.25) : shade(l.color, -0.35)} stroke="#2a2c26" strokeWidth={1} />
+            <circle cx={l.x} cy={G.LAMP_Y} r={G.LAMP_R} fill={on ? shade(l.color, 0.25) : shade(l.color, -0.18)} stroke="#2a2c26" strokeWidth={1} />
             {on && (
               <>
                 <circle cx={l.x} cy={G.LAMP_Y} r={G.LAMP_R - 6} fill="rgba(255,255,255,0.55)" />
@@ -354,35 +359,41 @@ function EUnit({ sim }: { sim: SimOutput | null }) {
   return (
     <g>
       {/* gövde üstünden çıkan kablo halkaları (3UA biriminde teller yukarı fışkırır) */}
-      <path d={`M ${u.body.x + 20} ${u.body.y + 5} Q ${u.body.x + 4} ${u.body.y - 22} ${u.body.x + 24} ${u.body.y - 38}`} stroke="#1a1a1c" strokeWidth={4.5} fill="none" strokeLinecap="round" />
-      <path d={`M ${u.body.x + 44} ${u.body.y + 5} Q ${u.body.x + 34} ${u.body.y - 26} ${u.body.x + 52} ${u.body.y - 40}`} stroke="#1a1a1c" strokeWidth={4.5} fill="none" strokeLinecap="round" />
-      <ellipse cx={u.body.x + 24} cy={u.body.y - 40} rx={7} ry={3} fill="#23231f" />
-      <ellipse cx={u.body.x + 52} cy={u.body.y - 42} rx={7} ry={3} fill="#23231f" />
-      {/* gövde altından sarkan kablo halkası */}
-      <path d={`M ${u.body.x + 10} ${u.body.y + u.body.h - 8} Q ${u.body.x - 12} ${u.body.y + u.body.h + 24} ${u.body.x + 4} ${u.body.y + u.body.h + 18}`} stroke="#1a1a1c" strokeWidth={4} fill="none" strokeLinecap="round" />
-      <rect x={u.body.x} y={u.body.y} width={u.body.w} height={u.body.h} rx={7} fill="#29292c" stroke="#0f0f11" strokeWidth={1.5} />
-      <rect x={u.body.x + 4} y={u.face.y - 6} width={u.body.w - 8} height={(u.face.y - 6) - u.body.y} fill="#3a3b3e" />
-      <rect x={u.face.x} y={u.face.y} width={u.face.w} height={u.face.h} rx={3} fill="#e9e9e6" stroke="#8f9296" strokeWidth={1.2} />
-      <text x={u.face.x + 8} y={u.face.y + 16} fontFamily={MS} fontSize={9} fill="#6b6e72">3UA 250V~</text>
-      {/* büyük yuvarlak ayar kadranı — yüzeyin sol-altında, reset düğmesi sağda kalır */}
+      <path d={`M ${u.body.x + 20} ${u.body.y + 5} Q ${u.body.x + 4} ${u.body.y - 18} ${u.body.x + 24} ${u.body.y - 32}`} stroke="#1a1a1c" strokeWidth={4.5} fill="none" strokeLinecap="round" />
+      <path d={`M ${u.body.x + 44} ${u.body.y + 5} Q ${u.body.x + 34} ${u.body.y - 22} ${u.body.x + 52} ${u.body.y - 34}`} stroke="#1a1a1c" strokeWidth={4.5} fill="none" strokeLinecap="round" />
+      <ellipse cx={u.body.x + 24} cy={u.body.y - 34} rx={7} ry={3} fill="#23231f" />
+      <ellipse cx={u.body.x + 52} cy={u.body.y - 36} rx={7} ry={3} fill="#23231f" />
+      {/* gövde altından sarkan kablo demeti — tn sırasına kadar bej boşluk bırakır */}
+      <path d={`M ${u.body.x + 18} ${u.body.y + u.body.h - 6} Q ${u.body.x + 2} ${u.body.y + u.body.h + 30} ${u.body.x + 12} ${u.body.y + u.body.h + 44}`} stroke="#1a1a1c" strokeWidth={4} fill="none" strokeLinecap="round" />
+      <path d={`M ${u.body.x + 34} ${u.body.y + u.body.h - 6} Q ${u.body.x + 26} ${u.body.y + u.body.h + 28} ${u.body.x + 34} ${u.body.y + u.body.h + 42}`} stroke="#1a1a1c" strokeWidth={3.6} fill="none" strokeLinecap="round" />
+      {/* foto R5: KOYU DIN gövde */}
+      <rect x={u.body.x} y={u.body.y} width={u.body.w} height={u.body.h} rx={4} fill="#2a2a2e" stroke="#0f0f12" strokeWidth={1.5} />
+      {/* üst terminal bandı: iki sıra vida + KOYU ayar kadranı (kırmızı iğneli) */}
+      <rect x={u.body.x + 3} y={u.body.y + 3} width={u.body.w - 6} height={42} rx={2} fill="#1c1c20" stroke="#0c0c0e" strokeWidth={0.8} />
+      {[0, 1, 2, 3].map((i) => (
+        <line key={i} x1={u.body.x + 12 + i * 22} y1={u.body.y + 9} x2={u.body.x + 12 + i * 22} y2={u.body.y + 16} stroke="#6a6d72" strokeWidth={2} strokeLinecap="round" />
+      ))}
       <g id="termik-kadran">
-        <circle cx={u.face.x + 22} cy={u.face.y + 58} r={16} fill="#f4f4f1" stroke="#8f9296" strokeWidth={1.3} />
-        <circle cx={u.face.x + 22} cy={u.face.y + 58} r={10.5} fill="#dddedb" stroke="#a5a8ab" strokeWidth={1} />
-        <line x1={u.face.x + 22} y1={u.face.y + 58} x2={u.face.x + 30} y2={u.face.y + 50} stroke="#b9321f" strokeWidth={2.6} strokeLinecap="round" />
-        <circle cx={u.face.x + 22} cy={u.face.y + 58} r={2} fill="#3c3f44" />
-        {[0, 1, 2, 3, 4].map((i) => (
-          <line key={i} x1={u.face.x + 22 + (i - 2) * 6.5} y1={u.face.y + 38.5} x2={u.face.x + 22 + (i - 2) * 6.5} y2={u.face.y + 41.5} stroke="#6b6e72" strokeWidth={1} />
-        ))}
+        <circle cx={u.topDial.x} cy={u.topDial.y} r={u.topDial.r} fill="#3a3b3f" stroke="#0e0e10" strokeWidth={1.4} />
+        <line x1={u.topDial.x} y1={u.topDial.y} x2={u.topDial.x + 6} y2={u.topDial.y - 6} stroke="#b9321f" strokeWidth={2.2} strokeLinecap="round" />
+        <circle cx={u.topDial.x} cy={u.topDial.y} r={2} fill="#17181b" />
       </g>
+      {/* küçük beyaz etiket yüzü: kırmızı reset + mavi düğme aynı sırada */}
+      <rect x={u.face.x} y={u.face.y} width={u.face.w} height={u.face.h} rx={2.5} fill="#eceae4" stroke="#8f9296" strokeWidth={1} />
+      <text x={u.face.x + u.face.w / 2} y={u.face.y + 11} textAnchor="middle" fontFamily={MS} fontSize={7} fontWeight={700} fill="#6b6e72">SIEMENS</text>
       {/* kırmızı sıfırlama düğmesi — attığında dışarı çıkar */}
       <g className="clickable" onClick={(e) => { e.stopPropagation(); A.termikArm(); }}>
-        <circle cx={u.reset.x} cy={u.reset.y + (tripped ? -3 : 0)} r={u.reset.r} fill="#b9321f" stroke="#5e1508" strokeWidth={1.8} />
-        <circle cx={u.reset.x - 2.5} cy={u.reset.y - 3 + (tripped ? -3 : 0)} r={2.5} fill="#e2614f" />
+        <circle cx={u.reset.x} cy={u.reset.y + (tripped ? -2.5 : 0)} r={u.reset.r} fill="#b9321f" stroke="#5e1508" strokeWidth={1.6} />
+        <circle cx={u.reset.x - 2} cy={u.reset.y - 2.5 + (tripped ? -2.5 : 0)} r={2} fill="#e2614f" />
         <title>Termik sıfırla (e.tc kapatır)</title>
       </g>
       {/* mavi ayar düğmesi */}
-      <circle cx={u.blueK.x} cy={u.blueK.y} r={u.blueK.r} fill="#2a5fa8" stroke="#173a66" strokeWidth={1.4} />
-      <text x={u.body.x + 4} y={u.body.y + u.body.h - 8} fontFamily={MS} fontSize={10} fontWeight={700} fill="#9fa2a6">1.6</text>
+      <circle cx={u.blueK.x} cy={u.blueK.y} r={u.blueK.r} fill="#2a5fa8" stroke="#173a66" strokeWidth={1.3} />
+      {/* alt terminal bloğu */}
+      <rect x={u.body.x + 6} y={u.body.y + 44 + u.face.h} width={u.body.w - 12} height={20} rx={2} fill="#1c1c20" stroke="#0c0c0e" strokeWidth={0.8} />
+      {[0, 1, 2, 3].map((i) => (
+        <circle key={i} cx={u.body.x + 16 + i * 18} cy={u.body.y + 44 + u.face.h + 10} r={2.4} fill="#6a6d72" />
+      ))}
     </g>
   );
 }
@@ -395,7 +406,7 @@ function ETrayPrints() {
       <rect x={t.box.x} y={t.box.y} width={t.box.w} height={t.box.h} fill="none" stroke={INK} strokeWidth={1.6} />
       {/* foto: siyah/kırmızı satırlar ARASINDA solda dikey ayırıcı (bıçak ağzı) + altında t~Z işareti */}
       <path d={`M 356 551 L 356 583`} stroke={INK} strokeWidth={1.6} strokeLinecap="round" />
-      <text x={382} y={578} textAnchor="middle" fontFamily={MS} fontSize={11} fontWeight={700} fill={INK}>t~Z</text>
+      <text x={404} y={579} textAnchor="middle" fontFamily={MS} fontSize={11} fontWeight={700} fill={INK}>t~Z</text>
       {/* kenardaki silik kalem yazısı — gerçek kartta "Rm şah" */}
       <text x={t.box.x + t.box.w + 12} y={t.box.y + 74} fontFamily={MS} fontSize={13} fontStyle="italic" fontWeight={600} fill="#6b6350" opacity={0.4}>Rm şah</text>
       {t.rows.map((row) => {
@@ -515,18 +526,18 @@ function D2Unit({ sim }: { sim: SimOutput | null }) {
     <g>
       <path d={`M ${u.cableStub.x - 10} ${u.cableStub.y - 16} Q ${u.cableStub.x - 20} ${u.cableStub.y + 12} ${u.body.x + 20} ${u.body.y + 6}`} stroke="#1a1a1c" strokeWidth={4.5} fill="none" strokeLinecap="round" />
       <ellipse cx={u.cableStub.x - 10} cy={u.cableStub.y - 18} rx={7} ry={3} fill="#23231f" />
-      <rect x={u.body.x} y={u.body.y} width={u.body.w} height={u.body.h} rx={5} fill="#d7d9dc" stroke="#585b60" strokeWidth={1.5} />
-      {/* foto R4: üst/alt vida terminal sıraları (geniş DIN gövde) */}
+      <rect x={u.body.x} y={u.body.y} width={u.body.w} height={u.body.h} rx={4} fill="#d7d9dc" stroke="#585b60" strokeWidth={1.5} />
+      {/* foto R5: üst/alt vida terminal sıraları (slim genişlik) */}
       <rect x={u.body.x + 4} y={u.body.y + 3} width={u.body.w - 8} height={7} rx={2} fill="#c9cbce" stroke="#9ea1a5" strokeWidth={0.8} />
-      {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-        <circle key={`t${i}`} cx={u.body.x + 16 + i * ((u.body.w - 32) / 6)} cy={u.body.y + 6.5} r={2} fill="#8f9296" />
+      {[0, 1, 2, 3].map((i) => (
+        <circle key={`t${i}`} cx={u.body.x + 14 + i * ((u.body.w - 28) / 3)} cy={u.body.y + 6.5} r={2} fill="#8f9296" />
       ))}
       <rect x={u.body.x + 4} y={u.body.y + u.body.h - 10} width={u.body.w - 8} height={7} rx={2} fill="#c9cbce" stroke="#9ea1a5" strokeWidth={0.8} />
-      {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-        <circle key={`b${i}`} cx={u.body.x + 16 + i * ((u.body.w - 32) / 6)} cy={u.body.y + u.body.h - 6.5} r={2} fill="#8f9296" />
+      {[0, 1, 2, 3].map((i) => (
+        <circle key={`b${i}`} cx={u.body.x + 14 + i * ((u.body.w - 28) / 3)} cy={u.body.y + u.body.h - 6.5} r={2} fill="#8f9296" />
       ))}
       {/* dijital kronometre: gerçek kartta KIRMIZI 7-segment göstergesi */}
-      <rect x={u.body.x + 10} y={u.body.y + 30} width={u.body.w - 20} height={110} rx={3} fill="#efefec" stroke="#9ea1a5" strokeWidth={1.2} />
+      <rect x={u.body.x + 10} y={u.body.y + 16} width={u.body.w - 20} height={u.body.h - 52} rx={3} fill="#efefec" stroke="#9ea1a5" strokeWidth={1.2} />
       <rect x={u.lcd.x} y={u.lcd.y} width={u.lcd.w} height={u.lcd.h} rx={2} fill="#2a0b08" stroke="#180604" strokeWidth={1.2} />
       {/* gerçek kartta kırmızı 7-segment gösterge */}
       <SegDisplay x={u.lcd.x + 5} y={u.lcd.y + 1.5} h={u.lcd.h - 3} value={sec.toFixed(1)} />
@@ -628,17 +639,17 @@ function ContactorUnit({ k, on }: { k: G.ContactorDef; on: boolean }) {
       </g>
       {/* kanca kablo (pabuç) */}
       <path d={`M ${f.x + 24} ${f.y + f.h - 3} Q ${f.x - 4} ${G.C_ROW_Y[0] + 6} ${left} ${G.C_ROW_Y[0]}`} stroke="#23231f" strokeWidth={4} fill="none" strokeLinecap="round" />
-      {/* üst demet: fotoda dolgun, hafif sola yatık siyah kubbe */}
+      {/* üst demet: fotoda dolgun, hafif sola yatık siyah kubbe (foto yüksekliği ~40-45) */}
       <rect x={f.x} y={f.y} width={f.w} height={14} rx={4} fill="#1c1c1e" stroke="#0c0c0e" strokeWidth={1.2} />
-      <path d={`M ${f.x + 3} ${f.y + 5} C ${f.x - 10} ${f.y - 26} ${f.x - 2} ${f.y - 52} ${f.x + 18} ${f.y - 58} C ${f.x + 38} ${f.y - 63} ${f.x + 58} ${f.y - 36} ${f.x + 70} ${f.y + 5}`} fill="#202124" stroke="#0f0f10" strokeWidth={1} />
+      <path d={`M ${f.x + 3} ${f.y + 5} C ${f.x - 8} ${f.y - 22} ${f.x - 2} ${f.y - 42} ${f.x + 16} ${f.y - 46} C ${f.x + 34} ${f.y - 51} ${f.x + 52} ${f.y - 30} ${f.x + 64} ${f.y + 5}`} fill="#202124" stroke="#0f0f10" strokeWidth={1} />
       {/* kubbe içi tel dokusu — sola yatık kısa kıvrımlar */}
-      {[12, 24, 36, 48, 60].map((o) => (
-        <path key={o} d={`M ${f.x + o - 6} ${f.y - 6} Q ${f.x + o - 4} ${f.y - 32} ${f.x + o + 1} ${f.y - 50}`} stroke="#3a3b40" strokeWidth={1.1} fill="none" opacity={0.8} />
+      {[10, 21, 32, 43, 54].map((o) => (
+        <path key={o} d={`M ${f.x + o - 6} ${f.y - 6} Q ${f.x + o - 4} ${f.y - 24} ${f.x + o} ${f.y - 40}`} stroke="#3a3b40" strokeWidth={1.1} fill="none" opacity={0.8} />
       ))}
       {/* tepe pabuç elipsleri — kubbe kenarına gömülü */}
-      <ellipse cx={f.x + 16} cy={f.y - 53} rx={9} ry={3.2} fill="#23231f" />
-      <ellipse cx={f.x + 34} cy={f.y - 57} rx={10} ry={3.4} fill="#23231f" />
-      <ellipse cx={f.x + 52} cy={f.y - 54} rx={8.5} ry={3.2} fill="#23231f" />
+      <ellipse cx={f.x + 14} cy={f.y - 43} rx={8} ry={3} fill="#23231f" />
+      <ellipse cx={f.x + 30} cy={f.y - 46} rx={9} ry={3.2} fill="#23231f" />
+      <ellipse cx={f.x + 47} cy={f.y - 43} rx={8} ry={3} fill="#23231f" />
       {/* gövde — foto R4: KOYU gri gövde (açık yüz üstte kalır) */}
       <rect x={f.x} y={f.y + 12} width={f.w} height={f.h - 12} rx={6} fill="url(#darkBody)" stroke="#26282c" strokeWidth={1.5} />
       {/* foto: tepsi ortasından geçen merkezî dikey hat — bobin satırından kutu altına tüm sıraları bağlar */}
@@ -669,7 +680,7 @@ function BoardLabels() {
       {G.BUTTONS.map((b) => (
         <text key={b.id} x={84} y={b.y + 7} textAnchor="middle" fontSize={21}>{b.id}</text>
       ))}
-      <text x={500} y={552} textAnchor="middle" fontSize={21}>e</text>
+      <text x={446} y={529} textAnchor="middle" fontSize={21}>e</text>
       <text x={G.D1_TRAY.label.x} y={G.D1_TRAY.label.y} textAnchor="middle" fontSize={21}>d1</text>
       <text x={G.D2_TRAY.label.x} y={G.D2_TRAY.label.y} textAnchor="middle" fontSize={21}>d2</text>
     </g>
@@ -685,34 +696,39 @@ function Motor({ running }: { running: boolean }) {
   const b = M.body;
   return (
     <g data-running={running ? '1' : '0'}>
-      {/* foto: gövde altının koyu silisi — çan dibinde kama + ince taban, şaft hizasına uzanır */}
-      <path d={`M ${b.x - 52} ${b.y + b.h - 4} L ${b.x + 58} ${b.y + b.h - 2} L ${b.x + 34} ${b.y + b.h + 9} L ${b.x - 44} ${b.y + b.h + 10} Z`} fill="#54575c" opacity={0.5} />
-      <rect x={b.x - 6} y={b.y + b.h - 3} width={b.w + 6} height={13} rx={3} fill="#5d6065" opacity={0.4} />
-      {/* mil (gerçek kartta sola bakan somunluk uç) */}
-      <rect x={M.shaft.x} y={M.shaft.y} width={M.shaft.w} height={M.shaft.h} rx={3} fill="#4a4d52" stroke="#2b2d31" strokeWidth={1.2} />
-      <rect x={M.shaft.x + 4} y={M.shaft.y - 1} width={6} height={M.shaft.h + 2} rx={3} fill="#43464c" />
-      <circle cx={M.shaft.x + 3} cy={M.shaft.y + M.shaft.h / 2} r={9} fill="#9aa0a6" stroke="#3a3d42" strokeWidth={1.2} />
+      {/* foto: gövde altının koyu silisi + ince taban */}
+      <rect x={b.x + 4} y={b.y + b.h - 2} width={b.w - 8} height={12} rx={3} fill="#5d6065" opacity={0.4} />
+      {/* mil: KISA stub + yuvarlak arka kapak diski (foto R5: 682-706 stub, 706-765 disk) */}
+      <rect x={M.shaft.x} y={M.shaft.y} width={M.shaft.w} height={M.shaft.h} rx={4} fill="#8d939a" stroke="#3a3d42" strokeWidth={1.2} />
+      <line x1={M.shaft.x + 10} y1={M.shaft.y + 3} x2={M.shaft.x + M.shaft.w - 6} y2={M.shaft.y + 3} stroke="#c2c7cc" strokeWidth={1.4} opacity={0.7} />
+      <circle cx={M.shaft.x - 2} cy={M.shaft.y + M.shaft.h / 2} r={M.shaft.h / 2 + 3} fill="#9aa0a6" stroke="#3a3d42" strokeWidth={1.2} />
       {/* gövde — soğutma kanatçıklarını (yatay oluklar) tak */}
-      <rect x={b.x} y={b.y} width={b.w} height={b.h} rx={10} fill={`url(#motorSkin)`} stroke="#7c7f84" strokeWidth={1.6} />
-      {/* kanatçık olukları: tekdüze değil — ince/kalın dönüşümlü (foto ~8 sık oluk) */}
+      <rect x={b.x} y={b.y} width={b.w} height={b.h} rx={8} fill={`url(#motorSkin)`} stroke="#7c7f84" strokeWidth={1.6} />
+      {/* yuvarlak arka end-bell kapağı — gövdeye GÖMÜLÜ, hafif koyu (foto) */}
+      <rect x={b.x + 18} y={b.y + 50} width={70} height={150} rx={32} fill="#8f9398" fillOpacity={0.55} stroke="#6f7277" strokeWidth={1} />
+      {[1, 2, 3].map((i) => (
+        <path key={i} d={`M ${b.x + 26} ${b.y + 66 + i * 38} q 26 -7 54 0`} stroke="#77797d" strokeWidth={2} fill="none" opacity={0.5} />
+      ))}
       {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
         <line key={i} x1={b.x + 8} y1={b.y + i * (b.h - 16) / 9} x2={b.x + b.w - 12} y2={b.y + i * (b.h - 16) / 9}
-          stroke={i % 2 ? '#929599' : '#85888c'} strokeWidth={i % 2 ? 2.2 : 1.5} opacity={0.45} />
+          stroke={i % 2 ? '#929599' : '#85888c'} strokeWidth={2.2} opacity={0.4} />
       ))}
-      {/* sağ kapak (fan kapağı): foto R4 — geniş, çerçevenin ÜZERİNE taşar; dikey panjur çizgileri */}
-      <rect x={b.x + b.w - 13} y={b.y + 4} width={66} height={b.h - 8} rx={8} fill="#a9adb2" stroke="#8d9095" strokeWidth={1} />
-      {[1, 2, 3, 4, 5, 6].map((i) => (
-        <line key={i} x1={b.x + b.w - 13 + i * 8.4} y1={b.y + 10} x2={b.x + b.w - 13 + i * 8.4} y2={b.y + b.h - 10} stroke="#7f8287" strokeWidth={1.8} opacity={0.55} />
+      {/* köşe cıvata başları (foto: 4 hex bolt) */}
+      {[[b.x + 16, b.y + 16], [b.x + 80, b.y + 16], [b.x + 168, b.y + 16], [b.x + 236, b.y + 16], [b.x + 16, b.y + b.h - 18], [b.x + 236, b.y + b.h - 18]].map(([cx, cy], i) => (
+        <circle key={i} cx={cx} cy={cy} r={5.5} fill="#b6b9be" stroke="#6f7277" strokeWidth={1} />
       ))}
-      {/* foto R4: üstte BÜYÜK KARE klemens kapağı — içinde kabartma SIEMENS */}
-      <rect x={b.x + 157} y={b.y + 8} width={95} height={88} rx={4} fill="#b2b5b9" stroke="#8d9095" strokeWidth={1.2} />
-      <rect x={b.x + 161} y={b.y + 12} width={87} height={80} rx={3} fill="none" stroke="#989ca0" strokeWidth={1} />
-      <text x={M.label.x} y={M.label.y} textAnchor="middle" fontFamily={MS} fontSize={19} fontWeight={800} fill="#a9adb2" letterSpacing={1.5} stroke="#d4d6da" strokeWidth={0.4}>SIEMENS</text>
-      {/* klemens kutusu + çıkış kablosu (foto: BEYAZ kablo) */}
+      {/* Kabartma SIEMENS — ön yüzde koyu harfler (foto R5: 765-915, ~85-120) */}
+      <text x={M.label.x} y={M.label.y} textAnchor="middle" fontFamily={MS} fontSize={22} fontWeight={800} fill="#75787d" letterSpacing={2.5} stroke="#c9ccd0" strokeWidth={0.45}>SIEMENS</text>
+      {/* sağ kapak (fan kapağı): foto R5 — ÇERÇEYE TAŞAR; dikey panjur çizgileri */}
+      <rect x={b.x + b.w - 70} y={b.y - 4} width={70} height={b.h + 10} rx={14} fill="#a9adb2" stroke="#8d9095" strokeWidth={1} />
+      {[1, 2, 3, 4, 5].map((i) => (
+        <line key={i} x1={b.x + b.w - 70 + i * 11} y1={b.y + 8} x2={b.x + b.w - 70 + i * 11} y2={b.y + b.h - 6} stroke="#7f8287" strokeWidth={2.4} opacity={0.5} />
+      ))}
+      {/* klemens kutusu gövdenin alt-solunda + çıkış kablosu (foto: BEYAZ kablo) */}
       <rect x={M.tBox.x} y={M.tBox.y} width={M.tBox.w} height={M.tBox.h} rx={4} fill="#b6b9be" stroke="#84878c" strokeWidth={1.4} />
-      <path d={`M ${M.tBox.x} ${M.tBox.y + 20} L ${M.tBox.x + M.tBox.w} ${M.tBox.y + 20}`} stroke="#84878c" strokeWidth={1.2} />
-      <path d={`M ${M.tBox.x + 40} ${M.tBox.y + M.tBox.h} Q ${M.tBox.x + 30} ${M.hole.y - 30} ${M.hole.x} ${M.hole.y}`} stroke="#e9e6df" strokeWidth={6} fill="none" strokeLinecap="round" />
-      <path d={`M ${M.tBox.x + 40} ${M.tBox.y + M.tBox.h} Q ${M.tBox.x + 30} ${M.hole.y - 30} ${M.hole.x} ${M.hole.y}`} stroke="#c9c6bf" strokeWidth={2} fill="none" strokeLinecap="round" opacity={0.55} />
+      <path d={`M ${M.tBox.x + 6} ${M.tBox.y + 18} L ${M.tBox.x + M.tBox.w - 6} ${M.tBox.y + 18}`} stroke="#84878c" strokeWidth={1.2} />
+      <path d={`M ${M.tBox.x + 36} ${M.tBox.y + M.tBox.h} Q ${M.tBox.x + 20} ${M.hole.y - 40} ${M.hole.x} ${M.hole.y}`} stroke="#e9e6df" strokeWidth={6} fill="none" strokeLinecap="round" />
+      <path d={`M ${M.tBox.x + 36} ${M.tBox.y + M.tBox.h} Q ${M.tBox.x + 20} ${M.hole.y - 40} ${M.hole.x} ${M.hole.y}`} stroke="#c9c6bf" strokeWidth={2} fill="none" strokeLinecap="round" opacity={0.55} />
       <ellipse cx={M.hole.x} cy={M.hole.y} rx={10} ry={4.5} fill="#23231f" />
     </g>
   );
@@ -823,11 +839,11 @@ export function Board() {
           <stop offset="55%" stopColor="#b2b5b9" />
           <stop offset="100%" stopColor="#8f9297" />
         </radialGradient>
-        {/* foto R4: kontaktör gövdesi koyu gri */}
+        {/* foto R5: kontaktör gövdesi koyu gri (foto ağırlığına hafifçe açılmış) */}
         <linearGradient id="darkBody" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#4b4e53" />
-          <stop offset="55%" stopColor="#3c3f44" />
-          <stop offset="100%" stopColor="#33363a" />
+          <stop offset="0%" stopColor="#565a60" />
+          <stop offset="55%" stopColor="#45494e" />
+          <stop offset="100%" stopColor="#3a3d42" />
         </linearGradient>
         <radialGradient id="panelSkin" cx="50%" cy="22%" r="115%">
           <stop offset="0%" stopColor="#eee3bd" />
