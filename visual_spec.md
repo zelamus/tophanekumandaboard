@@ -47,8 +47,8 @@ uç koordinatları ve soket ID'leri değişmez (kablolama kayıtları kırılır
 - Etiketler b1..b4 kalın siyah harfler, butonların SOLUNDA.
 
 ### Orta kolon cihazları (üç ayrı grup)
-- **e** (termik röle): gerçek Siemens 3UA tarzı termik röle DUVARDA MONTAJLI — büyük ayar kadranı, gri gövde. ALTTA elle çizilmiş terminaller: üstte küçük "t~Z" çifti, sonra üst sıra 2 kırmızı + 2 siyah (kıvrımlı köprü çizgileri), orta sıra 4 sarı, alt sıra 2 sarı. "e" etiketi kalın sağda; kenarda "Rm şah" el yazısı silik.
-- **d1** (zaman rölesi): beyaz/mavi DIN ray rölesi, üstten çıkan İKİ SİYAH TEL halkası. Altında sarı çift + sargı simgesi; altında kırmızı-mavi-kırmızı sıra (NC bağlantı çizgileri).
+- **e** (termik röle): gerçek Siemens 3UA tarzı termik röle DUVARDA MONTAJLI — büyük ayar kadranı, gri gövde. ALTTA elle çizilmiş terminaller — foto-crop ile doğrulanmış tek envanter [R5]: en üstte küçük "t~Z" yazısı; tepsi sıraları: 1. sıra SİYAH çift (tn kapı çizimi), 2. sıra KIRMIZI çift (tc), sonra SARI çift ×3 (m1/m2/m3 köprüleri) — 1 siyah + 1 kırmızı + 3 sarı. "e" etiketi kalın sağda; kenarda "Rm şah" kalem notu silik.
+- **d1** (takma röle): beyaz DIN gövde — yüzün ALT bölgesinde TEAL etiket bandı (foto R4 crop doğrulandı) — üstten çıkan İKİ SİYAH TEL halkası. Altında sarı çift + sargı simgesi; altında sol KIRMIZI + orta MAVİ + sağ Dİ-KOYU sıra (NC bağlantı çizgileri).
 - **d2/ZR** (dijital zaman rölesi): beyaz yüzüklü DİJİTAL kronometre, küçük KIRMIZI 7-segment göstergesi + altında ~4 koyu tuş. Altında (foto-kırpma ile doğrulandı): üstte SİYAH soket çifti (⊤ işaretli hat), altında SARI soket çifti, küçük "ZR" yazılı kutu, sonra iki temas sırası — sol KIRMIZI, orta MAVİ, sağ Dİ-PEN daha KOYU (photo: sağ uç kırmızı DEĞİL, soluncadan koyu/kara; iki çizgiden biri düz, biri dalgalı). [REV R3b: "2 sarı sıra / kırmızı-mavi-kırmızı" yazımı düzeltildi — foto buydu; GLM/DeepSeek foto-okumaları da aynı]
 
 ### Motor (sağ üst)
@@ -77,7 +77,7 @@ uç koordinatları ve soket ID'leri değişmez (kablolama kayıtları kırılır
 - Soket sıraları: R S T Rc ⊗ / U V W Mp ⊗ (Rc = siyah soket)
 - MCB + okul yazısı ✓
 - b1-b4 + sağında kırmızı/siyah soket kümesi + köprü çizgileri ✓
-- e grubu: beyaz kapaklı sade röle kutusu; altında t-z çizimi, 2 kırmızı sıra + 4 sarı + 2 sarı ✓
+- e grubu: gri 3UA gövde (duvar montajı, kadran + kırmızı reset); altında t~Z + SİYAH çift (tn) + KIRMIZI çift (tc) + SARI çift ×3 ✓ [R5: foto-crop doğrulamalı, tek envanter]
 - d1: beyaz/mavi kutu; sarı çift + sargı; kırmızı-mavi-kırmızı ✓
 - d2: beyaz dikdörtgen + kırmızı 7-seg + ~4 koyu tuş + siyah çift (üst, ⊤ hat) + sarı çift + ZR kutu + kırmızı-mavi-KOYU çift sıra (düz + dalgalı) ✓ [REV R3b: foto-açıklamalı]
 - Motor: gri kesik gövde + SIEMENS yazısı + sola şaft ✓

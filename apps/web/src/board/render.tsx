@@ -170,7 +170,7 @@ function PrTimed({ a, b, y }: { a: number; b: number; y: number }) {
   return (
     <g stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round">
       <path d={`M ${a + PAD} ${y} Q ${m} ${y + 2.2} ${b - PAD} ${y}`} />
-      <path d={`M ${m} ${y} L ${m} ${y - 13} M ${m - 5} ${y - 9} L ${m} ${y - 13} L ${m + 5} ${y - 9}`} />
+      <path d={`M ${m} ${y} L ${m} ${y - 13} M ${m - 6} ${y - 13} L ${m + 6} ${y - 13}`} />
     </g>
   );
 }
@@ -413,6 +413,8 @@ function D1Unit() {
       <rect x={u.body.x + 37} y={u.body.y + 7} width={12} height={8} rx={2} fill="#d24433" />
       {/* beyaz ön yüz gövdeye yakın (x+4 / w-8) */}
       <rect x={u.body.x + 4} y={u.body.y + 30} width={u.body.w - 8} height={u.body.h - 38} rx={3} fill="#e9e9e6" stroke="#8f9296" strokeWidth={1.2} />
+      {/* foto: yüzün alt bölgesinde teal bant (3UG4 etiket şeridi) */}
+      <rect x={u.body.x + 4} y={448} width={u.body.w - 8} height={58} rx={2} fill="#7cb0ab" fillOpacity={0.92} stroke="#5d948f" strokeWidth={0.8} />
       <circle cx={u.body.x + 24} cy={u.body.y + 66} r={10} fill="#191a1d" stroke="#000" strokeWidth={1.5} />
       <text x={u.body.x + 6} y={u.body.y + 22} fontFamily={MS} fontSize={8} fontWeight={700} fill="#5c5f64">3UG4</text>
     </g>
