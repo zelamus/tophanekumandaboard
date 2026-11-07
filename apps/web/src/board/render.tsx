@@ -875,10 +875,7 @@ export function Board() {
           <ellipse cx={1010} cy={620} rx={30} ry={13} />
           <ellipse cx={640} cy={880} rx={80} ry={15} />
         </g>
-        <g stroke="#8a754c" opacity={0.06} strokeLinecap="round" fill="none">
-          <path d={`M ${G.PANEL.x + 40} ${G.PANEL.y + 130} L ${G.PANEL.x + 30} ${G.PANEL.y + 950}`} strokeWidth={9} />
-          <path d={`M ${G.PANEL.x + G.PANEL.w - 60} ${G.PANEL.y + 200} L ${G.PANEL.x + G.PANEL.w - 48} ${G.PANEL.y + 750}`} strokeWidth={7} />
-        </g>
+        {/* foto R5: boy boy DÜZ çizik YOK — yalnız hafif yüzey leke izleri (üstteki elipsler) */}
         {/* köşe montaj vidası delikleri */}
         <g fill="#3b3122" opacity={0.35}>
           {[
