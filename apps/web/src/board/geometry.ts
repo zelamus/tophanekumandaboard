@@ -153,7 +153,7 @@ export const D1_TRAY = {
   spdt: { y: 644, nc: { x: 556.5, y: 645, id: 'd1.nc' }, com: { x: 612, y: 642, id: 'd1.com' }, no: { x: 666, y: 643, id: 'd1.no' } },
   comColor: KNOB_COLOR.blue,
   ncColor: KNOB_COLOR.red,
-  noColor: KNOB_COLOR.red, // fotoda kırmızı-mavi-kırmızı sırası
+  noColor: KNOB_COLOR.black, // foto R5 piksel-örnekleme: nc KIRMIZI - com MAVİ - no SİYAH (eski kırmızı-mavi-kırmızı okuması hatalıydı)
   label: { x: 688, y: 529 }, // foto R5: ortak etiket bandı y≈529
 };
 
