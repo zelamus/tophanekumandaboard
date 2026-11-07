@@ -146,7 +146,7 @@ await loadPreset('t4');
   out.zrTers = r; // beklenen: true / true / <800 / false
 }
 
-/* ---- stall: motora tek faz → ~5 sn sonra termik (uğuldama) atar ---- */
+/* ---- stall: önce tek faz (akım yok), 2. fazla faz-faz hatası → ~2 sn'de termik atar ---- */
 await loadPreset('t4');
 {
   const r = await page.evaluate(async () => {
@@ -157,8 +157,8 @@ await loadPreset('t4');
     const early = kka.getState(); // ~1.5 sn: hâlâ armed
     kka.A.clickTerminal('sup.S');
     kka.A.clickTerminal('sup.V'); // 2 faz → sargıdan akım akar (uğuldama)
-    await new Promise((res) => setTimeout(res, 5300)); // 5 sn eşiği İKİNCİ fazdan sonra başlar
-    const late = kka.getState(); // ~6.8 sn: termik atmış olmalı
+    await new Promise((res) => setTimeout(res, 5300)); // 2 sn faz-faz eşiği İKİNCİ fazdan sonra başlar (5.3 sn bekleme rahat kapsar)
+    const late = kka.getState(); // termik atmış olmalı
     kka.A.clearWires();
     kka.A.termikArm();
     return {
