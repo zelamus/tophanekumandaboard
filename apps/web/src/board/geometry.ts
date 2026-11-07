@@ -53,8 +53,8 @@ export const EMERGENCY = {
 
 /** 0/1 seçici anahtar (süs) */
 export const SELECTOR = {
-  plate: { x: 234, y: 115, w: 55, h: 85 },  // foto: daha dolgun kare plaka (~55×85)
-  knob: { x: 254, y: 150, r: 11 },
+  plate: { x: 212, y: 115, w: 84, h: 80 },  // foto: geniş plaka (~84×80)
+  knob: { x: 246, y: 150, r: 13 },
 };
 
 /** Kesici yuvası (girinti) — 3P motor + 1P kumanda kesici */
@@ -110,10 +110,10 @@ export const TERMINALS_BOT: SocketDef[] = [
 /* ---------------- e (termik röle) ---------------- */
 
 export const E_UNIT = {
-  body: { x: 377, y: 355, w: 81, h: 170 },
-  face: { x: 383, y: 400, w: 69, h: 80 },
-  reset: { x: 421, y: 432, r: 8.5 },   // kırmızı sıfırlama düğmesi (tıklanır)
-  blueK: { x: 439, y: 434, r: 5.5 },   // ayar düğmesi (süs)
+  body: { x: 395, y: 425, w: 118, h: 127 },   // foto R4: kısa-geniş gövde (~118×127)
+  face: { x: 403, y: 434, w: 98, h: 76 },
+  reset: { x: 441, y: 470, r: 8.5 },   // kırmızı sıfırlama düğmesi (tıklanır)
+  blueK: { x: 490, y: 480, r: 5.5 },   // ayar düğmesi (süs)
 };
 
 /** e tepsi: sütunlar sabit, 5 sıra — [tn, tc, m1, m2, m3] */
@@ -127,8 +127,8 @@ export const E_TRAY = {
     { id: 'm2', y: 644, knob: KNOB_COLOR.yellow, kind: 'bridge' },
     { id: 'm3', y: 675, knob: KNOB_COLOR.yellow, kind: 'bridge' },
   ] as TrayRow[],
-  /** Büyük termik kutu baskısı */
-  box: { x: 340, y: 536, w: 156, h: 154 },
+  /** Büyük termik kutu baskısı — foto R4: yalnız 3 sarı sırayı sarar (üst ~598, alt ~702) */
+  box: { x: 360, y: 598, w: 126, h: 104 },
 };
 
 export function eSockets(): SocketDef[] {
@@ -143,8 +143,8 @@ export function eSockets(): SocketDef[] {
 /* ---------------- d1 (takma röle) ---------------- */
 
 export const D1_UNIT = {
-  body: { x: 560, y: 360, w: 56, h: 175 },  // foto: ince-uzun (~55×175) gövde
-  cableStub: { x: 596, y: 326 },            // tel halkaların tepe noktası
+  body: { x: 548, y: 368, w: 72, h: 132 },  // foto R4: dolgun kısa gövde (~72×132)
+  cableStub: { x: 585, y: 334 },            // tel halkaların tepe noktası
 };
 
 export const D1_TRAY = {
@@ -153,13 +153,13 @@ export const D1_TRAY = {
   comColor: KNOB_COLOR.blue,
   ncColor: KNOB_COLOR.red,
   noColor: KNOB_COLOR.red, // fotoda kırmızı-mavi-kırmızı sırası
-  label: { x: 603, y: 552 }, // gövde altı bandında (body 360..535)
+  label: { x: 640, y: 468 }, // foto: gövdenin sağında (body 548..620)
 };
 
 /* ---------------- d2 (zaman rölesi ZR) ---------------- */
 
 export const D2_UNIT = {
-  body: { x: 750, y: 355, w: 124, h: 170 }, // ince beyaz DIN gövde (foto ≈124 geniş)
+  body: { x: 750, y: 355, w: 168, h: 170 }, // ince beyaz DIN gövde (foto R4: ~170 geniş, vidalı boruขึ้น sıralar)
   lcd: { x: 817, y: 441, w: 44, h: 20 },
   cableStub: { x: 828, y: 355 },
 };
@@ -230,30 +230,30 @@ export function contactorSockets(k: ContactorDef): SocketDef[] {
   const out: SocketDef[] = [
     { id: `${k.id}.a1`, x: k.trayL, y: C_ROW_Y[0], color: KNOB_COLOR.yellow, r: R_KNOB }, // bobin
     { id: `${k.id}.a2`, x: k.trayR, y: C_ROW_Y[0], color: KNOB_COLOR.yellow, r: R_KNOB },
-    put(1, 'm1', KNOB_COLOR.yellow),   // gerçek kartta sarı posta sıraları
-    putR(1, 'm1', KNOB_COLOR.yellow),
-    put(2, 'm2', KNOB_COLOR.yellow),
-    putR(2, 'm2', KNOB_COLOR.yellow),
-    // foto: k1/k2 "yarısı siyah partnerli" kırmızı sıralar — B sütunu siyah
+    put(1, 'm1', KNOB_COLOR.black),      // foto R4 piksel-ölçüm: sütunlar 1 siyah + 1 kırmızı + ...
+    putR(1, 'm1', KNOB_COLOR.black),     // ... + 2 siyah + 2 kırmızı(her iki sütun) + kutuda 3 siyah
+    put(2, 'm2', KNOB_COLOR.black),
+    putR(2, 'm2', KNOB_COLOR.black),
+    // foto: k1/k2 kırmızı sıralar — HER İKİ sütun kırmızı (sağ sütun (110,42,45) örneği)
     { id: `${k.id}.k1.a`, x: k.trayL, y: C_ROW_Y[3], color: KNOB_COLOR.red, r: R_KNOB },
-    { id: `${k.id}.k1.b`, x: k.trayR, y: C_ROW_Y[3], color: KNOB_COLOR.black, r: R_KNOB },
+    { id: `${k.id}.k1.b`, x: k.trayR, y: C_ROW_Y[3], color: KNOB_COLOR.red, r: R_KNOB },
     { id: `${k.id}.k2.a`, x: k.trayL, y: C_ROW_Y[4], color: KNOB_COLOR.red, r: R_KNOB },
-    { id: `${k.id}.k2.b`, x: k.trayR, y: C_ROW_Y[4], color: KNOB_COLOR.black, r: R_KNOB },
+    { id: `${k.id}.k2.b`, x: k.trayR, y: C_ROW_Y[4], color: KNOB_COLOR.red, r: R_KNOB },
   ];
-  out.push(put(5, 'x1', KNOB_COLOR.red), putR(5, 'x1', KNOB_COLOR.red));   // kutulu NO soketleri gerçekte kırmızı
-  out.push(put(6, 'x2', KNOB_COLOR.red), putR(6, 'x2', KNOB_COLOR.red));
-  out.push(put(7, 'x3', KNOB_COLOR.red), putR(7, 'x3', KNOB_COLOR.red));
+  out.push(put(5, 'x1', KNOB_COLOR.black), putR(5, 'x1', KNOB_COLOR.black));   // kutu içinde 3 sıra siyah
+  out.push(put(6, 'x2', KNOB_COLOR.black), putR(6, 'x2', KNOB_COLOR.black));
+  out.push(put(7, 'x3', KNOB_COLOR.black), putR(7, 'x3', KNOB_COLOR.black));
   return out;
 }
 
 /* ---------------- motor ---------------- */
 
 export const MOTOR = {
-  body: { x: 700, y: 70, w: 238, h: 190 },       // gri SIEMENS gövde (foto ≈238×190, panonun içinde)
-  shaft: { x: 652, y: 157, w: 48, h: 15 },        // sol mil (merkez y ≈ 164.5)
-  tBox: { x: 802, y: 228, w: 92, h: 78 },         // klemens kutusu
-  hole: { x: 792, y: 334 },                       // kablo pano giriş deliği
-  label: { x: 826, y: 152 },                      // SIEMENS yazısı
+  body: { x: 663, y: 62, w: 249, h: 240 },        // foto R4: büyük gövde, sağda fan kapağı çerçeveye taşar
+  shaft: { x: 572, y: 150, w: 94, h: 16 },        // sol mil (foto: uzun, basamaklı)
+  tBox: { x: 830, y: 262, w: 85, h: 56 },         // küçük klemens kutusu gövde altında
+  hole: { x: 765, y: 344 },                       // BEYAZ kablo pano giriş deliği
+  label: { x: 868, y: 126 },                      // embossed SIEMENS — büyük kare klemens kapağı üstünde
 };
 
 /* ---------------- harici sinyal lambası (pano dışı) ---------------- */
