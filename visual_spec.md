@@ -49,7 +49,7 @@ uç koordinatları ve soket ID'leri değişmez (kablolama kayıtları kırılır
 ### Orta kolon cihazları (üç ayrı grup)
 - **e** (termik röle): gerçek Siemens 3UA tarzı termik röle DUVARDA MONTAJLI — büyük ayar kadranı, gri gövde. ALTTA elle çizilmiş terminaller: üstte küçük "t~Z" çifti, sonra üst sıra 2 kırmızı + 2 siyah (kıvrımlı köprü çizgileri), orta sıra 4 sarı, alt sıra 2 sarı. "e" etiketi kalın sağda; kenarda "Rm şah" el yazısı silik.
 - **d1** (zaman rölesi): beyaz/mavi DIN ray rölesi, üstten çıkan İKİ SİYAH TEL halkası. Altında sarı çift + sargı simgesi; altında kırmızı-mavi-kırmızı sıra (NC bağlantı çizgileri).
-- **d2/ZR** (dijital zaman rölesi): beyaz yüzüklü DİJİTAL kronometre, küçük KIRMIZI 7-segment göstergesi + altında koyu tuşlar. Altında: 2 sarı soket sırası, küçük "ZR" yazılı kutu, sonra kırmızı-mavi-kırmızı çift sıra (bir çizgi düz, bir çizgi dalgalı).
+- **d2/ZR** (dijital zaman rölesi): beyaz yüzüklü DİJİTAL kronometre, küçük KIRMIZI 7-segment göstergesi + altında ~4 koyu tuş. Altında (foto-kırpma ile doğrulandı): üstte SİYAH soket çifti (⊤ işaretli hat), altında SARI soket çifti, küçük "ZR" yazılı kutu, sonra iki temas sırası — sol KIRMIZI, orta MAVİ, sağ Dİ-PEN daha KOYU (photo: sağ uç kırmızı DEĞİL, soluncadan koyu/kara; iki çizgiden biri düz, biri dalgalı). [REV R3b: "2 sarı sıra / kırmızı-mavi-kırmızı" yazımı düzeltildi — foto buydu; GLM/DeepSeek foto-okumaları da aynı]
 
 ### Motor (sağ üst)
 - Gerçek Siemens üç fazlı motor: gümüş-gri, yatay montaj, ŞAFT SOLA bakar (dişli ucu), gövdede soğutma kanatçıkları, altında kablo kutusu ve aşağı kıvrılan siyah kablo.
@@ -79,7 +79,7 @@ uç koordinatları ve soket ID'leri değişmez (kablolama kayıtları kırılır
 - b1-b4 + sağında kırmızı/siyah soket kümesi + köprü çizgileri ✓
 - e grubu: beyaz kapaklı sade röle kutusu; altında t-z çizimi, 2 kırmızı sıra + 4 sarı + 2 sarı ✓
 - d1: beyaz/mavi kutu; sarı çift + sargı; kırmızı-mavi-kırmızı ✓
-- d2: beyaz dikdörtgen + yeşil "0.0" LED + ZR kutu + kırmızı-mavi-kırmızı çift sıra ✓
+- d2: beyaz dikdörtgen + kırmızı 7-seg + ~4 koyu tuş + siyah çift (üst, ⊤ hat) + sarı çift + ZR kutu + kırmızı-mavi-KOYU çift sıra (düz + dalgalı) ✓ [REV R3b: foto-açıklamalı]
 - Motor: gri kesik gövde + SIEMENS yazısı + sola şaft ✓
 - C1-C4: koyu gövde + beyaz kapak + noktalar; altında sarı 2×4 + kırmızı/kutulu NO grupları ✓
 - Üst sağda TAKILAN "SİNYAL LAMBAŞI" kartı: site-ek β (harici lamba simülasyon aracı — panoda yok, bilinçli ekleme; PANODAN puanlamada sayılmasın).

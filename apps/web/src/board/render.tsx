@@ -296,6 +296,8 @@ function SchoolText() {
     <g fontFamily="Consolas, monospace" fontSize={21} fontWeight={900} letterSpacing={2.5} fill={INK}>
       <text x={G.SCHOOL.x} y={G.SCHOOL.y}>TOPHANE TEKNİK ve</text>
       <text x={G.SCHOOL.x} y={G.SCHOOL.y + G.SCHOOL.lineH}>ENDÜSTRİ MESLEK LİSESİ</text>
+      {/* okul yazısının altındaki silik kurşun kalem imza (foto) */}
+      <path d="M 132 362 c 5 -9 11 -9 15 -2 c 3 6 8 5 12 -2 c 4 -6 8 -2 9 3 q 6 4 14 2" stroke="#6e6a5e" strokeWidth={1.2} fill="none" opacity={0.2} />
     </g>
   );
 }
@@ -311,7 +313,9 @@ function Lamps({ sim }: { sim: SimOutput | null }) {
         const on = sim?.lamps[l.key] === true;
         return (
           <g key={l.key}>
-            <circle cx={l.x} cy={G.LAMP_Y} r={G.LAMP_R + 2.5} fill="#9ba191" stroke="#3d4237" strokeWidth={1.4} />
+            {/* foto: koyu bezel + dış gümüş ince çember */}
+            <circle cx={l.x} cy={G.LAMP_Y} r={G.LAMP_R + 4} fill="none" stroke="#b9bcc1" strokeWidth={0.9} />
+            <circle cx={l.x} cy={G.LAMP_Y} r={G.LAMP_R + 2.5} fill="#3f443e" stroke="#23261f" strokeWidth={1.4} />
             <circle cx={l.x} cy={G.LAMP_Y} r={G.LAMP_R} fill={on ? shade(l.color, 0.25) : shade(l.color, -0.35)} stroke="#2a2c26" strokeWidth={1} />
             {on && (
               <>
@@ -378,7 +382,7 @@ function ETrayPrints() {
       {/* gecikme işareti: siyah tn çiftinin ÜSTÜNDE (foto) */}
       <text x={(t.cols[0] + t.cols[1]) / 2} y={t.rows[0].y - 7} textAnchor="middle" fontFamily={MS} fontSize={11} fontWeight={700} fill={INK}>t~Z</text>
       {/* kenardaki silik kalem yazısı — gerçek kartta "Rm şah" */}
-      <text x={t.box.x + t.box.w + 12} y={t.box.y + 74} fontFamily={MS} fontSize={13} fontStyle="italic" fontWeight={600} fill="#6b6350" opacity={0.85}>Rm şah</text>
+      <text x={t.box.x + t.box.w + 12} y={t.box.y + 74} fontFamily={MS} fontSize={13} fontStyle="italic" fontWeight={600} fill="#6b6350" opacity={0.4}>Rm şah</text>
       {t.rows.map((row) => {
         const a = t.cols[0], b = t.cols[1], y = row.y;
         if (row.kind === 'ncOpen') return <PrNcOpen key={row.id} a={a} b={b} y={y} />;
@@ -498,8 +502,9 @@ function D2Unit({ sim }: { sim: SimOutput | null }) {
       <rect x={u.lcd.x} y={u.lcd.y} width={u.lcd.w} height={u.lcd.h} rx={2} fill="#2a0b08" stroke="#180604" strokeWidth={1.2} />
       {/* gerçek kartta kırmızı 7-segment gösterge */}
       <SegDisplay x={u.lcd.x + 5} y={u.lcd.y + 1.5} h={u.lcd.h - 3} value={sec.toFixed(1)} />
-      {[0, 1, 2].map((i) => (
-        <circle key={i} cx={u.lcd.x + 8 + i * 14} cy={u.lcd.y + u.lcd.h + 12} r={4.5} fill="#1d1d20" stroke="#000" strokeWidth={1} />
+      {/* foto: LCD altında 4 belirgin koyu tuş */}
+      {[0, 1, 2, 3].map((i) => (
+        <circle key={i} cx={u.lcd.x + 6 + i * 11.5} cy={u.lcd.y + u.lcd.h + 12} r={5} fill="#15151a" stroke="#000" strokeWidth={0.8} />
       ))}
       <text x={u.body.x + u.body.w - 14} y={u.body.y + 18} textAnchor="end" fontFamily={MS} fontSize={9} fontWeight={700} fill="#5c5f64">ZR</text>
     </g>
@@ -516,8 +521,8 @@ function D2TrayPrints() {
         <rect x={t.zrBox.x} y={t.zrBox.y} width={t.zrBox.w} height={t.zrBox.h} fill="none" stroke={INK} strokeWidth={1.4} />
         <text x={t.zrBox.x + t.zrBox.w / 2} y={t.zrBox.y + 14} textAnchor="middle" fontFamily={MS} fontSize={10} fontWeight={700} fill={INK}>ZR</text>
       </g>
-      {/* foto: iki köprüden biri düz, biri dalgalı (1. sıra düz, 2. sıra el çizimi dalga) */}
-      <PrNc a={t.rowX.nc} b={t.rowX.no} y={t.rows[0].y} />
+      {/* foto: iki köprüden biri DÜZ (paysız hat), biri dalgalı */}
+      <path d={`M ${t.rowX.nc} ${t.rows[0].y} L ${t.rowX.no} ${t.rows[0].y}`} stroke={INK} strokeWidth={1.7} strokeLinecap="round" fill="none" />
       <PrWave nc={t.rowX.nc} com={t.rowX.com} no={t.rowX.no} y={t.rows[1].y} />
     </g>
   );
@@ -532,12 +537,14 @@ function ButtonUnit({ b, pressed }: { b: G.ButtonDef; pressed: boolean }) {
   const press = pressed;
   return (
     <g className={press ? 'btn pressed' : 'btn'}>
-      {/* yuva çifti arası baskı + ortak köprü */}
+      {/* yuva çifti arası baskı + ortak köprü (diğer baskılarla aynı mürekkep filtresi) */}
+      <g filter="url(#handInk)">
       <g stroke={INK} strokeWidth={1.6} fill="none" strokeLinecap="round">
         <path d={`M ${G.BTN_COL.red} ${b.y - G.BTN_COL.dy} L ${G.BTN_COL.red} ${b.y + G.BTN_COL.dy}`} />
         <path d={`M ${G.BTN_COL.red} ${b.y} L ${G.BTN_COL.black - 26} ${b.y}`} />
         <path d={`M ${G.BTN_COL.black - 26} ${b.y} L ${G.BTN_COL.black - 12} ${b.y - G.BTN_COL.dy + 4} L ${G.BTN_COL.black - 10} ${b.y - G.BTN_COL.dy + 3}`} />
         <path d={`M ${G.BTN_COL.black - 26} ${b.y} L ${G.BTN_COL.black - 12} ${b.y + G.BTN_COL.dy - 4} L ${G.BTN_COL.black - 10} ${b.y + G.BTN_COL.dy - 3}`} />
+      </g>
       </g>
       {/* düğme gövdesi */}
       <g className="bhit"
@@ -650,15 +657,19 @@ function Motor({ running }: { running: boolean }) {
   const b = M.body;
   return (
     <g data-running={running ? '1' : '0'}>
+      {/* foto: gövde altının koyu silisi — çan dibinde kama + ince taban, şaft hizasına uzanır */}
+      <path d={`M ${b.x - 52} ${b.y + b.h - 4} L ${b.x + 58} ${b.y + b.h - 2} L ${b.x + 34} ${b.y + b.h + 9} L ${b.x - 44} ${b.y + b.h + 10} Z`} fill="#54575c" opacity={0.5} />
+      <rect x={b.x - 6} y={b.y + b.h - 3} width={b.w + 6} height={13} rx={3} fill="#5d6065" opacity={0.4} />
       {/* mil (gerçek kartta sola bakan somunluk uç) */}
       <rect x={M.shaft.x} y={M.shaft.y} width={M.shaft.w} height={M.shaft.h} rx={3} fill="#4a4d52" stroke="#2b2d31" strokeWidth={1.2} />
+      <rect x={M.shaft.x + 4} y={M.shaft.y - 1} width={6} height={M.shaft.h + 2} rx={3} fill="#43464c" />
       <circle cx={M.shaft.x + 3} cy={M.shaft.y + M.shaft.h / 2} r={9} fill="#9aa0a6" stroke="#3a3d42" strokeWidth={1.2} />
       {/* gövde — soğutma kanatçıklarını (yatay oluklar) tak */}
       <rect x={b.x} y={b.y} width={b.w} height={b.h} rx={10} fill={`url(#motorSkin)`} stroke="#7c7f84" strokeWidth={1.6} />
-      {/* kanatçık olukları: tekdüze değil — ince/kalın dönüşümlü */}
-      {[1, 2, 3, 4, 5].map((i) => (
-        <line key={i} x1={b.x + 8} y1={b.y + i * (b.h - 16) / 6} x2={b.x + b.w - 12} y2={b.y + i * (b.h - 16) / 6}
-          stroke={i % 2 ? '#929599' : '#85888c'} strokeWidth={i % 2 ? 2.4 : 1.6} opacity={0.5} />
+      {/* kanatçık olukları: tekdüze değil — ince/kalın dönüşümlü (foto ~8 sık oluk) */}
+      {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+        <line key={i} x1={b.x + 8} y1={b.y + i * (b.h - 16) / 9} x2={b.x + b.w - 12} y2={b.y + i * (b.h - 16) / 9}
+          stroke={i % 2 ? '#929599' : '#85888c'} strokeWidth={i % 2 ? 2.2 : 1.5} opacity={0.45} />
       ))}
       {/* sağ üstte koyu isim plakası — fan kapağına binmeden */}
       <rect x={b.x + b.w - 120} y={b.y + 9} width={68} height={32} rx={2.5} fill="#33373c" stroke="#1d2024" strokeWidth={1} />
