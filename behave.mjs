@@ -270,6 +270,34 @@ await loadPreset('t5');
   out.zrModeSwitch = r; // beklenen: true / false / false (fix yoksa t3: true sızardı)
 }
 
+/* ---- harici lamba kutup simetrisi: ters bağlantıda da yanmalı (sentezik) ---- */
+{
+  const r = await page.evaluate(async () => {
+    const { RelayEngine } = await import('/src/sim/engine.ts');
+    const e = new RelayEngine();
+    const out = e.solve({
+      wires: [
+        { a: 'ext.fazR', b: 'sup.Mp' }, // lambanın "faz" ucuna nötr!
+        { a: 'ext.gnd', b: 'sup.Rc' },  // "toprak" ucuna faz!
+      ],
+      contacts: () => [],
+      termikArmed: true,
+      sources: [{ tid: 'sup.Rc', pot: 'L1' }, { tid: 'sup.Mp', pot: 'N' }],
+      dtMs: 0,
+      zr: { delayMs: 1000, mode: 'düz' },
+      probes: {
+        indicators: { red: 'x.a', green: 'x.b', yellow: 'x.c', ctrl: 'x.d' },
+        lamp5: ['x.e', 'x.f'],
+        ext: { yellow: 'x.g', red: 'ext.fazR', green: 'x.i', gnd: 'ext.gnd' },
+        motor: ['sup.U', 'sup.V', 'sup.W'],
+        coils: { c1: ['x.1', 'x.2'], c2: ['x.3', 'x.4'], c3: ['x.5', 'x.6'], c4: ['x.7', 'x.8'], d1: ['x.9', 'x.10'], zr: ['x.11', 'x.12'] },
+      },
+    });
+    return { red: out.ext.red };
+  });
+  out.extPolarity = r; // beklenen: true (gerçekte lamba faz-N arası yanar, kutup yönü önemsiz)
+}
+
 /* ---- salınım tespiti: kendi NC kontağıyla beslenen bobin → unstable ---- */
 {
   const r = await page.evaluate(async () => {

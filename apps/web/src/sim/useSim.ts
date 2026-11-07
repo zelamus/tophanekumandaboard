@@ -88,6 +88,7 @@ export function useSimLoop(): void {
   const sigRef = useRef<string>('');
   const epochRef = useRef<number>(-1);
   const stallRef = useRef(0);
+  const stallEpochRef = useRef<number>(-1);
 
   useEffect(() => {
     let raf = 0;
@@ -104,6 +105,12 @@ export function useSimLoop(): void {
         epochRef.current = st.simEpoch;
         engineRef.current.reset();
         sigRef.current = '';
+        stallRef.current = 0;
+      }
+
+      // Termik "Sıfırla": bobin + ZR'ye dokunmadan yalnız uğuldama penceresini tazeler
+      if (stallEpochRef.current !== st.stallEpoch) {
+        stallEpochRef.current = st.stallEpoch;
         stallRef.current = 0;
       }
 

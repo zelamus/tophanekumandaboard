@@ -1,13 +1,14 @@
 // Durum çubuğu — lambalar, röleler, motor ve uyarılar
 
 import { A, useStore } from '../store';
+import type { ZrConf } from '../store';
 import type { SimOutput } from '../sim/model';
 
 function Dot({ on, color, title }: { on: boolean; color: string; title: string }) {
   return <span className={`dot ${on ? 'on' : ''}`} style={{ '--c': color } as React.CSSProperties} title={title} />;
 }
 
-function chips(sim: SimOutput | null): React.ReactNode[] {
+function chips(sim: SimOutput | null, zr: ZrConf): React.ReactNode[] {
   if (!sim) return [];
   const out: React.ReactNode[] = [];
   if (sim.motor.running) {
@@ -22,8 +23,13 @@ function chips(sim: SimOutput | null): React.ReactNode[] {
     if (on) out.push(<span key={`k${i}`} className="chip ok">K{i + 1} çekili</span>);
   });
   if (sim.dev.d1) out.push(<span key="d1" className="chip ok">d1 çekişti</span>);
-  if (sim.dev.zr.energized) out.push(<span key="zr" className="chip">ZR sayıyor: {(sim.dev.zr.elapsed / 1000).toFixed(1)} sn</span>);
-  else if (sim.dev.zr.closed) out.push(<span key="zrh" className="chip">ZR tutuyor: kalan {(sim.dev.zr.elapsed / 1000).toFixed(1)} sn</span>);
+  if (sim.dev.zr.energized) {
+    out.push(zr.mode === 'ters'
+      ? <span key="zr" className="chip">ZR çekili (ters) — bırakınca {(zr.delayMs / 1000).toFixed(1)} sn tutar</span>
+      : <span key="zr" className="chip">ZR sayıyor: {(sim.dev.zr.elapsed / 1000).toFixed(1)} sn</span>);
+  } else if (sim.dev.zr.closed) {
+    out.push(<span key="zrh" className="chip">ZR tutuyor: kalan {(sim.dev.zr.elapsed / 1000).toFixed(1)} sn</span>);
+  }
   if (!sim.dev.termik.armed) out.push(<span key="tr" className="chip warn">Termik attı</span>);
   if (sim.unstable) out.push(<span key="uns" className="chip warn">Kontaktör çakıyor — devre salınıyor</span>);
   return out;
@@ -46,10 +52,10 @@ export function StatusBar() {
         <Dot on={sim?.ext.green === true} color="#2ecc71" title="Harici yeşil" />
       </div>
       <div className="sMid">
-        {chips(sim)}
+        {chips(sim, st.zr)}
         {shorted.length > 0 && (
           <span className="chip warn big">
-            Kısa devre! ({shorted.length} uç) — kesici düşürüldü. Kabloları düzeltip sıfırla.
+            Kısa devre! ({shorted.length} uç) — termik attı, kumanda devresi koptu. Kabloları düzelt, sonra sıfırla.
             <button className="linkBtn" onClick={() => A.termikArm()}>Sıfırla</button>
           </span>
         )}

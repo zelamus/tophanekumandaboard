@@ -188,11 +188,14 @@ export class RelayEngine {
       white: hasPhase(args.probes.lamp5[0]) && reach.get(args.probes.lamp5[1])?.has('N') === true ||
              hasPhase(args.probes.lamp5[1]) && reach.get(args.probes.lamp5[0])?.has('N') === true,
     };
-    const gndN = reach.get(args.probes.ext.gnd)?.has('N') === true;
+    // Harici sinyal lambaları simetrik: lambaden faz+N hangi uçtan gelirse
+    // gelsin yanmalıdır (gerçekte kutup yönü önemsiz).
+    const extEn = makeEnergizer(reach);
+    const eg = args.probes.ext;
     const ext = {
-      yellow: gndN && hasPhase(args.probes.ext.yellow),
-      red: gndN && hasPhase(args.probes.ext.red),
-      green: gndN && hasPhase(args.probes.ext.green),
+      yellow: extEn(eg.yellow, eg.gnd),
+      red: extEn(eg.red, eg.gnd),
+      green: extEn(eg.green, eg.gnd),
     };
 
     // Motor: üç uçta da faz olmalı; faz sırası yönü belirler. Gerçek üç fazlı

@@ -40,6 +40,8 @@ export interface AppState {
   sim: SimOutput | null;
   /** Doküman/preset yükleme ya da kablo temizliğinde artar → sim motoru sıfırlanır */
   simEpoch: number;
+  /** Termik sıfırlamada artar → uğuldama sayacı yeni pencere alır (bobin/ZR İÇİNE DOKUNMAZ) */
+  stallEpoch: number;
 }
 
 const listeners = new Set<() => void>();
@@ -57,6 +59,7 @@ let state: AppState = {
   selCable: null,
   sim: null,
   simEpoch: 0,
+  stallEpoch: 0,
 };
 
 function notify(): void { listeners.forEach((f) => f()); }
@@ -132,7 +135,9 @@ export const A = {
     patch({ breakers: { ...state.breakers, [k]: !state.breakers[k] } });
   },
 
-  termikArm(): void { patch({ termikArmed: true, simEpoch: state.simEpoch + 1 }); },
+  // Termik sıfırlama: bobin/ZR durumuna DOKUNMAZ (fizikte termik reseti ZR'yi
+  // etkilemez); yalnız uğuldama sayacına yeni pencere açar (stallEpoch).
+  termikArm(): void { patch({ termikArmed: true, stallEpoch: state.stallEpoch + 1 }); },
   termikTrip(): void { patch({ termikArmed: false }); },
 
   setZr(zr: Partial<ZrConf>): void {
