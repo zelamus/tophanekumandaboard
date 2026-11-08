@@ -47,32 +47,32 @@ export const FRAME_COLOR = '#26201a';
 
 /** Acil stop düğmesi (süs — pano görseli) */
 export const EMERGENCY = {
-  plate: { x: 105, y: 70, w: 135, h: 105 },
-  dome: { x: 155, y: 112, r: 31 },
+  plate: { x: 112, y: 70, w: 96, h: 96 },   // GetPixel adj7: hardal plaka merkez ~(160,118) r~48
+  dome:   { x: 161, y: 110, r: 32 },        // kırmızı dome ~r32 (foto local 130..185)
 };
 
 /** 0/1 seçici anahtar (süs) */
 export const SELECTOR = {
-  plate: { x: 246, y: 84, w: 62, h: 86 },  // foto R5: dikdörtgen plaka ~62×86
-  knob: { x: 278, y: 122, r: 19 },         // büyük siyah göbek
+  plate: { x: 246, y: 98, w: 62, h: 85 },  // GetPixel: plaka üst ~y98, alt ~y183; yüz SOLUK MAVİ-GRİ
+  knob: { x: 271, y: 153, r: 17.5 },       // adj8 selKnob2: koyu kütle local x254..288 y134..172; kol AŞAĞI
 };
 
 /** Kesici yuvası (girinti) — 3P motor + 1P kumanda kesici */
-export const RECESS: Rect = { x: 109, y: 217, w: 109, h: 69 };
+export const RECESS: Rect = { x: 102, y: 206, w: 124, h: 68 };
 
 /** Okul yazısı konumu */
-export const SCHOOL = { xEnd: 310, y: 337, lineH: 19 }; // sağa hizalı; satır bitişi ~x310
+export const SCHOOL = { cx: 214, y: 331, lineH: 19.5 }; // adj8: ink satırları y318..332/338..352, ORTA hizalı x≈214
 
 /** Sinyal lambaları (1–5) — y: 152, çap ≈ 38 */
 export interface LampDef { x: number; color: string; key: 'red' | 'green' | 'yellow' | 'ctrl' | 'white'; }
 export const LAMP_Y = 152;
 export const LAMP_R = 19;
 export const LAMPS: LampDef[] = [
-  { x: 361, color: '#c8352b', key: 'red' },
-  { x: 417, color: '#2f9e4f', key: 'green' },
-  { x: 474, color: '#e0a41c', key: 'yellow' },
-  { x: 529, color: '#c8352b', key: 'ctrl' },
-  { x: 585, color: '#ece9df', key: 'white' },
+  { x: 361.5, color: '#A82C37', key: 'red' },   // GetPixel R5: OFF lens renkleri (doygun)
+  { x: 417.5, color: '#00A44D', key: 'green' },
+  { x: 472,   color: '#D59929', key: 'yellow' },
+  { x: 527,   color: '#AE3441', key: 'ctrl' },
+  { x: 582,   color: '#B2C6EB', key: 'white' },
 ];
 
 /* ---------------- terminal (banjo) soket sıraları ---------------- */
@@ -110,11 +110,11 @@ export const TERMINALS_BOT: SocketDef[] = [
 /* ---------------- e (termik röle) ---------------- */
 
 export const E_UNIT = {
-  body: { x: 375, y: 345, w: 100, h: 135 },   // foto R5: siyah DIN röle (foto ~375..475 × 345..480)
-  face: { x: 399, y: 393, w: 52, h: 44 },     // küçük beyaz etiket yüzü
-  topDial: { x: 410, y: 388, r: 10 },         // KOYU ayar kadranı + kırmızı iğne (üst terminal bandında)
-  reset: { x: 414, y: 424, r: 7 },            // kırmızı sıfırlama (tıklanır) — mavi ile aynı sırada
-  blueK: { x: 438, y: 421, r: 5.5 },          // mavi ayar düğmesi (süs)
+  body: { x: 382, y: 372, w: 74, h: 130 },    // GetPixel: gövde (382..456) × (372..502); üst band koyu y372..400
+  face: { x: 387, y: 403, w: 66, h: 44 },     // soluk MAVİ-GRİ etiket yüzü (#c3cfdd, adj8 eBtnRow)
+  topDial: { x: 403, y: 419, r: 10 },         // ayar kadranı — foto: YÜZÜN SOLUNDA halka + kırmızı iğne
+  reset: { x: 420, y: 429, r: 5.5 },          // kırmızı sıfırlama (tıklanır) — mavi ile aynı sırada
+  blueK: { x: 441, y: 431, r: 5 },            // koyu MAVİ düğme (süs) — #2d5b99 ailesi
 };
 
 /** e tepsi: sütunlar sabit, 5 sıra — [tn, tc, m1, m2, m3] */
@@ -144,8 +144,8 @@ export function eSockets(): SocketDef[] {
 /* ---------------- d1 (takma röle) ---------------- */
 
 export const D1_UNIT = {
-  body: { x: 548, y: 368, w: 72, h: 132 },  // foto R4: dolgun kısa gövde (~72×132)
-  cableStub: { x: 585, y: 334 },            // tel halkaların tepe noktası
+  body: { x: 596, y: 364, w: 58, h: 144 },  // GetPixel: düz dar gövde (596..654) × (364..508); tel gümüşleri üstte (612..640)
+  cableStub: { x: 626, y: 348 },            // tel gümüşlerinin tepe noktası
 };
 
 export const D1_TRAY = {
@@ -160,9 +160,15 @@ export const D1_TRAY = {
 /* ---------------- d2 (zaman rölesi ZR) ---------------- */
 
 export const D2_UNIT = {
-  body: { x: 785, y: 350, w: 85, h: 170 }, // foto R5: TEK KOLON slim DIN (foto ~785..870 × 350..520)
-  lcd: { x: 808, y: 402, w: 42, h: 27 },
-  cableStub: { x: 805, y: 318 },
+  // adj8 d2Wide: dar gövde — soluk MAVİ yüz ~local 810..850, üst gri kapak y≈388,
+  // LCD koyu bezel y≈404..433 (kırmızı segment foto'da GÖRÜNÜR), tuş takımı y≈493..502,
+  // alt koyu terminal bandı ~x795..843 y≈505..520
+  body: { x: 808, y: 390, w: 42, h: 118 },  // yüz kutusu (soluk mavi)
+  capT: { x: 802, y: 386, w: 54, h: 12 },   // üst gri terminal kapağı (gövdeden geniş)
+  lcd: { x: 813, y: 404, w: 36, h: 30 },    // bezel koyu, kırmızı 7-seg içerde
+  btnY: 496,                                // 4 koyu tuş merkezi y; x 818/827/836/845
+  bandB: { x: 796, y: 508, w: 50, h: 13 },  // alt koyu terminal bandı
+  cableStub: { x: 802, y: 316 },            // gövde sol-üstünden yükselen siyah kablo
 };
 
 export const D2_TRAY = {
@@ -251,10 +257,15 @@ export function contactorSockets(k: ContactorDef): SocketDef[] {
 
 export const MOTOR = {
   body: { x: 688, y: 45, w: 280, h: 235 },        // foto R5: gövde üst ~45, sol ~688, sağ fan kapağı çerçeveye taşar
-  shaft: { x: 640, y: 158, w: 66, h: 14 },        // KISA stub + yuvarlak arka kapak diski
-  tBox: { x: 785, y: 215, w: 72, h: 70 },         // klemens kutusu gövdenin ALT-SOLunda
-  hole: { x: 765, y: 325 },                       // BEYAZ kablo pano giriş deliği
-  label: { x: 832, y: 128 },                      // kabartma SIEMENS — ön yüzde (koyu harfler)
+  shaft: { x: 628, y: 153, w: 84, h: 30 },        // GetPixel: koyu çelik mil 628..712, merkez y168
+  bell:  { x: 727, y: 168, r: 63 },               // yuvarlak arka disk (r63)
+  hub:   { x: 727, y: 168, r: 35 },               // koyu hub #555F68, mil oraya girer
+  plate: { x: 780, y: 60, w: 125, h: 130 },       // kabartma plaka (780..905 × 60..190) #8490a0
+  bolts: [[788, 72], [888, 72], [796, 188], [888, 188]], // 4 hex vida (sol-alt 796: bell kenarından uzak)
+  fan:   { x: 896, y: 40, w: 72, h: 244, louvers: [910, 926, 942, 958] },
+  tBox: { x: 800, y: 229, w: 74, h: 57 },         // klemens kutusu GetPixel (800..874 × 229..286)
+  hole: { x: 765, y: 334 },                       // BEYAZ kablo pano giriş deliği (koyu şeritte)
+  label: { x: 833, y: 134 },                      // kabartma SIEMENS — Dar fs18, koyu harfler #4b5868
 };
 
 /* ---------------- harici sinyal lambası (pano dışı) ---------------- */

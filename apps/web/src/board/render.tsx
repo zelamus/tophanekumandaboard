@@ -73,12 +73,12 @@ function SocketLabels() {
 const PAD = 13;   // soketten baskı başlangıç payı
 const DGAP = 12;  // açık kontak boşluğu
 
-/** Açık (NO) kontak baskısı: ──╱─ */
+/** Açık (NO) kontak baskısı: ──╱─ (dağlama — düz hatlar) */
 function PrNo({ a, b, y }: { a: number; b: number; y: number }) {
   const m = (a + b) / 2;
   return (
     <g stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round">
-      <path d={`M ${a + PAD} ${y} Q ${(a + PAD + m - DGAP) / 2} ${y + 1.8} ${m - DGAP} ${y}`} />
+      <path d={`M ${a + PAD} ${y} L ${m - DGAP} ${y}`} />
       <path d={`M ${m - DGAP} ${y} L ${m + 2} ${y - 12} L ${m + 2} ${y + 1}`} />
       <path d={`M ${m + DGAP} ${y} L ${b - PAD} ${y}`} />
       <path d={`M ${m - DGAP} ${y} L ${m - DGAP} ${y - 11}`} />
@@ -86,31 +86,29 @@ function PrNo({ a, b, y }: { a: number; b: number; y: number }) {
   );
 }
 
-/** Kapalı (NC) kontak baskısı: elle çizilmiş gibi hafif inişli hat */
+/** Kapalı (NC) kontak baskısı: düz yatay hat */
 function PrNc({ a, b, y }: { a: number; b: number; y: number }) {
-  const m = (a + b) / 2;
   return (
-    <path d={`M ${a + PAD} ${y} Q ${m} ${y + 2.4} ${b - PAD} ${y}`} stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round" />
+    <path d={`M ${a + PAD} ${y} L ${b - PAD} ${y}`} stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round" />
   );
 }
 
-/** Termik normal kapı (tn): kapı + küçük köprü işareti */
+/** Termik normal kapı (tn): kapı + küçük köprü işareti — düz */
 function PrNcOpen({ a, b, y }: { a: number; b: number; y: number }) {
   const m = (a + b) / 2;
   return (
     <g stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round">
       <path d={`M ${a + PAD} ${y} L ${m - 6} ${y}`} />
-      <path d={`M ${m + 6} ${y} Q ${(m + 6 + b - PAD) / 2} ${y + 2} ${b - PAD} ${y}`} />
+      <path d={`M ${m + 6} ${y} L ${b - PAD} ${y}`} />
       <path d={`M ${m - 6} ${y - 5} L ${m - 6} ${y + 5} M ${m + 6} ${y - 5} L ${m + 6} ${y + 5}`} />
     </g>
   );
 }
 
-/** Termik gecikmeli kapı (tc): hafif kavisli köprü — gecikme işareti tepsinin üstünde ayrı çizilir */
+/** Termik gecikmeli kapı (tc): gecikme işareti tepsinin üstünde ayrı çizilir — düz */
 function PrNcT({ a, b, y }: { a: number; b: number; y: number }) {
-  const m = (a + b) / 2;
   return (
-    <path d={`M ${a + PAD} ${y} Q ${m} ${y + 2.4} ${b - PAD} ${y}`} stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round" />
+    <path d={`M ${a + PAD} ${y} L ${b - PAD} ${y}`} stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round" />
   );
 }
 
@@ -167,23 +165,23 @@ function PrSpdt({ nc, com, no, y }: { nc: number; com: number; no: number; y: nu
   );
 }
 
-/** el çizimi dalgalı köprü — iki yumuşak Q eğrisi, 3 soketten geçer */
+/** atlama köprüsü (d2 alt sıra): dağlama — köşeli kırılım, eğri YOK */
 function PrWave({ nc, com, no, y }: { nc: number; com: number; no: number; y: number }) {
   const a = nc, m = com, b = no;
   return (
     <path
-      d={`M ${a} ${y} Q ${(a + m) / 2} ${y + 7} ${m} ${y} Q ${(m + b) / 2} ${y - 7} ${b} ${y}`}
-      stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round"
+      d={`M ${a} ${y} L ${m - 13} ${y} L ${m} ${y + 11} L ${m + 13} ${y} L ${b} ${y}`}
+      stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round" strokeLinejoin="miter"
     />
   );
 }
 
-/** d2 zamanlanmış NO: ⊤ işaretli hat */
+/** d2 zamanlanmış NO: ⊤ işaretli hat — düz */
 function PrTimed({ a, b, y }: { a: number; b: number; y: number }) {
   const m = (a + b) / 2;
   return (
     <g stroke={INK} strokeWidth={1.7} fill="none" strokeLinecap="round">
-      <path d={`M ${a + PAD} ${y} Q ${m} ${y + 2.2} ${b - PAD} ${y}`} />
+      <path d={`M ${a + PAD} ${y} L ${b - PAD} ${y}`} />
       <path d={`M ${m} ${y} L ${m} ${y - 13} M ${m - 6} ${y - 13} L ${m + 6} ${y - 13}`} />
     </g>
   );
@@ -231,20 +229,20 @@ function Emergency() {
   const p = G.EMERGENCY;
   const cx = p.plate.x + p.plate.w / 2;
   const cy = p.plate.y + p.plate.h / 2;
-  const rPlate = Math.min(p.plate.w, p.plate.h) / 2;
+  const r = p.plate.w / 2;
   return (
     <g>
-      {/* gerçek kart: yuvarlak sarı plaka + üzerinde yay boyunca EMERGENCY */}
-      <circle cx={cx} cy={cy} r={rPlate} fill="#e7c93c" stroke="#8f7a17" strokeWidth={1.5} />
-      <circle cx={cx} cy={cy} r={rPlate - 7} fill="#ddb725" stroke="#d0b52c" strokeWidth={0.8} />
-      <circle cx={p.dome.x} cy={p.dome.y} r={p.dome.r} fill="#b9321f" stroke="#5e1508" strokeWidth={2} />
-      <circle cx={p.dome.x} cy={p.dome.y} r={p.dome.r - 9} fill="#d24433" />
-      <circle cx={p.dome.x - 8} cy={p.dome.y - 9} r={7} fill="#e2614f" opacity={0.85} />
-      {/* foto: yazı sol-ALT cemberi ICINDE, plaka kenarina tasmaz */}
+      {/* foto: hardal-mustard TEK plaka + ince koyu dış çember (çift sarı YOK) */}
+      <circle cx={cx} cy={cy} r={r} fill="url(#emPlate)" stroke="#6e6212" strokeWidth={1.6} />
+      {/* kırmızı dome — plaka merkezi; üst-solda focal highlight */}
+      <circle cx={p.dome.x} cy={p.dome.y} r={p.dome.r} fill="#8f2b2c" stroke="#4b1207" strokeWidth={2} />
+      <circle cx={p.dome.x} cy={p.dome.y} r={p.dome.r - 6} fill="#a03d42" />
+      <circle cx={p.dome.x - 9} cy={p.dome.y - 10} r={7.5} fill="#e2614f" opacity={0.85} />
+      {/* foto: EMERGENCY sol-ALT yayda, plaka kenarına taşmaz */}
       <defs>
-        <path id="emArc" d={`M ${cx - 54} ${cy + 4} Q ${cx - 4} ${cy + 52} ${cx + 50} ${cy + 22}`} />
+        <path id="emArc" d={`M ${cx - 44} ${cy + 12} Q ${cx - 2} ${cy + 46} ${cx + 42} ${cy + 22}`} />
       </defs>
-      <text fontFamily={MS} fontSize={15} fontWeight={800} fill={INK} letterSpacing={1.2}>
+      <text fontFamily={MS} fontSize={13} fontWeight={800} fill="#241d10" letterSpacing={1.1}>
         <textPath href="#emArc" startOffset="50%" textAnchor="middle">EMERGENCY</textPath>
       </text>
     </g>
@@ -253,34 +251,36 @@ function Emergency() {
 
 function Breakers() {
   const st = useStore();
+  const R = G.RECESS;
   return (
     <g>
-      {/* foto: açık gri/bej muhafaza içinde küçük DIN modülleri */}
-      <rect x={G.RECESS.x} y={G.RECESS.y} width={G.RECESS.w} height={G.RECESS.h} rx={5} fill="#efeeea" stroke="#8f9296" strokeWidth={1.2} />
+      {/* foto: açık muhafaza içinde KOYU iç kavite */}
+      <rect x={R.x} y={R.y} width={R.w} height={R.h} rx={5} fill="#efeeea" stroke="#8f9296" strokeWidth={1.2} />
       {/* foto: muhafazanın iki yanında panel vidaları */}
-      <circle cx={G.RECESS.x + 4} cy={G.RECESS.y + G.RECESS.h / 2} r={2.4} fill="#c9cbce" stroke="#7d8085" strokeWidth={0.8} />
-      <circle cx={G.RECESS.x + G.RECESS.w - 4} cy={G.RECESS.y + G.RECESS.h / 2} r={2.4} fill="#c9cbce" stroke="#7d8085" strokeWidth={0.8} />
-      {/* F3 — motor kesicisi (3P): foto KOYU kavite + AÇIK kollar */}
-      <rect x={116} y={226} width={48} height={55} rx={2} fill="#f2f1ed" stroke="#8b8a86" strokeWidth={1} />
+      <circle cx={R.x + 4} cy={R.y + R.h / 2} r={2.4} fill="#c9cbce" stroke="#7d8085" strokeWidth={0.8} />
+      <circle cx={R.x + R.w - 4} cy={R.y + R.h / 2} r={2.4} fill="#c9cbce" stroke="#7d8085" strokeWidth={0.8} />
+      {/* ust.md: İÇ KAVİTE KOYU */}
+      <rect x={R.x + 5} y={R.y + 4} width={R.w - 10} height={R.h - 8} rx={3} fill="#33342e" stroke="#23241f" strokeWidth={0.8} />
+      {/* F3 — motor kesicisi (3P): 3 siyah kol, açık gövde */}
       <g className="clickable" onClick={(e) => { e.stopPropagation(); A.toggleBreaker('motor'); }}>
-        {[120, 131, 142].map((x) => (
+        {[118, 129, 140].map((x) => (
           <g key={x}>
-            <rect x={x} y={230} width={10} height={7} rx={1} fill="#efefec" />
-            <rect x={x - 1} y={234} width={12} height={22} rx={1.5} fill="#33363a" stroke="#0c0c0e" strokeWidth={0.8} />
-            <rect x={x} y={st.breakers.motor ? 236 : 250} width={10} height={17} rx={2} fill="#e6e6e2" stroke="#9a9c9f" strokeWidth={0.7} />
-            <rect x={x - 1} y={263} width={10} height={7} rx={1} fill="#c5c4bf" />
+            <rect x={x} y={218} width={10} height={7} rx={1} fill="#efefec" />
+            <rect x={x - 1} y={222} width={12} height={22} rx={1.5} fill="#33363a" stroke="#0c0c0e" strokeWidth={0.8} />
+            <rect x={x} y={st.breakers.motor ? 224 : 238} width={10} height={17} rx={2} fill="#e6e6e2" stroke="#9a9c9f" strokeWidth={0.7} />
+            <rect x={x - 1} y={251} width={10} height={7} rx={1} fill="#c5c4bf" />
           </g>
         ))}
-        <rect x={116} y={226} width={48} height={55} rx={2} fill="transparent" />
+        <rect x={114} y={214} width={48} height={52} rx={2} fill="transparent" />
         <title>F3 — motor kesicisi (3P)</title>
       </g>
       {/* F1 — kumanda kesicisi (1P); F3 ile arasında boşluk */}
-      <rect x={172} y={226} width={22} height={55} rx={2} fill="#f2f1ed" stroke="#8b8a86" strokeWidth={1} />
       <g className="clickable" onClick={(e) => { e.stopPropagation(); A.toggleBreaker('control'); }}>
-        <rect x={176} y={230} width={10} height={7} rx={1} fill="#efefec" />
-        <rect x={175} y={234} width={12} height={22} rx={1.5} fill="#33363a" stroke="#0c0c0e" strokeWidth={0.8} />
-        <rect x={176} y={st.breakers.control ? 236 : 250} width={10} height={17} rx={2} fill="#e6e6e2" stroke="#9a9c9f" strokeWidth={0.7} />
-        <rect x={175} y={263} width={10} height={7} rx={1} fill="#c5c4bf" />
+        <rect x={172} y={218} width={10} height={7} rx={1} fill="#efefec" />
+        <rect x={171} y={222} width={12} height={22} rx={1.5} fill="#33363a" stroke="#0c0c0e" strokeWidth={0.8} />
+        <rect x={172} y={st.breakers.control ? 224 : 238} width={10} height={17} rx={2} fill="#e6e6e2" stroke="#9a9c9f" strokeWidth={0.7} />
+        <rect x={171} y={251} width={10} height={7} rx={1} fill="#c5c4bf" />
+        <rect x={168} y={214} width={22} height={52} rx={2} fill="transparent" />
         <title>F1 — kumanda kesicisi (1P)</title>
       </g>
     </g>
@@ -291,17 +291,17 @@ function Selector() {
   const p = G.SELECTOR;
   return (
     <g>
-      {/* gerçek kart: açık gri/beyaz plaka + siyah kol */}
-      <rect x={p.plate.x} y={p.plate.y} width={p.plate.w} height={p.plate.h} rx={9} fill="#d8d7d3" stroke="#5d5f63" strokeWidth={1.5} />
-      <rect x={p.plate.x + 5} y={p.plate.y + 5} width={p.plate.w - 10} height={p.plate.h - 10} rx={6} fill="#e7e6e2" stroke="#9a9c9f" strokeWidth={1} />
-      <circle cx={p.knob.x} cy={p.knob.y} r={p.knob.r} fill="#23252b" stroke="#111" strokeWidth={1.5} />
-      {/* kol: fotoda dolgun siyah, sol-aşağı bakar */}
-      <path d={`M ${p.knob.x} ${p.knob.y} L ${p.knob.x - 10} ${p.knob.y + 18}`} stroke="#17171b" strokeWidth={9} strokeLinecap="round" />
-      {/* 0 üst-sağ, 1 sağ-orta (foto) */}
-      <text x={p.plate.x + p.plate.w - 10} y={p.plate.y + 16} textAnchor="middle" fontFamily={MS} fontSize={10} fontWeight={700} fill="#2b2b2e">0</text>
-      <text x={p.plate.x + p.plate.w - 5} y={p.plate.y + 50} textAnchor="middle" fontFamily={MS} fontSize={10} fontWeight={700} fill="#2b2b2e">1</text>
-      <text x={p.plate.x + 8} y={p.plate.y + p.plate.h - 5} fontFamily={MS} fontSize={6.5} fontWeight={700} fill="#8a8c90">SIEMENS</text>
-      {/* plaka altındaki küçük kazıma baskı (okunamıyor) — çok silik */}
+      {/* foto: plaka yüzü soluk MAVİ-GRİ metal */}
+      <rect x={p.plate.x} y={p.plate.y} width={p.plate.w} height={p.plate.h} rx={8} fill="url(#selPlate)" stroke="#5d5f63" strokeWidth={1.5} />
+      {/* foto y≈113: koyu işlenmiş slit bandı */}
+      <rect x={p.plate.x + 7} y={112} width={p.plate.w - 14} height={7} rx={2} fill="#3c3e42" opacity={0.75} />
+      <text x={p.plate.x + p.plate.w - 11} y={124} textAnchor="middle" fontFamily={MS} fontSize={10} fontWeight={700} fill="#23262c">0</text>
+      <text x={p.plate.x + p.plate.w - 8} y={172} textAnchor="middle" fontFamily={MS} fontSize={10} fontWeight={700} fill="#23262c">1</text>
+      {/* göbek + dolgun kol SOL-AŞAĞI */}
+      <circle cx={p.knob.x} cy={p.knob.y} r={p.knob.r} fill="#23252b" stroke="#101114" strokeWidth={1.5} />
+      <path d={`M ${p.knob.x} ${p.knob.y} L ${p.knob.x - 13} ${p.knob.y + 19}`} stroke="#17171b" strokeWidth={9} strokeLinecap="round" />
+      <text x={p.plate.x + 6} y={p.plate.y + p.plate.h - 6} fontFamily={MS} fontSize={6.5} fontWeight={700} fill="#70747a">SIEMENS</text>
+      {/* plaka altındaki silik kazıma baskı */}
       <g stroke={INK} strokeWidth={1} fill="none" opacity={0.16} strokeLinecap="round">
         <path d={`M ${p.plate.x + 5} ${p.plate.y + p.plate.h + 12} q 5 -4 10 0 t 10 0 t 10 0`} />
         <path d={`M ${p.plate.x + 12} ${p.plate.y + p.plate.h + 18} h 22`} />
@@ -312,13 +312,13 @@ function Selector() {
 
 function SchoolText() {
   return (
-    /* foto R5: damgalı stencil yazı — mono, SAĞA HİZALI (satır bitişi ~x310), ~19px / ls 0.5 */
-    <g fontFamily="Consolas, monospace" fontSize={19} fontWeight={900} letterSpacing={0.5} fill={INK} textAnchor="end">
-      <text x={G.SCHOOL.xEnd} y={G.SCHOOL.y}>TOPHANE TEKNİK ve</text>
-      <text x={G.SCHOOL.xEnd} y={G.SCHOOL.y + G.SCHOOL.lineH}>ENDÜSTRİ MESLEK LİSESİ</text>
-      {/* okul yazısının altındaki silik kurşun kalem imza (foto) */}
+    /* adj8: damgalı stencil — mono, ORTA hizalı (ink x136..292 merkezi ~214), satır baselines y331/350.5 */
+    <g fontFamily="Consolas, monospace" fontSize={19} fontWeight={900} letterSpacing={0.5} fill={INK} textAnchor="middle">
+      <text x={G.SCHOOL.cx} y={G.SCHOOL.y}>TOPHANE TEKNİK ve</text>
+      <text x={G.SCHOOL.cx} y={G.SCHOOL.y + G.SCHOOL.lineH}>ENDÜSTRİ MESLEK LİSESİ</text>
+      {/* okul yazısının altındaki silik kurşun kalem imza (foto, sol taraf altı) */}
       <g textAnchor="start">
-        <path d="M 112 368 c 5 -9 11 -9 15 -2 c 3 6 8 5 12 -2 c 4 -6 8 -2 9 3 q 6 4 14 2" stroke="#6e6a5e" strokeWidth={1.2} fill="none" opacity={0.2} />
+        <path d="M 138 372 c 5 -9 11 -9 15 -2 c 3 6 8 5 12 -2 c 4 -6 8 -2 9 3 q 6 4 14 2" stroke="#6e6a5e" strokeWidth={1.2} fill="none" opacity={0.22} />
       </g>
     </g>
   );
@@ -327,15 +327,16 @@ function SchoolText() {
 function Lamps({ sim }: { sim: SimOutput | null }) {
   return (
     <g>
-      {/* foto R4: tek şerit YOK — her pilot kendi krom çerçevesinde, arada bej panel görünür */}
+      {/* adj7: koyu KIZIL-KAHVE bezel ikili — gümüş çember YOK, arada bej panel görünür */}
       {G.LAMPS.map((l) => {
         const on = sim?.lamps[l.key] === true;
         return (
           <g key={l.key}>
-            {/* foto: koyu bezel + dış gümüş ince çember */}
-            <circle cx={l.x} cy={G.LAMP_Y} r={G.LAMP_R + 4} fill="none" stroke="#b9bcc1" strokeWidth={0.9} />
-            <circle cx={l.x} cy={G.LAMP_Y} r={G.LAMP_R + 2.5} fill="#3f443e" stroke="#23261f" strokeWidth={1.4} />
-            <circle cx={l.x} cy={G.LAMP_Y} r={G.LAMP_R} fill={on ? shade(l.color, 0.25) : shade(l.color, -0.18)} stroke="#2a2c26" strokeWidth={1} />
+            <circle cx={l.x} cy={G.LAMP_Y} r={G.LAMP_R + 3.4} fill="#472b24" stroke="#2c170f" strokeWidth={1.2} />
+            <circle cx={l.x} cy={G.LAMP_Y} r={G.LAMP_R + 1.2} fill="none" stroke="rgba(230,220,200,0.28)" strokeWidth={1} />
+            {/* OFF hali: lens RENKLERİ doygun (GetPixel #A82C37 vb.) — koyulaştırma yok */}
+            <circle cx={l.x} cy={G.LAMP_Y} r={G.LAMP_R} fill={on ? shade(l.color, 0.3) : l.color} stroke="rgba(0,0,0,0.55)" strokeWidth={1} />
+            {!on && <ellipse cx={l.x - 5} cy={G.LAMP_Y - 6} rx={7} ry={4} fill="rgba(255,255,255,0.10)" />}
             {on && (
               <>
                 <circle cx={l.x} cy={G.LAMP_Y} r={G.LAMP_R - 6} fill="rgba(255,255,255,0.55)" />
@@ -356,43 +357,54 @@ function Lamps({ sim }: { sim: SimOutput | null }) {
 function EUnit({ sim }: { sim: SimOutput | null }) {
   const u = G.E_UNIT;
   const tripped = sim?.dev.termik.armed === false;
+  const bx = u.body.x, by = u.body.y, bw = u.body.w, bh = u.body.h;
   return (
     <g>
-      {/* gövde üstünden çıkan kablo halkaları (3UA biriminde teller yukarı fışkırır) */}
-      <path d={`M ${u.body.x + 20} ${u.body.y + 5} Q ${u.body.x + 4} ${u.body.y - 18} ${u.body.x + 24} ${u.body.y - 32}`} stroke="#1a1a1c" strokeWidth={4.5} fill="none" strokeLinecap="round" />
-      <path d={`M ${u.body.x + 44} ${u.body.y + 5} Q ${u.body.x + 34} ${u.body.y - 22} ${u.body.x + 52} ${u.body.y - 34}`} stroke="#1a1a1c" strokeWidth={4.5} fill="none" strokeLinecap="round" />
-      <ellipse cx={u.body.x + 24} cy={u.body.y - 34} rx={7} ry={3} fill="#23231f" />
-      <ellipse cx={u.body.x + 52} cy={u.body.y - 36} rx={7} ry={3} fill="#23231f" />
-      {/* gövde altından sarkan kablo demeti — tn sırasına kadar bej boşluk bırakır */}
-      <path d={`M ${u.body.x + 18} ${u.body.y + u.body.h - 6} Q ${u.body.x + 2} ${u.body.y + u.body.h + 30} ${u.body.x + 12} ${u.body.y + u.body.h + 44}`} stroke="#1a1a1c" strokeWidth={4} fill="none" strokeLinecap="round" />
-      <path d={`M ${u.body.x + 34} ${u.body.y + u.body.h - 6} Q ${u.body.x + 26} ${u.body.y + u.body.h + 28} ${u.body.x + 34} ${u.body.y + u.body.h + 42}`} stroke="#1a1a1c" strokeWidth={3.6} fill="none" strokeLinecap="round" />
-      {/* foto R5: KOYU DIN gövde */}
-      <rect x={u.body.x} y={u.body.y} width={u.body.w} height={u.body.h} rx={4} fill="#2a2a2e" stroke="#0f0f12" strokeWidth={1.5} />
-      {/* üst terminal bandı: iki sıra vida + KOYU ayar kadranı (kırmızı iğneli) */}
-      <rect x={u.body.x + 3} y={u.body.y + 3} width={u.body.w - 6} height={42} rx={2} fill="#1c1c20" stroke="#0c0c0e" strokeWidth={0.8} />
-      {[0, 1, 2, 3].map((i) => (
-        <line key={i} x1={u.body.x + 12 + i * 22} y1={u.body.y + 9} x2={u.body.x + 12 + i * 22} y2={u.body.y + 16} stroke="#6a6d72" strokeWidth={2} strokeLinecap="round" />
+      {/* foto: üç üst terminal pimi (koyu) — tel çifti bunlardan yukarı kıvrılır */}
+      {[bx + 16, bx + 38, bx + 60].map((x, i) => (
+        <g key={`tp${i}`}>
+          <circle cx={x} cy={by + 13} r={6} fill="#17171a" stroke="#000" strokeWidth={1} />
+          <circle cx={x - 2} cy={by + 11} r={1.8} fill="#5f6469" opacity={0.7} />
+        </g>
       ))}
+      {/* koyu DIN gövde (foto ~#232327) */}
+      <rect x={bx} y={by} width={bw} height={bh} rx={4} fill="#232327" stroke="#0f0f12" strokeWidth={1.5} />
+      {/* üst terminal bandı */}
+      <rect x={bx + 3} y={by + 3} width={bw - 6} height={26} rx={2} fill="#1c1c20" stroke="#0c0c0e" strokeWidth={0.8} />
+      {/* ayar kadranı: foto — YÜZÜN SOLUNDA koyu halka + kırmızı iğne (id korunur) */}
       <g id="termik-kadran">
-        <circle cx={u.topDial.x} cy={u.topDial.y} r={u.topDial.r} fill="#3a3b3f" stroke="#0e0e10" strokeWidth={1.4} />
-        <line x1={u.topDial.x} y1={u.topDial.y} x2={u.topDial.x + 6} y2={u.topDial.y - 6} stroke="#b9321f" strokeWidth={2.2} strokeLinecap="round" />
+        <circle cx={u.topDial.x} cy={u.topDial.y} r={u.topDial.r} fill="#33353a" stroke="#101114" strokeWidth={2} />
+        {[0, 60, 120, 180, 240, 300].map((a) => (
+          <line key={a}
+            x1={u.topDial.x + Math.cos((a * Math.PI) / 180) * (u.topDial.r - 2.5)}
+            y1={u.topDial.y + Math.sin((a * Math.PI) / 180) * (u.topDial.r - 2.5)}
+            x2={u.topDial.x + Math.cos((a * Math.PI) / 180) * (u.topDial.r - 5.5)}
+            y2={u.topDial.y + Math.sin((a * Math.PI) / 180) * (u.topDial.r - 5.5)}
+            stroke="#c8ccd2" strokeWidth={1} opacity={0.75} />
+        ))}
+        <line x1={u.topDial.x} y1={u.topDial.y} x2={u.topDial.x + 4} y2={u.topDial.y - 7} stroke="#b9321f" strokeWidth={2} strokeLinecap="round" />
         <circle cx={u.topDial.x} cy={u.topDial.y} r={2} fill="#17181b" />
       </g>
-      {/* küçük beyaz etiket yüzü: kırmızı reset + mavi düğme aynı sırada */}
-      <rect x={u.face.x} y={u.face.y} width={u.face.w} height={u.face.h} rx={2.5} fill="#eceae4" stroke="#8f9296" strokeWidth={1} />
-      <text x={u.face.x + u.face.w / 2} y={u.face.y + 11} textAnchor="middle" fontFamily={MS} fontSize={7} fontWeight={700} fill="#6b6e72">SIEMENS</text>
-      {/* kırmızı sıfırlama düğmesi — attığında dışarı çıkar */}
+      {/* soluk MAVİ-GRİ etiket yüzü */}
+      <rect x={u.face.x} y={u.face.y} width={u.face.w} height={u.face.h} rx={2.5} fill="#c3cfdd" stroke="#9aa6b4" strokeWidth={1} />
+      <text x={u.face.x + u.face.w / 2} y={u.face.y + 10} textAnchor="middle" fontFamily={MS} fontSize={6.5} fontWeight={700} fill="#5c6572">SIEMENS</text>
+      {/* kırmızı reset + üstündeki koyu yuva (foto) */}
       <g className="clickable" onClick={(e) => { e.stopPropagation(); A.termikArm(); }}>
-        <circle cx={u.reset.x} cy={u.reset.y + (tripped ? -2.5 : 0)} r={u.reset.r} fill="#b9321f" stroke="#5e1508" strokeWidth={1.6} />
-        <circle cx={u.reset.x - 2} cy={u.reset.y - 2.5 + (tripped ? -2.5 : 0)} r={2} fill="#e2614f" />
+        <rect x={u.reset.x - 4} y={u.face.y + 11} width={9} height={10} rx={1.5} fill="rgba(16,20,28,0.85)" />
+        <circle cx={u.reset.x} cy={u.reset.y + (tripped ? -2.5 : 0)} r={u.reset.r} fill="#a8333b" stroke="#4e1310" strokeWidth={1.4} />
+        <circle cx={u.reset.x - 1.6} cy={u.reset.y - 1.8 + (tripped ? -2.5 : 0)} r={1.7} fill="#e2614f" />
         <title>Termik sıfırla (e.tc kapatır)</title>
       </g>
-      {/* mavi ayar düğmesi */}
-      <circle cx={u.blueK.x} cy={u.blueK.y} r={u.blueK.r} fill="#2a5fa8" stroke="#173a66" strokeWidth={1.3} />
-      {/* alt terminal bloğu */}
-      <rect x={u.body.x + 6} y={u.body.y + 44 + u.face.h} width={u.body.w - 12} height={20} rx={2} fill="#1c1c20" stroke="#0c0c0e" strokeWidth={0.8} />
-      {[0, 1, 2, 3].map((i) => (
-        <circle key={i} cx={u.body.x + 16 + i * 18} cy={u.body.y + 44 + u.face.h + 10} r={2.4} fill="#6a6d72" />
+      {/* koyu MAVİ düğme + üstündeki yuva */}
+      <rect x={u.blueK.x - 4.5} y={u.face.y + 11} width={9} height={10} rx={1.5} fill="rgba(10,16,26,0.85)" />
+      <circle cx={u.blueK.x} cy={u.blueK.y} r={u.blueK.r} fill="#2d5b99" stroke="#11294e" strokeWidth={1.3} />
+      {/* alt terminal bandı + 3 pim */}
+      <rect x={bx + 3} y={by + 82} width={bw - 6} height={44} rx={2} fill="#1a1a1d" stroke="#0c0c0e" strokeWidth={0.8} />
+      {[bx + 16, bx + 38, bx + 60].map((x, i) => (
+        <g key={`bt${i}`}>
+          <circle cx={x} cy={by + 106} r={6.2} fill="#141417" stroke="#000" strokeWidth={1} />
+          <circle cx={x - 2} cy={by + 104} r={1.8} fill="#565b60" opacity={0.7} />
+        </g>
       ))}
     </g>
   );
@@ -426,25 +438,30 @@ function ETrayPrints() {
 
 function D1Unit() {
   const u = G.D1_UNIT;
+  const bx = u.body.x, by = u.body.y, bw = u.body.w, bh = u.body.h;
   return (
     <g>
-      {/* gövde üstünden fışkıran İKİ SİYAH TEL halkası (foto; tepe ~y326) */}
-      <path d={`M ${u.body.x + 12} ${u.body.y + 3} Q ${u.body.x - 2} ${u.body.y - 20} ${u.body.x + 14} ${u.body.y - 34}`} stroke="#1a1a1c" strokeWidth={4.5} fill="none" strokeLinecap="round" />
-      <path d={`M ${u.body.x + 40} ${u.body.y + 3} Q ${u.body.x + 28} ${u.body.y - 22} ${u.body.x + 46} ${u.body.y - 36}`} stroke="#1a1a1c" strokeWidth={4.5} fill="none" strokeLinecap="round" />
-      <ellipse cx={u.body.x + 14} cy={u.body.y - 35} rx={7} ry={3} fill="#23231f" />
-      <ellipse cx={u.body.x + 46} cy={u.body.y - 37} rx={7} ry={3} fill="#23231f" />
-      {/* ince-uzun gövde */}
-      <rect x={u.body.x} y={u.body.y} width={u.body.w} height={u.body.h} rx={5} fill="#cdd0d4" stroke="#585b60" strokeWidth={1.5} />
-      {/* foto: sol DIN kıskacı (gövde solunda ince klips) */}
-      <path d={`M ${u.body.x - 3} ${u.body.y + 26} L ${u.body.x - 3} ${u.body.y + 52}`} stroke="#8a8d92" strokeWidth={5} strokeLinecap="round" />
-      {/* beyaz ön yüz gövdeye yakın (x+4 / w-8) */}
-      <rect x={u.body.x + 4} y={u.body.y + 30} width={u.body.w - 8} height={u.body.h - 38} rx={3} fill="#e9e9e6" stroke="#8f9296" strokeWidth={1.2} />
-      {/* foto R4: yüzün alt bölgesinde teal bant (3UG4 etiket şeridi) — yeni yüz sınırlarına göre */}
-      <rect x={u.body.x + 4} y={442} width={u.body.w - 8} height={40} rx={2} fill="#7cb0ab" fillOpacity={0.92} stroke="#5d948f" strokeWidth={0.8} />
-      <circle cx={u.body.x + 24} cy={u.body.y + 66} r={10} fill="#191a1d" stroke="#000" strokeWidth={1.5} />
-      <text x={u.body.x + 6} y={u.body.y + 22} fontFamily={MS} fontSize={8} fontWeight={700} fill="#5c5f64">3UG4</text>
-      {/* foto: alt siyah terminal bloğu */}
-      <rect x={u.body.x + 8} y={u.body.y + u.body.h - 6} width={u.body.w - 16} height={12} rx={2} fill="#222226" stroke="#0c0c0e" strokeWidth={1} />
+      {/* İKİ siyah tel gümüşü kaldırıldı — cihaz kablosu yok */}
+      {/* beyaz kısa-dolgun gövde (596..654 × 364..508) */}
+      <rect x={bx} y={by} width={bw} height={bh} rx={5} fill="#f4f5f2" stroke="#8f9296" strokeWidth={1.5} />
+      {/* sol DIN kıskaçı */}
+      <path d={`M ${bx - 3} ${by + 26} L ${bx - 3} ${by + 52}`} stroke="#a3a8ad" strokeWidth={5} strokeLinecap="round" />
+      {/* yüz: 3 koyu mini terminal (üst) */}
+      {[bx + 20, bx + 34, bx + 48].map((x, i) => (
+        <circle key={`t${i}`} cx={x} cy={by + 16} r={5} fill="#1d2634" stroke="#0c1420" strokeWidth={1} />
+      ))}
+      {/* ön yüz beyaz + sağ kenara soluk MAVİ-GRİ silke */}
+      <rect x={bx + 3} y={by + 28} width={bw - 6} height={bh - 44} rx={3} fill="#eef0f4" stroke="#d8dad6" strokeWidth={1} />
+      <rect x={bx + bw - 20} y={by + 30} width={17} height={bh - 48} rx={2} fill="rgba(120,140,170,0.25)" />
+      <text x={bx + 5} y={by + 38} fontFamily={MS} fontSize={8} fontWeight={700} fill="#5c5f64">3UG4</text>
+      <text x={bx + 5} y={by + 48} fontFamily={MS} fontSize={7} fontWeight={700} fill="#8a8e93">SIEMENS</text>
+      {/* siyah göbek / döndürme başı — foto merkez-sol (~616,429) */}
+      <circle cx={bx + 20} cy={by + 65} r={9} fill="#1a1b1f" stroke="#000" strokeWidth={1.4} />
+      {/* teal-mavi seçim bandı (foto #6591AC..#779AB6, y≈455..495) */}
+      <rect x={bx + 4} y={by + 91} width={bw - 8} height={40} rx={2} fill="#6b96ae" fillOpacity={0.96} stroke="#4f7d97" strokeWidth={0.8} />
+      <path d={`M ${bx + 12} ${by + 99} q 14 5 34 0 M ${bx + 12} ${by + 121} q 14 5 34 0`} stroke="#9fc2d8" strokeWidth={1.1} fill="none" opacity={0.25} />
+      {/* alt siyah terminal bloğu */}
+      <rect x={bx + 6} y={by + bh - 13} width={bw - 12} height={11} rx={2} fill="#222226" stroke="#0c0c0e" strokeWidth={1} />
     </g>
   );
 }
@@ -524,28 +541,29 @@ function D2Unit({ sim }: { sim: SimOutput | null }) {
   const sec = sim ? (sim.dev.zr.elapsed / 1000) : 0;
   return (
     <g>
-      <path d={`M ${u.cableStub.x - 10} ${u.cableStub.y - 16} Q ${u.cableStub.x - 20} ${u.cableStub.y + 12} ${u.body.x + 20} ${u.body.y + 6}`} stroke="#1a1a1c" strokeWidth={4.5} fill="none" strokeLinecap="round" />
-      <ellipse cx={u.cableStub.x - 10} cy={u.cableStub.y - 18} rx={7} ry={3} fill="#23231f" />
-      <rect x={u.body.x} y={u.body.y} width={u.body.w} height={u.body.h} rx={4} fill="#d7d9dc" stroke="#585b60" strokeWidth={1.5} />
-      {/* foto R5: üst/alt vida terminal sıraları (slim genişlik) */}
-      <rect x={u.body.x + 4} y={u.body.y + 3} width={u.body.w - 8} height={7} rx={2} fill="#c9cbce" stroke="#9ea1a5" strokeWidth={0.8} />
-      {[0, 1, 2, 3].map((i) => (
-        <circle key={`t${i}`} cx={u.body.x + 14 + i * ((u.body.w - 28) / 3)} cy={u.body.y + 6.5} r={2} fill="#8f9296" />
+      {/* gövde sol-üstündeki kablo stipü kaldırıldı — cihaz kablosu yok */}
+      {/* üst gri terminal kapağı (gövdeden geniş) */}
+      <rect x={u.capT.x} y={u.capT.y} width={u.capT.w} height={u.capT.h} rx={3} fill="#8e9396" stroke="#6f7478" strokeWidth={1.2} />
+      {[815, 827, 839, 851].map((x, i) => (
+        <circle key={`t${i}`} cx={x} cy={u.capT.y + 6} r={2.2} fill="#5a5e62" />
       ))}
-      <rect x={u.body.x + 4} y={u.body.y + u.body.h - 10} width={u.body.w - 8} height={7} rx={2} fill="#c9cbce" stroke="#9ea1a5" strokeWidth={0.8} />
-      {[0, 1, 2, 3].map((i) => (
-        <circle key={`b${i}`} cx={u.body.x + 14 + i * ((u.body.w - 28) / 3)} cy={u.body.y + u.body.h - 6.5} r={2} fill="#8f9296" />
+      {/* dar kolon: soluk MAVİ face */}
+      <rect x={u.body.x} y={u.body.y} width={u.body.w} height={u.body.h} rx={4} fill="url(#d2Face)" stroke="#5f6a80" strokeWidth={1.4} />
+      {/* LCD — koyu bezel (#101D25); KIRMIZI segmentler foto'da GÖRÜNÜR */}
+      <rect x={u.lcd.x - 3} y={u.lcd.y - 3} width={u.lcd.w + 6} height={u.lcd.h + 6} rx={3} fill="#101d25" stroke="#060c12" strokeWidth={1} />
+      <rect x={u.lcd.x} y={u.lcd.y} width={u.lcd.w} height={u.lcd.h} rx={2} fill="#22303c" />
+      <SegDisplay x={u.lcd.x + 4} y={u.lcd.y + 3} h={u.lcd.h - 6} value={sec.toFixed(1)} />
+      {/* ZR mini etiketi sağ-üst */}
+      <text x={u.body.x + u.body.w - 3} y={u.body.y + 13} textAnchor="end" fontFamily={MS} fontSize={6.5} fontWeight={700} fill="#46506a">ZR</text>
+      {/* keypad: 4 koyu yuvarlak tuş (r≈3, lokal y≈496) */}
+      {[818, 827, 836, 845].map((x, i) => (
+        <circle key={`b${i}`} cx={x} cy={u.btnY} r={3.2} fill="#15151a" stroke="#000" strokeWidth={0.8} />
       ))}
-      {/* dijital kronometre: gerçek kartta KIRMIZI 7-segment göstergesi */}
-      <rect x={u.body.x + 10} y={u.body.y + 16} width={u.body.w - 20} height={u.body.h - 52} rx={3} fill="#efefec" stroke="#9ea1a5" strokeWidth={1.2} />
-      <rect x={u.lcd.x} y={u.lcd.y} width={u.lcd.w} height={u.lcd.h} rx={2} fill="#2a0b08" stroke="#180604" strokeWidth={1.2} />
-      {/* gerçek kartta kırmızı 7-segment gösterge */}
-      <SegDisplay x={u.lcd.x + 5} y={u.lcd.y + 1.5} h={u.lcd.h - 3} value={sec.toFixed(1)} />
-      {/* foto: LCD altında 4 belirgin koyu tuş */}
-      {[0, 1, 2, 3].map((i) => (
-        <circle key={i} cx={u.lcd.x + 6 + i * 11.5} cy={u.lcd.y + u.lcd.h + 12} r={5} fill="#15151a" stroke="#000" strokeWidth={0.8} />
+      {/* alt koyu terminal bandı (gövdeden sola taşkın, foto ~x795..843) */}
+      <rect x={u.bandB.x} y={u.bandB.y} width={u.bandB.w} height={u.bandB.h} rx={2} fill="#262624" stroke="#141412" strokeWidth={1} />
+      {[806, 817, 828, 839].map((x, i) => (
+        <circle key={`bt${i}`} cx={x} cy={u.bandB.y + 6.5} r={2.2} fill="#4c4c48" />
       ))}
-      <text x={u.body.x + u.body.w - 14} y={u.body.y + 18} textAnchor="end" fontFamily={MS} fontSize={9} fontWeight={700} fill="#5c5f64">ZR</text>
     </g>
   );
 }
@@ -569,20 +587,17 @@ function D2TrayPrints() {
    ================================================================ */
 
 function ButtonUnit({ b, pressed }: { b: G.ButtonDef; pressed: boolean }) {
-  const fill = b.color === 'red' ? '#b9321f' : '#2f9e4f';
   const press = pressed;
   return (
     <g className={press ? 'btn pressed' : 'btn'}>
-      {/* yuva çifti arası baskı + ortak köprü (diğer baskılarla aynı mürekkep filtresi) */}
-      <g filter="url(#handInk)">
-      <g stroke={INK} strokeWidth={1.6} fill="none" strokeLinecap="round">
+      {/* yuva çifti arası baskı + ortak köprü — dağlama, DÜZ hatlar */}
+      <g stroke={INK} strokeWidth={1.6} fill="none" strokeLinecap="round" strokeLinejoin="miter">
         <path d={`M ${G.BTN_COL.red} ${b.y - G.BTN_COL.dy} L ${G.BTN_COL.red} ${b.y + G.BTN_COL.dy}`} />
         <path d={`M ${G.BTN_COL.red} ${b.y} L ${G.BTN_COL.black - 26} ${b.y}`} />
         <path d={`M ${G.BTN_COL.black - 26} ${b.y} L ${G.BTN_COL.black - 12} ${b.y - G.BTN_COL.dy + 4} L ${G.BTN_COL.black - 10} ${b.y - G.BTN_COL.dy + 3}`} />
         <path d={`M ${G.BTN_COL.black - 26} ${b.y} L ${G.BTN_COL.black - 12} ${b.y + G.BTN_COL.dy - 4} L ${G.BTN_COL.black - 10} ${b.y + G.BTN_COL.dy - 3}`} />
       </g>
-      </g>
-      {/* düğme gövdesi */}
+      {/* düğme gövdesi: etek + açık metal rim + KOYU DİŞLİ yaka + cap gradient (bas-r13/boş-r17) */}
       <g className="bhit"
         onPointerDown={(e) => { e.stopPropagation(); A.pressButton(b.id as 'b1'); try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* sentetik olay */ } }}
         onPointerUp={(e) => { e.stopPropagation(); A.releaseButton(b.id as 'b1'); }}
@@ -590,8 +605,12 @@ function ButtonUnit({ b, pressed }: { b: G.ButtonDef; pressed: boolean }) {
         onClick={(e) => e.stopPropagation()}
       >
         <circle cx={b.x} cy={b.y} r={26} fill="#2c2620" stroke="#191512" strokeWidth={1.4} />
-        <circle cx={b.x} cy={b.y} r={press ? 13 : 17} fill={fill} stroke="#1c0d08" strokeWidth={1.6} />
-        <circle cx={b.x - 5} cy={b.y - 5} r={4.5} fill="rgba(255,255,255,0.35)" />
+        <circle cx={b.x} cy={b.y} r={22.6} fill="none" stroke="rgba(196,198,190,0.55)" strokeWidth={1.1} />
+        <circle cx={b.x} cy={b.y} r={21.7} fill="#17120e" />
+        <circle cx={b.x} cy={b.y} r={20.4} fill="none" stroke="#0e0a07" strokeWidth={3.4} strokeDasharray="2.2 2.1" />
+        <circle cx={b.x} cy={b.y} r={press ? 13 : 17} fill={`url(#cap-${b.id})`} stroke="#140a06" strokeWidth={1.4} />
+        {/* cap dome gloss (sol-üst) */}
+        <path d={`M ${b.x - 9} ${b.y - 5} Q ${b.x - 2} ${b.y - 12} ${b.x + 6} ${b.y - 8}`} stroke="rgba(255,255,255,0.30)" strokeWidth={2.4} fill="none" strokeLinecap="round" />
         <title>{b.id.toUpperCase()} — bas-tut</title>
       </g>
     </g>
@@ -619,53 +638,48 @@ function ContactorUnit({ k, on }: { k: G.ContactorDef; on: boolean }) {
   const f = k.front;
   const left = k.trayL, right = k.trayR;
   const m = Math.round((left + right) / 2);
+  const bandY = f.y + 55; // koyu terminal bandı üstü (gövde İÇİNDE rel +55)
   return (
     <g>
-      {/* x sıralarının büyük yardımcı kutu baskısı */}
-      <g filter="url(#handInk)">
-        <rect x={left + 12} y={G.C_ROW_Y[5] - 20} width={right - left - 24} height={(G.C_ROW_Y[7] - G.C_ROW_Y[5]) + 28} fill="none" stroke={INK} strokeWidth={1.6} />
-        {/* sıra baskıları */}
-        <PrCoil a={left} b={right} y={G.C_ROW_Y[0]} />
-        <PrNo a={left} b={right} y={G.C_ROW_Y[1]} />
-        <PrNo a={left} b={right} y={G.C_ROW_Y[2]} />
-        <PrNc a={left} b={right} y={G.C_ROW_Y[3]} />
-        <PrNc a={left} b={right} y={G.C_ROW_Y[4]} />
-        <PrAux a={left} b={right} y={G.C_ROW_Y[5]} />
-        <PrAux a={left} b={right} y={G.C_ROW_Y[6]} />
-        <PrAux a={left} b={right} y={G.C_ROW_Y[7]} />
-        {/* tepsi→gövde bağlantı baskısı */}
-        <path d={`M ${left + 4} ${G.C_ROW_Y[0] - 14} Q ${left + 30} ${G.C_ROW_Y[0] - 34} ${f.x + 30} ${f.y + f.h}`} stroke={INK} strokeWidth={1.5} fill="none" />
-        <path d={`M ${right - 4} ${G.C_ROW_Y[0] - 14} Q ${right - 26} ${G.C_ROW_Y[0] - 34} ${f.x + 52} ${f.y + f.h}`} stroke={INK} strokeWidth={1.5} fill="none" />
-      </g>
-      {/* kanca kablo (pabuç) */}
-      <path d={`M ${f.x + 24} ${f.y + f.h - 3} Q ${f.x - 4} ${G.C_ROW_Y[0] + 6} ${left} ${G.C_ROW_Y[0]}`} stroke="#23231f" strokeWidth={4} fill="none" strokeLinecap="round" />
-      {/* üst demet: fotoda dolgun, hafif sola yatık siyah kubbe (foto yüksekliği ~40-45) */}
-      <rect x={f.x} y={f.y} width={f.w} height={14} rx={4} fill="#1c1c1e" stroke="#0c0c0e" strokeWidth={1.2} />
-      <path d={`M ${f.x + 3} ${f.y + 5} C ${f.x - 8} ${f.y - 22} ${f.x - 2} ${f.y - 42} ${f.x + 16} ${f.y - 46} C ${f.x + 34} ${f.y - 51} ${f.x + 52} ${f.y - 30} ${f.x + 64} ${f.y + 5}`} fill="#202124" stroke="#0f0f10" strokeWidth={1} />
-      {/* kubbe içi tel dokusu — sola yatık kısa kıvrımlar */}
-      {[10, 21, 32, 43, 54].map((o) => (
-        <path key={o} d={`M ${f.x + o - 6} ${f.y - 6} Q ${f.x + o - 4} ${f.y - 24} ${f.x + o} ${f.y - 40}`} stroke="#3a3b40" strokeWidth={1.1} fill="none" opacity={0.8} />
+      {/* x sıralarının büyük yardımcı kutu baskısı — kilit (c1 foto-ink: 168..257 × 1047..1152) — DÜZ */}
+      <rect x={left + 12} y={G.C_ROW_Y[5] - 20} width={right - left - 36} height={(G.C_ROW_Y[7] - G.C_ROW_Y[5]) + 28} fill="none" stroke={INK} strokeWidth={1.6} />
+      {/* sıra baskıları (dağlama — düz) */}
+      <PrCoil a={left} b={right} y={G.C_ROW_Y[0]} />
+      <PrNo a={left} b={right} y={G.C_ROW_Y[1]} />
+      <PrNo a={left} b={right} y={G.C_ROW_Y[2]} />
+      <PrNc a={left} b={right} y={G.C_ROW_Y[3]} />
+      <PrNc a={left} b={right} y={G.C_ROW_Y[4]} />
+      <PrAux a={left} b={right} y={G.C_ROW_Y[5]} />
+      <PrAux a={left} b={right} y={G.C_ROW_Y[6]} />
+      <PrAux a={left} b={right} y={G.C_ROW_Y[7]} />
+      {/* tepsi→gövde bağlantı baskısı — keskin DÜZ kanca */}
+      <path d={`M ${left + 6} ${G.C_ROW_Y[0] - 16} L ${f.x + 24} ${f.y + f.h}`} stroke={INK} strokeWidth={1.5} fill="none" strokeLinejoin="miter" />
+      <path d={`M ${right - 6} ${G.C_ROW_Y[0] - 16} L ${f.x + 66} ${f.y + f.h}`} stroke={INK} strokeWidth={1.5} fill="none" strokeLinejoin="miter" />
+      {/* gövde — KOYU taban (94×155, y737) */}
+      <rect x={f.x} y={f.y} width={f.w} height={f.h} rx={4} fill="url(#darkBody)" stroke="#23221f" strokeWidth={1.5} />
+      {/* tel dome/gri teller kaldırıldı — cihaz kablosu yok; üst gövde düz koyu kalır */}
+      {/* koyu terminal bandı (66×13, rel +55..+68) + bandın üstünde 3 pabuç elips */}
+      <rect x={f.x + 4} y={bandY} width={66} height={13} rx={1.5} fill="#191917" stroke="#0c0c0a" strokeWidth={0.8} />
+      {[14, 32, 50].map((o) => (
+        <ellipse key={o} cx={f.x + o} cy={bandY} rx={5.5} ry={2.6} fill="#31302c" stroke="#0e0e0c" strokeWidth={0.7} />
       ))}
-      {/* tepe pabuç elipsleri — kubbe kenarına gömülü */}
-      <ellipse cx={f.x + 14} cy={f.y - 43} rx={8} ry={3} fill="#23231f" />
-      <ellipse cx={f.x + 30} cy={f.y - 46} rx={9} ry={3.2} fill="#23231f" />
-      <ellipse cx={f.x + 47} cy={f.y - 43} rx={8} ry={3} fill="#23231f" />
-      {/* gövde — foto R4: KOYU gri gövde (açık yüz üstte kalır) */}
-      <rect x={f.x} y={f.y + 12} width={f.w} height={f.h - 12} rx={6} fill="url(#darkBody)" stroke="#26282c" strokeWidth={1.5} />
-      {/* foto: tepsi ortasından geçen merkezî dikey hat — bobin satırından kutu altına tüm sıraları bağlar */}
+      {/* dar (48px) bızbuz-beyaz yüz + sağ koyu perde (#41403B) — ünite-köşeleri içinde */}
+      <rect x={f.x + 1.5} y={f.y + 68} width={46} height={f.h - 70} fill="#ecebe8" stroke="#8a8a84" strokeWidth={1} />
+      <rect x={f.x + 48} y={f.y + 68} width={f.w - 49.5} height={f.h - 70} fill="#41403b" />
+      {/* yüz: siyah anahtar + IN/0 plakası + SIEMENS */}
+      <rect x={f.x + 7} y={f.y + 92} width={9} height={15} rx={1.5} fill="#1d1d20" stroke="#000" strokeWidth={0.8} />
+      <rect x={f.x + 6} y={f.y + 112} width={36} height={15} rx={2} fill="#fbfbf8" stroke="#a3a3a0" strokeWidth={0.9} />
+      <text x={f.x + 24} y={f.y + 123} textAnchor="middle" fontFamily={MS} fontSize={8} fill="#54565a">{on ? 'IN' : '0'}</text>
+      <text x={f.x + 24} y={f.y + 148} textAnchor="middle" fontFamily={MS} fontSize={7} fontWeight={700} fill="#6a6d72">SIEMENS</text>
+      {/* foto: tepsi ortasından geçen merkezî dikey hat — DÜZ */}
       <line x1={m} y1={915} x2={m} y2={1132} stroke={INK} strokeWidth={1.6} opacity={0.85} />
       {G.C_ROW_Y.map((ry) => (
         <circle key={ry} cx={m} cy={ry} r={3.2} fill="none" stroke={INK} strokeWidth={1.4} opacity={0.85} />
       ))}
-      <rect x={f.x + 3} y={f.y + 70} width={f.w - 6} height={f.h - 76} rx={3} fill="#e9e9ec" stroke="#87888d" strokeWidth={1.2} />
-      {/* siyah anahtar + plaka */}
-      <rect x={f.x + 10} y={f.y + 70 + 26} width={11} height={17} rx={2} fill="#1d1d20" stroke="#000" strokeWidth={1} />
-      <rect x={f.x + 17} y={f.y + 70 + 42} width={36} height={15} rx={2} fill="#fbfbf8" stroke="#a3a3a0" strokeWidth={0.9} />
-      <text x={f.x + 35} y={f.y + 70 + 53} textAnchor="middle" fontFamily={MS} fontSize={8} fill="#54565a">{on ? 'IN' : '0'}</text>
-      <text x={f.x + f.w / 2} y={f.y + f.h - 6} textAnchor="middle" fontFamily={MS} fontSize={9} fontWeight={700} fill="#6a6d72">SIEMENS</text>
-      {/* etiket: foto-crop doğrulandı — KOYU kalın, gövdenin alt-sağ kenarında (panelde dev gibi) */}
+      {/* kanca kablosu kaldırıldı — cihaz kablosu yok */}
+      {/* etiket: KOYU kalın, gövdenin alt-sağ kenarında */}
       <text x={f.x + 64} y={868} textAnchor="middle" fontFamily={MS} fontSize={24} fontWeight={800} fill={INK}>{k.id.toUpperCase()}</text>
-      {/* foto: sütun en altta siyah soket çifti — dekoratif, x-kutusunun altında */}
+      {/* foto: sütun en altta siyah soket çifti — dekoratif */}
       <FakeKnob x={k.trayL} y={G.C_ROW_Y[7] + 19} color={G.KNOB_COLOR.black} />
       <FakeKnob x={k.trayR} y={G.C_ROW_Y[7] + 19} color={G.KNOB_COLOR.black} />
       <title>{k.id.toUpperCase()} — kontaktör</title>
@@ -677,8 +691,9 @@ function ContactorUnit({ k, on }: { k: G.ContactorDef; on: boolean }) {
 function BoardLabels() {
   return (
     <g pointerEvents="none" fontFamily={MS} fontWeight={800} fill={INK}>
+      {/* cihaz etiketleri — foto: b etiketleri merkez x≈108, fontSize≈23 */}
       {G.BUTTONS.map((b) => (
-        <text key={b.id} x={84} y={b.y + 7} textAnchor="middle" fontSize={21}>{b.id}</text>
+        <text key={b.id} x={108} y={b.y + 8} textAnchor="middle" fontSize={23}>{b.id}</text>
       ))}
       <text x={446} y={529} textAnchor="middle" fontSize={21}>e</text>
       <text x={G.D1_TRAY.label.x} y={G.D1_TRAY.label.y} textAnchor="middle" fontSize={21}>d1</text>
@@ -696,40 +711,41 @@ function Motor({ running }: { running: boolean }) {
   const b = M.body;
   return (
     <g data-running={running ? '1' : '0'}>
-      {/* foto: gövde altının koyu silisi + ince taban */}
-      <rect x={b.x + 4} y={b.y + b.h - 2} width={b.w - 8} height={12} rx={3} fill="#5d6065" opacity={0.4} />
-      {/* mil: KISA stub + yuvarlak arka kapak diski (foto R5: 682-706 stub, 706-765 disk) */}
-      <rect x={M.shaft.x} y={M.shaft.y} width={M.shaft.w} height={M.shaft.h} rx={4} fill="#8d939a" stroke="#3a3d42" strokeWidth={1.2} />
-      <line x1={M.shaft.x + 10} y1={M.shaft.y + 3} x2={M.shaft.x + M.shaft.w - 6} y2={M.shaft.y + 3} stroke="#c2c7cc" strokeWidth={1.4} opacity={0.7} />
-      <circle cx={M.shaft.x - 2} cy={M.shaft.y + M.shaft.h / 2} r={M.shaft.h / 2 + 3} fill="#9aa0a6" stroke="#3a3d42" strokeWidth={1.2} />
-      {/* gövde — soğutma kanatçıklarını (yatay oluklar) tak */}
-      <rect x={b.x} y={b.y} width={b.w} height={b.h} rx={8} fill={`url(#motorSkin)`} stroke="#7c7f84" strokeWidth={1.6} />
-      {/* yuvarlak arka end-bell kapağı — gövdeye GÖMÜLÜ, hafif koyu (foto) */}
-      <rect x={b.x + 18} y={b.y + 50} width={70} height={150} rx={32} fill="#8f9398" fillOpacity={0.55} stroke="#6f7277" strokeWidth={1} />
-      {[1, 2, 3].map((i) => (
-        <path key={i} d={`M ${b.x + 26} ${b.y + 66 + i * 38} q 26 -7 54 0`} stroke="#77797d" strokeWidth={2} fill="none" opacity={0.5} />
-      ))}
+      <title>Motor {running ? '(çalışıyor)' : '(duruyor)'}</title>
+      {/* zemin gölgesi (cihaz kablosu yok — kablo + delik kaldırıldı) */}
+      <rect x={b.x + 10} y={b.y + b.h - 6} width={b.w - 22} height={12} rx={6} fill="#56585c" opacity={0.38} />
+      {/* gövde + yatay oluklar (plaka/fan z sırası onları örter) */}
+      <rect x={b.x} y={b.y} width={b.w} height={b.h} rx={8} fill="url(#motorSkin)" stroke="#7c7f84" strokeWidth={1.6} />
       {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-        <line key={i} x1={b.x + 8} y1={b.y + i * (b.h - 16) / 9} x2={b.x + b.w - 12} y2={b.y + i * (b.h - 16) / 9}
-          stroke={i % 2 ? '#929599' : '#85888c'} strokeWidth={2.2} opacity={0.4} />
+        <line key={i} x1={b.x + 6} x2={b.x + b.w - 6} y1={b.y + 31 + (i - 1) * 27} y2={b.y + 31 + (i - 1) * 27}
+          stroke="#828589" strokeWidth={3} opacity={0.6} />
       ))}
-      {/* köşe cıvata başları (foto: 4 hex bolt) */}
-      {[[b.x + 16, b.y + 16], [b.x + 80, b.y + 16], [b.x + 168, b.y + 16], [b.x + 236, b.y + 16], [b.x + 16, b.y + b.h - 18], [b.x + 236, b.y + b.h - 18]].map(([cx, cy], i) => (
-        <circle key={i} cx={cx} cy={cy} r={5.5} fill="#b6b9be" stroke="#6f7277" strokeWidth={1} />
+      {/* kabartma plaka (780..905 × 60..190, açık gri) + 4 köşe hex vida */}
+      <rect x={M.plate.x} y={M.plate.y} width={M.plate.w} height={M.plate.h} rx={3} fill="#c8cccf" stroke="#8b8e93" strokeWidth={1.3} />
+      {M.bolts.map(([hx, hy], i) => (
+        <polygon key={i} points={[0, 60, 120, 180, 240, 300].map((a) =>
+          `${(hx + 7.5 * Math.cos((a * Math.PI) / 180)).toFixed(1)},${(hy + 7.5 * Math.sin((a * Math.PI) / 180)).toFixed(1)}`).join(' ')}
+          fill="#7d8a99" stroke="#4c5765" strokeWidth={1} />
       ))}
-      {/* Kabartma SIEMENS — ön yüzde koyu harfler (foto R5: 765-915, ~85-120) */}
-      <text x={M.label.x} y={M.label.y} textAnchor="middle" fontFamily={MS} fontSize={22} fontWeight={800} fill="#75787d" letterSpacing={2.5} stroke="#c9ccd0" strokeWidth={0.45}>SIEMENS</text>
-      {/* sağ kapak (fan kapağı): foto R5 — ÇERÇEYE TAŞAR; dikey panjur çizgileri */}
-      <rect x={b.x + b.w - 70} y={b.y - 4} width={70} height={b.h + 10} rx={14} fill="#a9adb2" stroke="#8d9095" strokeWidth={1} />
-      {[1, 2, 3, 4, 5].map((i) => (
-        <line key={i} x1={b.x + b.w - 70 + i * 11} y1={b.y + 8} x2={b.x + b.w - 70 + i * 11} y2={b.y + b.h - 6} stroke="#7f8287" strokeWidth={2.4} opacity={0.5} />
+      {/* kabartma SIEMENS — koyu harfler + açık bevel (photo fs18 dar blok) */}
+      <text x={M.label.x} y={M.label.y} textAnchor="middle" fontFamily={MS} fontSize={18} fontWeight={800} letterSpacing={2}
+        fill="#4b4e53" stroke="#b9c0c9" strokeWidth={1.1} paintOrder="stroke">SIEMENS</text>
+      {/* yuvarlak zil diski (kapsül değil — plakanın sol-alt köşesini örter) */}
+      <circle cx={M.bell.x} cy={M.bell.y} r={M.bell.r} fill="#b9c3cf" stroke="#8b95a1" strokeWidth={2} />
+      {/* KOYU çelik mil: pu uç → mil → bevel → collar; HUB en üstte, mil ucu altına girer */}
+      <rect x={M.shaft.x} y={M.shaft.y + 2} width={18} height={28} rx={5} fill="#b6b4a8" stroke="#8f8d82" strokeWidth={1.2} />
+      <rect x={M.shaft.x + 16} y={M.shaft.y} width={M.shaft.w - 16} height={30} rx={4} fill="#383c43" stroke="#191c20" strokeWidth={1.2} />
+      <line x1={M.shaft.x + 24} y1={M.shaft.y + 6} x2={M.shaft.x + 78} y2={M.shaft.y + 6} stroke="#6b7078" strokeWidth={1.7} opacity={0.75} />
+      <rect x={M.shaft.x + 50} y={M.shaft.y - 4} width={16} height={38} rx={3} fill="#23262b" stroke="#101215" strokeWidth={1.2} />
+      <circle cx={M.hub.x} cy={M.hub.y} r={M.hub.r} fill="#596169" stroke="#3c4148" strokeWidth={1.4} />
+      {/* fan kapağı (gövdeyi ~5 taşar, rx10) + 4 dikey panjur */}
+      <rect x={M.fan.x} y={M.fan.y} width={M.fan.w} height={M.fan.h} rx={10} fill="#9dabbe" stroke="#7e8a9a" strokeWidth={1.2} />
+      {M.fan.louvers.map((lx) => (
+        <line key={lx} x1={lx} x2={lx} y1={M.fan.y + 12} y2={M.fan.y + M.fan.h - 12} stroke="#6f7a8b" strokeWidth={3} opacity={0.6} />
       ))}
-      {/* klemens kutusu gövdenin alt-solunda + çıkış kablosu (foto: BEYAZ kablo) */}
-      <rect x={M.tBox.x} y={M.tBox.y} width={M.tBox.w} height={M.tBox.h} rx={4} fill="#b6b9be" stroke="#84878c" strokeWidth={1.4} />
-      <path d={`M ${M.tBox.x + 6} ${M.tBox.y + 18} L ${M.tBox.x + M.tBox.w - 6} ${M.tBox.y + 18}`} stroke="#84878c" strokeWidth={1.2} />
-      <path d={`M ${M.tBox.x + 36} ${M.tBox.y + M.tBox.h} Q ${M.tBox.x + 20} ${M.hole.y - 40} ${M.hole.x} ${M.hole.y}`} stroke="#e9e6df" strokeWidth={6} fill="none" strokeLinecap="round" />
-      <path d={`M ${M.tBox.x + 36} ${M.tBox.y + M.tBox.h} Q ${M.tBox.x + 20} ${M.hole.y - 40} ${M.hole.x} ${M.hole.y}`} stroke="#c9c6bf" strokeWidth={2} fill="none" strokeLinecap="round" opacity={0.55} />
-      <ellipse cx={M.hole.x} cy={M.hole.y} rx={10} ry={4.5} fill="#23231f" />
+      {/* klemens kutusu (800..874 × 229..286) + lid derzi — kablo altından çıkar */}
+      <rect x={M.tBox.x} y={M.tBox.y} width={M.tBox.w} height={M.tBox.h} rx={5} fill="#bcbfc4" stroke="#84878d" strokeWidth={1.4} />
+      <line x1={M.tBox.x + 10} y1={M.tBox.y + 18} x2={M.tBox.x + M.tBox.w - 10} y2={M.tBox.y + 18} stroke="#85888d" strokeWidth={1.2} />
     </g>
   );
 }
@@ -834,31 +850,67 @@ export function Board() {
       }}
     >
       <defs>
-        <radialGradient id="motorSkin" cx="50%" cy="28%" r="75%">
-          <stop offset="0%" stopColor="#cdd0d4" />
-          <stop offset="55%" stopColor="#b2b5b9" />
-          <stop offset="100%" stopColor="#8f9297" />
+        {/* motor gövdesi: soluk LEYLAK (GetPixel #C3D3F0 kümesi) */}
+        <radialGradient id="motorSkin" cx="50%" cy="24%" r="85%">
+          <stop offset="0%" stopColor="#cdd8f2" />
+          <stop offset="55%" stopColor="#b4c1dd" />
+          <stop offset="100%" stopColor="#929ebc" />
         </radialGradient>
-        {/* foto R5: kontaktör gövdesi koyu gri (foto ağırlığına hafifçe açılmış) */}
-        <linearGradient id="darkBody" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#565a60" />
-          <stop offset="55%" stopColor="#45494e" />
-          <stop offset="100%" stopColor="#3a3d42" />
+        {/* acil-stop: hardal-mustard TEK plaka (foto #B2AD1B..#A29F06 kümesi) */}
+        <radialGradient id="emPlate" cx="45%" cy="32%" r="80%">
+          <stop offset="0%" stopColor="#c3b838" />
+          <stop offset="60%" stopColor="#aca21b" />
+          <stop offset="100%" stopColor="#7f7a12" />
+        </radialGradient>
+        {/* seçici plaka: soluk MAVİ-GRİ metal (foto #A5B8D4..#B6C5E6) */}
+        <linearGradient id="selPlate" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#b6c3d4" />
+          <stop offset="50%" stopColor="#c3cfe0" />
+          <stop offset="100%" stopColor="#a7b5c8" />
         </linearGradient>
-        <radialGradient id="panelSkin" cx="50%" cy="22%" r="115%">
-          <stop offset="0%" stopColor="#eee3bd" />
-          <stop offset="70%" stopColor="#e4d7ac" />
-          <stop offset="100%" stopColor="#d3c394" />
+        {/* buton cap gradient'leri — b1/b3 KIRMIZI (aşağı aydınlanan), b2/b4 TEAL (çapraz) */}
+        <linearGradient id="cap-b1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#8e2a34" />
+          <stop offset="46%" stopColor="#a0353f" />
+          <stop offset="100%" stopColor="#b34450" />
+        </linearGradient>
+        <linearGradient id="cap-b3" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#8e2a34" />
+          <stop offset="46%" stopColor="#a0353f" />
+          <stop offset="100%" stopColor="#b34450" />
+        </linearGradient>
+        <linearGradient id="cap-b2" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#026260" />
+          <stop offset="52%" stopColor="#006f69" />
+          <stop offset="100%" stopColor="#147d76" />
+        </linearGradient>
+        <linearGradient id="cap-b4" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#026260" />
+          <stop offset="52%" stopColor="#006f69" />
+          <stop offset="100%" stopColor="#147d76" />
+        </linearGradient>
+        {/* kontaktör gövdesi: koyu gri duvar (foto #41403B) */}
+        <linearGradient id="darkBody" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#4d4c46" />
+          <stop offset="55%" stopColor="#41403b" />
+          <stop offset="100%" stopColor="#383731" />
+        </linearGradient>
+        {/* d2: soluk MAVİ yüz (foto #8DA4C4..#98ABCB) */}
+        <linearGradient id="d2Face" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#a6b6d2" />
+          <stop offset="55%" stopColor="#93a7c8" />
+          <stop offset="100%" stopColor="#7e93b8" />
+        </linearGradient>
+        {/* tekrar-verified beige: #B4AD90..#C0BA9E */}
+        <radialGradient id="panelSkin" cx="50%" cy="24%" r="115%">
+          <stop offset="0%" stopColor="#c9c2a4" />
+          <stop offset="60%" stopColor="#bcb597" />
+          <stop offset="100%" stopColor="#a69c7b" />
         </radialGradient>
-        {/* elle çizilmiş mürekkep: hafif dağınıklık — CAD düzlüğünü kırar */}
-        <filter id="handInk" x="-6%" y="-6%" width="112%" height="112%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="7" result="n" />
-          <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
       </defs>
 
-      {/* arka plan (duvar) */}
-      <rect x={-400} y={-300} width={2200} height={2000} fill="#e9e7e2" />
+      {/* arka plan (duvar — foto: soluk MAVİ-BEYAZ #BCCDE9) */}
+      <rect x={-400} y={-300} width={2200} height={2000} fill="#bccce9" />
 
       {/* pano gölgesi + çerçeve + yüzey */}
       <rect x={G.FRAME.x + 6} y={G.FRAME.y + 10} width={G.FRAME.w} height={G.FRAME.h} rx={10} fill="rgba(0,0,0,0.18)" />
@@ -883,12 +935,16 @@ export function Board() {
             [G.PANEL.x + 18, G.PANEL.y + G.PANEL.h - 16], [G.PANEL.x + G.PANEL.w - 18, G.PANEL.y + G.PANEL.h - 16],
           ].map(([sx, sy]) => <circle key={`${sx}-${sy}`} cx={sx} cy={sy} r={3.4} />)}
         </g>
-        {/* kurşun kalem notları: C2-C3 arası rakamlar + b4 üstü işaret */}
+        {/* kurşun kalem notları: C2-C3 arası rakamlar */}
         <g fill="#8b8172" opacity={0.65} fontStyle="italic">
           <text x={517} y={1006} fontFamily={MS} fontSize={11}>44</text>
           <text x={524} y={1032} fontFamily={MS} fontSize={10}>9</text>
-          <text x={122} y={622} fontFamily={MS} fontSize={11}>11</text>
-          <path d="M 100 612 Q 108 606 116 613" stroke="#8b8172" strokeWidth={1.2} fill="none" opacity={0.65} />
+        </g>
+        {/* b3–b4 arası kurşun garabeti (foto local x128..165 / y604..630) — kalem izi, elle bırakılır */}
+        <g stroke="#8f8776" strokeWidth={1.4} fill="none" opacity={0.55} strokeLinecap="round">
+          <path d="M 132 608 q 8 -6 14 1 q 6 7 12 0 q 5 -6 10 2" />
+          <path d="M 136 618 q 10 -5 17 2 q 7 6 11 -1" />
+          <path d="M 131 626 h 26" />
         </g>
       </g>
 
@@ -900,14 +956,14 @@ export function Board() {
 
       {/* cihaz gövdeleri (kabloların altında) — baskı katmanı elle-çizilmiş mürekkep */}
       <EUnit sim={sim} />
-      <g filter="url(#handInk)"><ETrayPrints /></g>
+      <ETrayPrints />
       <D1Unit />
-      <g filter="url(#handInk)"><D1TrayPrints /></g>
+      <D1TrayPrints />
       {G.BUTTONS.map((b) => <ButtonUnit key={b.id} b={b} pressed={st.pressed[b.id as 'b1']} />)}
       {/* kontaktörler d2 tepsi katmanından ÖNCE: c4 kubbesi d2 baskılarının altında kalsın */}
       {G.CONTACTORS.map((k) => <ContactorUnit key={k.id} k={k} on={sim?.dev.contactors[k.id as 'c1'] === true} />)}
       <D2Unit sim={sim} />
-      <g filter="url(#handInk)"><D2TrayPrints /></g>
+      <D2TrayPrints />
 
       {/* kablolar */}
       <Cables cables={st.cables} />
