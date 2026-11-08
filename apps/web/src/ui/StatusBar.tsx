@@ -1,71 +1,193 @@
-// Durum çubuğu — lambalar, röleler, motor ve uyarılar
-
 import { A, useStore } from '../store';
 import type { ZrConf } from '../store';
 import type { SimOutput } from '../sim/model';
+import { IconAlert, IconRefresh } from './Icons';
 
-function Dot({ on, color, title }: { on: boolean; color: string; title: string }) {
-  return <span className={`dot ${on ? 'on' : ''}`} style={{ '--c': color } as React.CSSProperties} title={title} />;
+interface LedProps {
+  on: boolean;
+  color: string;
+  label: string;
+  title: string;
 }
 
-function chips(sim: SimOutput | null, zr: ZrConf): React.ReactNode[] {
-  if (!sim) return [];
-  const out: React.ReactNode[] = [];
+function HardwareLed({ on, color, label, title }: LedProps) {
+  return (
+    <div className={`hardwareLed ${on ? 'on' : ''}`} title={title}>
+      <span className="ledPip" style={{ '--led-color': color } as React.CSSProperties} />
+      <span className="ledLabel">{label}</span>
+    </div>
+  );
+}
+
+function renderTelemetry(sim: SimOutput | null, zr: ZrConf) {
+  if (!sim) return null;
+  const pills: React.ReactNode[] = [];
+
+  // 1. Motor Telemetrisi
   if (sim.motor.running) {
-    out.push(<span key="m" className="chip ok">Motor: çalışıyor ({sim.motor.dir === 1 ? 'ileri' : 'geri'})</span>);
+    pills.push(
+      <div key="motor" className="telemetryPill success">
+        <span className="pulseDot" />
+        <span>Motor: Çalışıyor ({sim.motor.dir === 1 ? 'İleri' : 'Geri'})</span>
+      </div>
+    );
   } else if (sim.motor.overCurrent) {
-    out.push(<span key="m" className="chip warn">Motor uğuluyor ({sim.motor.stallTripDelayMs <= 2500 ? 'faz-faz hatası' : 'dönüş yolu: faz-nötr'}) — termik yakında atacak</span>);
+    pills.push(
+      <div key="motor" className="telemetryPill warning">
+        <span className="pulseDot warning" />
+        <span>Motor Uğultu (Aşırı Akım) — Termik Yakında Atacak</span>
+      </div>
+    );
   } else if (sim.motor.missingPhase) {
-    out.push(<span key="m" className="chip warn">Motor: faz eksik</span>);
+    pills.push(
+      <div key="motor" className="telemetryPill warning">
+        <span>Motor: Faz Eksik</span>
+      </div>
+    );
   } else {
-    out.push(<span key="m" className="chip">Motor: durdu</span>);
+    pills.push(
+      <div key="motor" className="telemetryPill neutral">
+        <span>Motor: Durdu</span>
+      </div>
+    );
   }
-  const kOn = [sim.dev.contactors.c1, sim.dev.contactors.c2, sim.dev.contactors.c3, sim.dev.contactors.c4];
-  kOn.forEach((on, i) => {
-    if (on) out.push(<span key={`k${i}`} className="chip ok">K{i + 1} çekili</span>);
+
+  // 2. Kontaktörler (K1, K2, K3, K4)
+  const contactors = [
+    sim.dev.contactors.c1,
+    sim.dev.contactors.c2,
+    sim.dev.contactors.c3,
+    sim.dev.contactors.c4,
+  ];
+  contactors.forEach((active, index) => {
+    if (active) {
+      pills.push(
+        <div key={`k${index}`} className="telemetryPill success">
+          <span>K{index + 1} Çekili</span>
+        </div>
+      );
+    }
   });
-  if (sim.dev.d1) out.push(<span key="d1" className="chip ok">d1 çekişti</span>);
-  if (sim.dev.zr.energized) {
-    out.push(zr.mode === 'ters'
-      ? <span key="zr" className="chip">ZR çekili (ters) — bırakınca {(zr.delayMs / 1000).toFixed(1)} sn tutar</span>
-      : sim.dev.zr.closed
-        ? <span key="zr" className="chip ok">ZR çekili (gecikme doldu)</span>
-        : <span key="zr" className="chip">ZR sayıyor: {(sim.dev.zr.elapsed / 1000).toFixed(1)} sn</span>);
-  } else if (sim.dev.zr.closed) {
-    out.push(<span key="zrh" className="chip">ZR tutuyor: kalan {(sim.dev.zr.elapsed / 1000).toFixed(1)} sn</span>);
+
+  // 3. d1 Yardımcı Rölesi
+  if (sim.dev.d1) {
+    pills.push(
+      <div key="d1" className="telemetryPill success">
+        <span>d1 Röle Çekili</span>
+      </div>
+    );
   }
-  if (!sim.dev.termik.armed) out.push(<span key="tr" className="chip warn">Termik attı</span>);
-  if (sim.unstable) out.push(<span key="uns" className="chip warn">Kontaktör çakıyor — devre salınıyor</span>);
-  return out;
+
+  // 4. Zaman Rölesi (ZR)
+  if (sim.dev.zr.energized) {
+    pills.push(
+      <div key="zr" className="telemetryPill info">
+        {zr.mode === 'ters'
+          ? `ZR Çekili (Ters) — Bırakınca ${(zr.delayMs / 1000).toFixed(1)} sn`
+          : sim.dev.zr.closed
+            ? 'ZR Çekili (Gecikme Doldu)'
+            : `ZR Sayıyor: ${(sim.dev.zr.elapsed / 1000).toFixed(1)} sn`}
+      </div>
+    );
+  } else if (sim.dev.zr.closed) {
+    pills.push(
+      <div key="zrh" className="telemetryPill info">
+        <span>ZR Tutuyor: Kalan {(sim.dev.zr.elapsed / 1000).toFixed(1)} sn</span>
+      </div>
+    );
+  }
+
+  // 5. Termik Durumu
+  if (!sim.dev.termik.armed) {
+    pills.push(
+      <div key="termik" className="telemetryPill danger">
+        <IconAlert style={{ width: 13, height: 13, marginRight: 4 }} />
+        <span>Termik Attı</span>
+      </div>
+    );
+  }
+
+  // 6. Titreşim / Salınım
+  if (sim.unstable) {
+    pills.push(
+      <div key="unstable" className="telemetryPill warning">
+        <span>Devre Salınıyor (Kontaktör Çakıyor)</span>
+      </div>
+    );
+  }
+
+  return pills;
 }
 
 export function StatusBar() {
   const st = useStore();
   const sim = st.sim;
   const shorted = sim?.shorts ?? [];
+
+  // Durum Rehberi (İmleç ve Etkileşim İpucu)
+  let guideText: React.ReactNode;
+  if (st.mode === 'kablo' && st.selCable) {
+    guideText = <span><b>Kablo Seçili</b> · [Del] ile sil, [Esc] seçimi kaldır</span>;
+  } else if (st.mode === 'kablo' && st.selTerminal) {
+    guideText = <span><b>Hedef Uca Tıklayın</b> · (Shift + Tık: zincirleme çekim)</span>;
+  } else if (st.mode === 'sil') {
+    guideText = <span><b>Silme Modu</b> · Kaldırmak istediğiniz kabloya tıklayın</span>;
+  } else if (st.mode === 'hareket') {
+    guideText = <span><b>Taşıma Modu</b> · Boşluğu sürükleyin, tekerlekle yakınlaştırın</span>;
+  } else {
+    guideText = <span><b>Hazır</b> · Kablo çekmek için terminallere tıklayın</span>;
+  }
+
   return (
-    <footer className="status">
-      <div className="sLeft">
-        <Dot on={sim?.lamps.red === true} color="#e74c3c" title="L1 indikatör" />
-        <Dot on={sim?.lamps.green === true} color="#2ecc71" title="L2 indikatör" />
-        <Dot on={sim?.lamps.yellow === true} color="#f1c40f" title="L3 indikatör" />
-        <Dot on={sim?.lamps.ctrl === true} color="#e67e22" title="Rc (kumanda faz)" />
-        <Dot on={sim?.lamps.white === true} color="#ecf0f1" title="Besleme (beyaz lamba 5)" />
-        <Dot on={sim?.ext.yellow === true} color="#f1c40f" title="Harici sarı" />
-        <Dot on={sim?.ext.red === true} color="#e74c3c" title="Harici kırmızı" />
-        <Dot on={sim?.ext.green === true} color="#2ecc71" title="Harici yeşil" />
+    <footer className="appStatusBar" role="contentinfo">
+      {/* Sol: Şebeke ve Sinyal Lambaları LED Dizisi */}
+      <div className="statusSection left">
+        <div className="ledBankGroup" title="3-Fazlı Ana Besleme ve Kumanda Fazı">
+          <HardwareLed on={sim?.lamps.red === true} color="#ff3b30" label="L1" title="L1 Fazı (Kırmızı Lamba)" />
+          <HardwareLed on={sim?.lamps.green === true} color="#34c759" label="L2" title="L2 Fazı (Yeşil Lamba)" />
+          <HardwareLed on={sim?.lamps.yellow === true} color="#ffcc00" label="L3" title="L3 Fazı (Sarı Lamba)" />
+          <HardwareLed on={sim?.lamps.ctrl === true} color="#ff9500" label="Rc" title="Rc Kumanda Fazı" />
+          <HardwareLed on={sim?.lamps.white === true} color="#f2f2f7" label="N" title="Nötr / Besleme Tam" />
+        </div>
+
+        <span className="statusDivider" aria-hidden="true" />
+
+        <div className="ledBankGroup" title="Harici Sinyal Lambaları">
+          <HardwareLed on={sim?.ext.yellow === true} color="#ffcc00" label="Hs" title="Harici Sarı Sinyal Lambası" />
+          <HardwareLed on={sim?.ext.red === true} color="#ff3b30" label="Hk" title="Harici Kırmızı Sinyal Lambası" />
+          <HardwareLed on={sim?.ext.green === true} color="#34c759" label="Hy" title="Harici Yeşil Sinyal Lambası" />
+        </div>
       </div>
-      <div className="sMid">
-        {chips(sim, st.zr)}
-        {shorted.length > 0 && (
-          <span className="chip warn big">
-            Kısa devre! ({shorted.length} uç) — termik attı, kumanda devresi koptu. Kabloları düzelt, sonra sıfırla.
-            <button className="linkBtn" onClick={() => A.termikArm()}>Sıfırla</button>
-          </span>
+
+      {/* Orta: Telemetri Rozetleri ve Kısa Devre Uyarısı */}
+      <div className="statusSection center" aria-live="polite">
+        {shorted.length > 0 ? (
+          <div className="shortCircuitAlert">
+            <IconAlert className="alertIcon" />
+            <span className="alertMsg">
+              Kısa Devre Algılandı! ({shorted.length} Terminal) — Termik attı, kumanda koptu.
+            </span>
+            <button
+              type="button"
+              className="alertResetBtn"
+              onClick={() => A.termikArm()}
+            >
+              <IconRefresh style={{ width: 12, height: 12, marginRight: 4 }} />
+              <span>Sıfırla</span>
+            </button>
+          </div>
+        ) : (
+          <div className="telemetryList">
+            {renderTelemetry(sim, st.zr)}
+          </div>
         )}
       </div>
-      <div className="sRight">
-        {st.mode === 'kablo' && st.selTerminal ? 'İkinci ucu seç…' : `Mod: ${st.mode}`}
+
+      {/* Sağ: İpucu / Rehber Metni */}
+      <div className="statusSection right">
+        <div className="guidanceBadge">
+          {guideText}
+        </div>
       </div>
     </footer>
   );
