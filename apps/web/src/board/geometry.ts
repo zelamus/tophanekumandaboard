@@ -1,209 +1,168 @@
-// Pano geometrisi — fotoğraftan ölçülen koordinatlar.
+// Pano geometrisi — "Siemens motor control training board" SVG sanatının
+// koordinat sistemi kullanılır (sanat viewBox: 40 385 1070 1180).
 //
-// Kaynak fotoğraf: 1125×2000 px. Yerel koordinat = foto − (60, 345).
-// SVG viewBox: "0 0 1180 1270".
-//   • Pano koyu çerçevesi : (8, 55) – (1022, 1215)
-//   • Bej pano yüzeyi     : (70, 65) – (939, 1153)
-//   • Harici sinyal lambası panonun sağında (x 1030–1170) — pano görselini
-//     BOZMAZ, öğrenci kablolarıyla beslenir.
-//
-// Soket (uç) kimlikleri kilitli listedir; sim motoru ve prefabrik devreler bu
-// kimlikleri kullanır:
+// Soket (uç) kimlikleri KİLİTLİ listedir; sim motoru, prefabrik devreler ve
+// kayıtlar bu kimlikleri kullanır (yerler yeni panoya eşlendi, kimlikler aynı):
 //   sup.R/S/T/Rc/X/U/V/W/Mp/X2 · bK.c1/c2/nc/no · e.tn.a/b · e.tc.a/b ·
 //   e.m1..m3.a/b · d1.a1/a2/com/nc/no · d2.no.a/b · d2.a1/a2 ·
 //   d2.c1.c1/c2.com/nc/no · cK.a1/a2 · cK.m1/m2.a/b · cK.k1/k2.a/b ·
 //   cK.x1/x2/x3.a/b · ext.fazY/fazR/fazG/gnd
+//
+// Sanattaki düğ (soket) #j sembolü dış halka r12'dir; interaktif düğler bunu
+// tamamen örtecek R_KNOB yarıçapı kullanır.
 
-export const VIEWBOX = '0 0 1180 1270';
+export const VIEWBOX = '40 385 1070 1180';
 
 export interface Rect { x: number; y: number; w: number; h: number; }
 
-/** Pano çerçevesi (koyu) ile bej yüzey */
-export const FRAME: Rect = { x: 50, y: 40, w: 911, h: 1158 };
-export const PANEL: Rect = { x: 70, y: 65, w: 869, h: 1088 };
+/** Pano koyu çerçevesi (sol/right şeritler sanat JSX'te birebir port edilmez) */
+export const FRAME: Rect = { x: 55, y: 397, w: 1042, h: 1148 };
+export const PANEL: Rect = { x: 118, y: 402, w: 904, h: 1098 };
 
-/** Yuvarlak düğ (soket) yarıçapları */
-export const R_KNOB = 10.5;      // ray / tepsi soketleri
-export const R_BTN_SOCKET = 8.5; // buton yuvaları
-export const R_MINI = 8;         // d1 / d2 küçük soketler
+/** Yuvarlak düğ (soket) yarıçapı — sanat #j dış halkasını örter */
+export const R_KNOB = 10.2;
 
-/** Plastik düğ renkleri (fotoğraftaki soketler) */
+/** Plastik düğ renkleri (sanat soket renkleri) */
 export const KNOB_COLOR = {
-  black: '#1c1c20',
-  red: '#b23a30',
-  yellow: '#d9a51e',
-  blue: '#2a5fa8',
+  black: '#1b1b1b',
+  red: '#c4202a',
+  yellow: '#e9a912',
+  blue: '#2d72d9',
 } as const;
 
-/** Gövde / baskı renkleri */
-export const INK = '#2b2419';        // baskı mürekkebi
-export const PANEL_COLOR = '#e6d59f';
-export const PANEL_EDGE = '#b9a776';
-export const FRAME_COLOR = '#26201a';
-
 /* ================================================================
-  üst blok: acilstop, seçici, iki uç sırası, lambalar, kesici yuvası
+   üst blok: lambalar, kesici, e ünitesi düğmeleri, d2 ekranı
    ================================================================ */
 
-/** Acil stop düğmesi (süs — pano görseli) */
-export const EMERGENCY = {
-  plate: { x: 112, y: 70, w: 96, h: 96 },   // GetPixel adj7: hardal plaka merkez ~(160,118) r~48
-  dome:   { x: 161, y: 110, r: 32 },        // kırmızı dome ~r32 (foto local 130..185)
-};
-
-/** 0/1 seçici anahtar (süs) */
-export const SELECTOR = {
-  plate: { x: 246, y: 98, w: 62, h: 85 },  // GetPixel: plaka üst ~y98, alt ~y183; yüz SOLUK MAVİ-GRİ
-  knob: { x: 271, y: 153, r: 17.5 },       // adj8 selKnob2: koyu kütle local x254..288 y134..172; kol AŞAĞI
-};
-
-/** Kesici yuvası (girinti) — 3P motor + 1P kumanda kesici */
-export const RECESS: Rect = { x: 102, y: 206, w: 124, h: 68 };
-
-/** Okul yazısı konumu */
-export const SCHOOL = { cx: 214, y: 331, lineH: 19.5 }; // adj8: ink satırları y318..332/338..352, ORTA hizalı x≈214
-
-/** Sinyal lambaları (1–5) — y: 152, çap ≈ 38 */
+/** Sinyal lambaları (1–5) — sanat y: 499, r: 27 */
 export interface LampDef { x: number; color: string; key: 'red' | 'green' | 'yellow' | 'ctrl' | 'white'; }
-export const LAMP_Y = 152;
-export const LAMP_R = 19;
+export const LAMP_Y = 499;
+export const LAMP_R = 27;
 export const LAMPS: LampDef[] = [
-  { x: 361.5, color: '#A82C37', key: 'red' },   // GetPixel R5: OFF lens renkleri (doygun)
-  { x: 417.5, color: '#00A44D', key: 'green' },
-  { x: 472,   color: '#D59929', key: 'yellow' },
-  { x: 527,   color: '#AE3441', key: 'ctrl' },
-  { x: 582,   color: '#B2C6EB', key: 'white' },
+  { x: 420, color: '#d9141c', key: 'red' },
+  { x: 476, color: '#17b34a', key: 'green' },
+  { x: 532, color: '#f0a21a', key: 'yellow' },
+  { x: 588, color: '#d9141c', key: 'ctrl' },
+  { x: 644, color: '#f2f2f2', key: 'white' },
 ];
 
-/* ---------------- terminal (banjo) soket sıraları ---------------- */
+/** Kesici yuvası (sanat 165..283 × 556..632): 3P motor + 1P kumanda */
+export const BREAKER = {
+  housing: { x: 165, y: 556, w: 118, h: 76 },
+  inner: { x: 168, y: 559, w: 112, h: 70 },
+  colX: [173, 199, 225, 251],   // 0..2 = F3 (motor, 3P); 3 = F1 (kumanda, 1P)
+  colY: 563, colW: 24, colH: 58,
+  leverInset: 3.5, leverW: 17, leverH: 42,
+  yOn: 564, yOff: 579,
+};
+
+/** e (termik röle) kırmızı Test/sıfırlama düğmesi — tıklanır */
+export const E_RESET = { x: 481, y: 759, w: 11.5, h: 11.5 };
+
+/** d2 ZR göstergesi — canlı 7 segment değeri buraya çizilir */
+export const D2_UNIT = {
+  body: { x: 836, y: 712, w: 76, h: 136 },
+  lcd: { x: 848, y: 776.5, w: 52, h: 16.5 },
+};
+
+/* ================================================================
+   terminal (soket) tanımları
+   ================================================================ */
 
 export interface SocketDef {
   id: string;
   x: number;
   y: number;
   color: string;
-  label?: string;      // basılı etiket metni
-  glyph?: 'lamp';      // lamba simgesi (ⓧ)
-  r?: number;          // özel yarıçap
+  r?: number;
 }
 
-const termCol = [361.5, 417.5, 472, 527, 582];
+/* ---------------- üst uç sıraları (besleme / motor / nötr) ---------------- */
 
-/** 1. uç sırası (y: 225) — üstten besleme */
+const TOP_Y = 569, BOT_Y = 631;
+const Lx = { a: 420, b: 476, c: 532, d: 588, lamp: 644 };
+
 export const TERMINALS_TOP: SocketDef[] = [
-  { id: 'sup.R',  x: termCol[0], y: 225, color: KNOB_COLOR.black,  label: 'R' },
-  { id: 'sup.S',  x: termCol[1], y: 225, color: KNOB_COLOR.red,    label: 'S' },
-  { id: 'sup.T',  x: termCol[2], y: 225, color: KNOB_COLOR.yellow, label: 'T' },
-  { id: 'sup.Rc', x: termCol[3], y: 225, color: KNOB_COLOR.red,    label: 'R' },   // gerçek kartta ikinci R (kırmızı soket)
-  { id: 'sup.X',  x: termCol[4], y: 225, color: KNOB_COLOR.black,  glyph: 'lamp' },
+  { id: 'sup.R',  x: Lx.a,    y: TOP_Y, color: KNOB_COLOR.black },
+  { id: 'sup.S',  x: Lx.b,    y: TOP_Y, color: KNOB_COLOR.red },
+  { id: 'sup.T',  x: Lx.c,    y: TOP_Y, color: KNOB_COLOR.yellow },
+  { id: 'sup.Rc', x: Lx.d,    y: TOP_Y, color: KNOB_COLOR.black },
+  { id: 'sup.X',  x: Lx.lamp, y: TOP_Y, color: KNOB_COLOR.black },  // sanatta ⊗ baskısı (644,601)
 ];
 
-/** 2. uç sırası (y: 285) — motor / nötr */
 export const TERMINALS_BOT: SocketDef[] = [
-  { id: 'sup.U',  x: termCol[0], y: 285, color: KNOB_COLOR.yellow, label: 'U' },
-  { id: 'sup.V',  x: termCol[1], y: 285, color: KNOB_COLOR.yellow, label: 'V' },
-  { id: 'sup.W',  x: termCol[2], y: 285, color: KNOB_COLOR.yellow, label: 'W' },
-  { id: 'sup.Mp', x: termCol[3], y: 285, color: KNOB_COLOR.blue,   label: 'Mp' },
-  { id: 'sup.X2', x: termCol[4], y: 285, color: KNOB_COLOR.black },                // sim bağlantı ucu — gerçek kartta lamba simgesi yalnız üst sıra ucunda
+  { id: 'sup.U',  x: Lx.a,    y: BOT_Y, color: KNOB_COLOR.yellow },
+  { id: 'sup.V',  x: Lx.b,    y: BOT_Y, color: KNOB_COLOR.yellow },
+  { id: 'sup.W',  x: Lx.c,    y: BOT_Y, color: KNOB_COLOR.yellow },
+  { id: 'sup.Mp', x: Lx.d,    y: BOT_Y, color: KNOB_COLOR.blue },
+  { id: 'sup.X2', x: Lx.lamp, y: BOT_Y, color: KNOB_COLOR.black },
 ];
 
-/* ---------------- e (termik röle) ---------------- */
+/* ---------------- e (termik röle) tepsi: [tn, tc, m1, m2, m3] ---------------- */
 
-export const E_UNIT = {
-  body: { x: 382, y: 372, w: 74, h: 130 },    // GetPixel: gövde (382..456) × (372..502); üst band koyu y372..400
-  face: { x: 387, y: 403, w: 66, h: 44 },     // soluk MAVİ-GRİ etiket yüzü (#c3cfdd, adj8 eBtnRow)
-  topDial: { x: 403, y: 419, r: 10 },         // ayar kadranı — foto: YÜZÜN SOLUNDA halka + kırmızı iğne
-  reset: { x: 420, y: 429, r: 5.5 },          // kırmızı sıfırlama (tıklanır) — mavi ile aynı sırada
-  blueK: { x: 441, y: 431, r: 5 },            // koyu MAVİ düğme (süs) — #2d5b99 ailesi
-};
+const E_COLS = [418, 540];
+const E_ROWS = [
+  { id: 'tn', y: 896,  knob: KNOB_COLOR.black },
+  { id: 'tc', y: 925,  knob: KNOB_COLOR.red },
+  { id: 'm1', y: 955,  knob: KNOB_COLOR.yellow },
+  { id: 'm2', y: 988,  knob: KNOB_COLOR.yellow },
+  { id: 'm3', y: 1021, knob: KNOB_COLOR.yellow },
+] as const;
 
-/** e tepsi: sütunlar sabit, 5 sıra — [tn, tc, m1, m2, m3] */
-export interface TrayRow { id: string; y: number; knob: string; kind: 'ncOpen' | 'ncT' | 'bridge' | 'coil' | 'no' | 'nc' | 'auxBox' | 'spdt' | 'timed' | 'coilZR'; }
-export const E_TRAY = {
-  cols: [356, 480],
-  rows: [
-    { id: 'tn', y: 551, knob: KNOB_COLOR.black,  kind: 'ncOpen' },
-    { id: 'tc', y: 583, knob: KNOB_COLOR.red,    kind: 'ncT' },
-    { id: 'm1', y: 613, knob: KNOB_COLOR.yellow, kind: 'bridge' },
-    { id: 'm2', y: 644, knob: KNOB_COLOR.yellow, kind: 'bridge' },
-    { id: 'm3', y: 675, knob: KNOB_COLOR.yellow, kind: 'bridge' },
-  ] as TrayRow[],
-  /** Büyük termik kutu baskısı — foto R4: yalnız 3 sarı sırayı sarar (üst ~598, alt ~702) */
-  box: { x: 360, y: 598, w: 126, h: 104 },
-};
-
-export function eSockets(): SocketDef[] {
+function eSockets(): SocketDef[] {
   const out: SocketDef[] = [];
-  for (const row of E_TRAY.rows) {
-    out.push({ id: `e.${row.id}.a`, x: E_TRAY.cols[0], y: row.y, color: row.knob, r: R_KNOB });
-    out.push({ id: `e.${row.id}.b`, x: E_TRAY.cols[1], y: row.y, color: row.knob, r: R_KNOB });
+  for (const row of E_ROWS) {
+    out.push({ id: `e.${row.id}.a`, x: E_COLS[0], y: row.y, color: row.knob });
+    out.push({ id: `e.${row.id}.b`, x: E_COLS[1], y: row.y, color: row.knob });
   }
   return out;
 }
 
-/* ---------------- d1 (takma röle) ---------------- */
+/* ---------------- d1 (takma röle): sarı bobin çifti + nc/com/no ---------------- */
 
-export const D1_UNIT = {
-  body: { x: 596, y: 364, w: 58, h: 144 },  // GetPixel: düz dar gövde (596..654) × (364..508); tel gümüşleri üstte (612..640)
-  cableStub: { x: 626, y: 348 },            // tel gümüşlerinin tepe noktası
-};
+const D1_SOCKS: SocketDef[] = [
+  { id: 'd1.a1',  x: 617, y: 925, color: KNOB_COLOR.yellow },
+  { id: 'd1.a2',  x: 735, y: 925, color: KNOB_COLOR.yellow },
+  { id: 'd1.nc',  x: 617, y: 988, color: KNOB_COLOR.red },
+  { id: 'd1.com', x: 676, y: 988, color: KNOB_COLOR.blue },
+  { id: 'd1.no',  x: 735, y: 988, color: KNOB_COLOR.black },
+];
 
-export const D1_TRAY = {
-  coil: { a: { x: 558, y: 580, id: 'd1.a1' }, b: { x: 676, y: 582, id: 'd1.a2' }, knob: KNOB_COLOR.yellow },
-  spdt: { y: 644, nc: { x: 556.5, y: 645, id: 'd1.nc' }, com: { x: 612, y: 642, id: 'd1.com' }, no: { x: 666, y: 643, id: 'd1.no' } },
-  comColor: KNOB_COLOR.blue,
-  ncColor: KNOB_COLOR.red,
-  noColor: KNOB_COLOR.black, // foto R5 piksel-örnekleme: nc KIRMIZI - com MAVİ - no SİYAH (eski kırmızı-mavi-kırmızı okuması hatalıydı)
-  label: { x: 688, y: 529 }, // foto R5: ortak etiket bandı y≈529
-};
+/* ---------------- d2 (zaman rölesi ZR): NO çifti, bobin çifti, 2 temas sırası ---------------- */
 
-/* ---------------- d2 (zaman rölesi ZR) ---------------- */
+const D2_ROW_Y = { c1: 988, c2: 1048 };
+const D2_ROW_X = { nc: 808, com: 874, no: 940 };
 
-export const D2_UNIT = {
-  // adj8 d2Wide: dar gövde — soluk MAVİ yüz ~local 810..850, üst gri kapak y≈388,
-  // LCD koyu bezel y≈404..433 (kırmızı segment foto'da GÖRÜNÜR), tuş takımı y≈493..502,
-  // alt koyu terminal bandı ~x795..843 y≈505..520
-  body: { x: 808, y: 390, w: 42, h: 118 },  // yüz kutusu (soluk mavi)
-  capT: { x: 802, y: 386, w: 54, h: 12 },   // üst gri terminal kapağı (gövdeden geniş)
-  lcd: { x: 813, y: 404, w: 36, h: 30 },    // bezel koyu, kırmızı 7-seg içerde
-  btnY: 496,                                // 4 koyu tuş merkezi y; x 818/827/836/845
-  bandB: { x: 796, y: 508, w: 50, h: 13 },  // alt koyu terminal bandı
-  cableStub: { x: 802, y: 316 },            // gövde sol-üstünden yükselen siyah kablo
-};
-
-export const D2_TRAY = {
-  timed:   { a: { x: 752, y: 552, id: 'd2.no.a' }, b: { x: 870, y: 552, id: 'd2.no.b' }, knob: KNOB_COLOR.black },
-  coil:    { a: { x: 752, y: 581, id: 'd2.a1' },  b: { x: 880, y: 582, id: 'd2.a2' },  knob: KNOB_COLOR.yellow },
-  zrBox:   { x: 800, y: 600, w: 42, h: 20 }, // "ZR" yazılı kutu baskısı
-  rows: [
-    { y: 644, prefix: 'c1' },
-    { y: 705, prefix: 'c2' },
-  ],
-  rowX: { nc: 746, com: 810, no: 869 },
-  label: { x: 863, y: 529 }, // foto R5: etiket bandı e/d1/d2 ortak y≈525-529
-};
+const D2_SOCKS: SocketDef[] = [
+  { id: 'd2.no.a', x: 808, y: 896, color: KNOB_COLOR.black },
+  { id: 'd2.no.b', x: 940, y: 896, color: KNOB_COLOR.black },
+  { id: 'd2.a1',   x: 808, y: 925, color: KNOB_COLOR.yellow },
+  { id: 'd2.a2',   x: 940, y: 925, color: KNOB_COLOR.yellow },
+  ...(['c1', 'c2'] as const).flatMap((n) => [
+    { id: `d2.${n}.nc`,  x: D2_ROW_X.nc,  y: D2_ROW_Y[n], color: KNOB_COLOR.red },
+    { id: `d2.${n}.com`, x: D2_ROW_X.com, y: D2_ROW_Y[n], color: KNOB_COLOR.blue },
+    { id: `d2.${n}.no`,  x: D2_ROW_X.no,  y: D2_ROW_Y[n], color: KNOB_COLOR.black },
+  ]),
+];
 
 /* ---------------- butonlar b1–b4 ---------------- */
 
-export interface ButtonDef { id: string; x: number; y: number; color: 'red' | 'teal'; }
+export interface ButtonDef { id: string; y: number; color: string; }
+export const BTN_POS = { cap: 217, red: 277, black: 340, label: 157, lever: 26 };
+
 export const BUTTONS: ButtonDef[] = [
-  { id: 'b1', x: 154, y: 399, color: 'red' },
-  { id: 'b2', x: 155, y: 488, color: 'teal' },
-  { id: 'b3', x: 158, y: 570, color: 'red' },
-  { id: 'b4', x: 157, y: 655, color: 'teal' },
+  { id: 'b1', y: 745,  color: '#d9141c' },
+  { id: 'b2', y: 830,  color: '#1f9a77' },
+  { id: 'b3', y: 915,  color: '#d9141c' },
+  { id: 'b4', y: 1000, color: '#1f9a77' },
 ];
 
-/** Yuva sütunları: kırmızı ortak çifti (x 220) + siyah nc/no (x 281.5) */
-export const BTN_COL = { red: 220, black: 281.5, dy: 28 };
-
 export function buttonSockets(b: ButtonDef): SocketDef[] {
-  const r = R_BTN_SOCKET;
-  const blackSocket: SocketDef = { id: `${b.id}.nc`, x: BTN_COL.black, y: b.y - BTN_COL.dy, color: KNOB_COLOR.black, r };
   return [
-    { id: `${b.id}.c1`, x: BTN_COL.red,  y: b.y - BTN_COL.dy, color: KNOB_COLOR.red,   r },
-    { id: `${b.id}.c2`, x: BTN_COL.red,  y: b.y + BTN_COL.dy, color: KNOB_COLOR.red,   r },
-    blackSocket,
-    { id: `${b.id}.no`, x: BTN_COL.black, y: b.y + BTN_COL.dy, color: KNOB_COLOR.black, r },
+    { id: `${b.id}.c1`, x: BTN_POS.red,   y: b.y - BTN_POS.lever, color: KNOB_COLOR.red },
+    { id: `${b.id}.c2`, x: BTN_POS.red,   y: b.y + BTN_POS.lever, color: KNOB_COLOR.red },
+    { id: `${b.id}.nc`, x: BTN_POS.black, y: b.y - BTN_POS.lever, color: KNOB_COLOR.black },
+    { id: `${b.id}.no`, x: BTN_POS.black, y: b.y + BTN_POS.lever, color: KNOB_COLOR.black },
   ];
 }
 
@@ -211,76 +170,57 @@ export function buttonSockets(b: ButtonDef): SocketDef[] {
 
 export interface ContactorDef {
   id: string;
-  trayL: number; trayR: number;   // tepsi sütunları
-  front: Rect;                    // gövde (ön yüz)
+  /** sanat #ct gövde use x (y sabit 1103) */
+  use: number;
+  /** tepsi sütunları (#col use x; sütunlar x ve x+120) */
+  trayL: number; trayR: number;
+  /** C# etiket x (y 1230) */
+  labelX: number;
 }
 
-const FRONT_H = 155;
 export const CONTACTORS: ContactorDef[] = [
-  // foto: gövde sütunlar arasında değil — sol sütun +38'den sağ sütun +8'e uzanır (sağa yapışık)
-  { id: 'c1', trayL: 156, trayR: 281, front: { x: 194, y: 737, w: 94, h: FRONT_H } },
-  { id: 'c2', trayL: 358, trayR: 478, front: { x: 396, y: 737, w: 94, h: FRONT_H } },
-  { id: 'c3', trayL: 552, trayR: 671, front: { x: 590, y: 737, w: 94, h: FRONT_H } },
-  { id: 'c4', trayL: 746, trayR: 867, front: { x: 784, y: 737, w: 94, h: FRONT_H } },
+  { id: 'c1', use: 234, trayL: 222, trayR: 342, labelX: 334 },
+  { id: 'c2', use: 427, trayL: 415, trayR: 535, labelX: 527 },
+  { id: 'c3', use: 620, trayL: 608, trayR: 728, labelX: 720 },
+  { id: 'c4', use: 813, trayL: 801, trayR: 921, labelX: 913 },
 ];
 
 /** Kontaktör tepsi sıraları (üstten alta): bobin, m1, m2, k1, k2, x1, x2, x3 */
-export const C_ROW_Y = [921, 950, 980, 1010, 1038, 1067, 1096, 1124] as const;
+export const C_ROW_Y = [1258, 1288, 1318, 1348, 1378, 1408, 1438, 1468] as const;
 
 export function contactorSockets(k: ContactorDef): SocketDef[] {
-  const put = (row: number, name: string, color: string) => {
-    return { id: `${k.id}.${name}.a`, x: k.trayL, y: C_ROW_Y[row], color, r: R_KNOB } as SocketDef;
-  };
-  const putR = (row: number, name: string, color: string) => {
-    return { id: `${k.id}.${name}.b`, x: k.trayR, y: C_ROW_Y[row], color, r: R_KNOB } as SocketDef;
-  };
-  const out: SocketDef[] = [
-    { id: `${k.id}.a1`, x: k.trayL, y: C_ROW_Y[0], color: KNOB_COLOR.yellow, r: R_KNOB }, // bobin
-    { id: `${k.id}.a2`, x: k.trayR, y: C_ROW_Y[0], color: KNOB_COLOR.yellow, r: R_KNOB },
-    put(1, 'm1', KNOB_COLOR.black),      // foto R4 piksel-ölçüm: sütunlar 1 siyah + 1 kırmızı + ...
-    putR(1, 'm1', KNOB_COLOR.black),     // ... + 2 siyah + 2 kırmızı(her iki sütun) + kutuda 3 siyah
-    put(2, 'm2', KNOB_COLOR.black),
-    putR(2, 'm2', KNOB_COLOR.black),
-    // foto: k1/k2 kırmızı sıralar — HER İKİ sütun kırmızı (sağ sütun (110,42,45) örneği)
-    { id: `${k.id}.k1.a`, x: k.trayL, y: C_ROW_Y[3], color: KNOB_COLOR.red, r: R_KNOB },
-    { id: `${k.id}.k1.b`, x: k.trayR, y: C_ROW_Y[3], color: KNOB_COLOR.red, r: R_KNOB },
-    { id: `${k.id}.k2.a`, x: k.trayL, y: C_ROW_Y[4], color: KNOB_COLOR.red, r: R_KNOB },
-    { id: `${k.id}.k2.b`, x: k.trayR, y: C_ROW_Y[4], color: KNOB_COLOR.red, r: R_KNOB },
+  const put = (row: number, name: string, color: string): SocketDef => ({
+    id: `${k.id}.${name}.a`, x: k.trayL, y: C_ROW_Y[row], color,
+  });
+  const putR = (row: number, name: string, color: string): SocketDef => ({
+    id: `${k.id}.${name}.b`, x: k.trayR, y: C_ROW_Y[row], color,
+  });
+  return [
+    { id: `${k.id}.a1`, x: k.trayL, y: C_ROW_Y[0], color: KNOB_COLOR.yellow },
+    { id: `${k.id}.a2`, x: k.trayR, y: C_ROW_Y[0], color: KNOB_COLOR.yellow },
+    put(1, 'm1', KNOB_COLOR.black), putR(1, 'm1', KNOB_COLOR.black),
+    put(2, 'm2', KNOB_COLOR.black), putR(2, 'm2', KNOB_COLOR.black),
+    put(3, 'k1', KNOB_COLOR.red),   putR(3, 'k1', KNOB_COLOR.red),
+    put(4, 'k2', KNOB_COLOR.red),   putR(4, 'k2', KNOB_COLOR.red),
+    put(5, 'x1', KNOB_COLOR.black), putR(5, 'x1', KNOB_COLOR.black),
+    put(6, 'x2', KNOB_COLOR.black), putR(6, 'x2', KNOB_COLOR.black),
+    put(7, 'x3', KNOB_COLOR.black), putR(7, 'x3', KNOB_COLOR.black),
   ];
-  out.push(put(5, 'x1', KNOB_COLOR.black), putR(5, 'x1', KNOB_COLOR.black));   // kutu içinde 3 sıra siyah
-  out.push(put(6, 'x2', KNOB_COLOR.black), putR(6, 'x2', KNOB_COLOR.black));
-  out.push(put(7, 'x3', KNOB_COLOR.black), putR(7, 'x3', KNOB_COLOR.black));
-  return out;
 }
-
-/* ---------------- motor ---------------- */
-
-export const MOTOR = {
-  body: { x: 688, y: 45, w: 280, h: 235 },        // foto R5: gövde üst ~45, sol ~688, sağ fan kapağı çerçeveye taşar
-  shaft: { x: 628, y: 153, w: 84, h: 30 },        // GetPixel: koyu çelik mil 628..712, merkez y168
-  bell:  { x: 727, y: 168, r: 63 },               // yuvarlak arka disk (r63)
-  hub:   { x: 727, y: 168, r: 35 },               // koyu hub #555F68, mil oraya girer
-  plate: { x: 780, y: 60, w: 125, h: 130 },       // kabartma plaka (780..905 × 60..190) #8490a0
-  bolts: [[788, 72], [888, 72], [796, 188], [888, 188]], // 4 hex vida (sol-alt 796: bell kenarından uzak)
-  fan:   { x: 896, y: 40, w: 72, h: 244, louvers: [910, 926, 942, 958] },
-  tBox: { x: 800, y: 229, w: 74, h: 57 },         // klemens kutusu GetPixel (800..874 × 229..286)
-  hole: { x: 765, y: 334 },                       // BEYAZ kablo pano giriş deliği (koyu şeritte)
-  label: { x: 833, y: 134 },                      // kabartma SIEMENS — Dar fs18, koyu harfler #4b5868
-};
 
 /* ---------------- harici sinyal lambası (pano dışı) ---------------- */
 
 export const EXT_LAMP = {
-  housing: { x: 1034, y: 58, w: 136, h: 118 },
+  housing: { x: 1112, y: 430, w: 136, h: 118 },
   lenses: [
-    { x: 1058, color: '#e0a41c' },
-    { x: 1098, color: '#c8352b' },
-    { x: 1138, color: '#2f9e4f' },
+    { x: 1136, color: '#e0a41c' },
+    { x: 1176, color: '#c8352b' },
+    { x: 1216, color: '#2f9e4f' },
   ],
-  lensY: 92, lensR: 12,
-  sockets: { y: 138 },
+  lensY: 464, lensR: 12,
+  sockets: { y: 510 },
   keys: ['ext.fazY', 'ext.fazR', 'ext.fazG', 'ext.gnd'],
-  socketX: [1046, 1078, 1110, 1142],
+  socketX: [1124, 1156, 1188, 1220],
 };
 
 /* ================================================================
@@ -291,20 +231,8 @@ export const TERMINALS: SocketDef[] = [
   ...TERMINALS_TOP,
   ...TERMINALS_BOT,
   ...eSockets(),
-  { id: D1_TRAY.coil.a.id, x: D1_TRAY.coil.a.x, y: D1_TRAY.coil.a.y, color: D1_TRAY.coil.knob, r: R_MINI },
-  { id: D1_TRAY.coil.b.id, x: D1_TRAY.coil.b.x, y: D1_TRAY.coil.b.y, color: D1_TRAY.coil.knob, r: R_MINI },
-  { id: D1_TRAY.spdt.nc.id,  x: D1_TRAY.spdt.nc.x,  y: D1_TRAY.spdt.nc.y,  color: D1_TRAY.ncColor,  r: R_MINI },
-  { id: D1_TRAY.spdt.com.id, x: D1_TRAY.spdt.com.x, y: D1_TRAY.spdt.com.y, color: D1_TRAY.comColor, r: R_MINI },
-  { id: D1_TRAY.spdt.no.id,  x: D1_TRAY.spdt.no.x,  y: D1_TRAY.spdt.no.y,  color: D1_TRAY.noColor,  r: R_MINI },
-  { id: D2_TRAY.timed.a.id, x: D2_TRAY.timed.a.x, y: D2_TRAY.timed.a.y, color: D2_TRAY.timed.knob, r: R_MINI },
-  { id: D2_TRAY.timed.b.id, x: D2_TRAY.timed.b.x, y: D2_TRAY.timed.b.y, color: D2_TRAY.timed.knob, r: R_MINI },
-  { id: D2_TRAY.coil.a.id, x: D2_TRAY.coil.a.x, y: D2_TRAY.coil.a.y, color: D2_TRAY.coil.knob, r: R_MINI },
-  { id: D2_TRAY.coil.b.id, x: D2_TRAY.coil.b.x, y: D2_TRAY.coil.b.y, color: D2_TRAY.coil.knob, r: R_MINI },
-  ...D2_TRAY.rows.flatMap((row) => [
-    { id: `d2.${row.prefix}.nc`,  x: D2_TRAY.rowX.nc,  y: row.y, color: KNOB_COLOR.red,   r: R_MINI },
-    { id: `d2.${row.prefix}.com`, x: D2_TRAY.rowX.com, y: row.y, color: KNOB_COLOR.blue,  r: R_MINI },
-    { id: `d2.${row.prefix}.no`,  x: D2_TRAY.rowX.no,  y: row.y, color: KNOB_COLOR.black, r: R_MINI },
-  ]),
+  ...D1_SOCKS,
+  ...D2_SOCKS,
   ...BUTTONS.flatMap(buttonSockets),
   ...CONTACTORS.flatMap(contactorSockets),
   ...EXT_LAMP.keys.map((id, i) => ({
@@ -320,8 +248,68 @@ export const SOCKET_MAP: Record<string, SocketDef> = Object.fromEntries(
   TERMINALS.map((s) => [s.id, s]),
 );
 
-/** Soketin taban plakasındaki sütun/knop rengini döndürür */
+/** Soket koordinatı (kablo eğrisi uçları) */
 export function socketPos(id: string): { x: number; y: number } {
   const s = SOCKET_MAP[id];
   return s ? { x: s.x, y: s.y } : { x: 0, y: 0 };
+}
+
+/* ================================================================
+   TTR (güç kablosu) modu — çekim sırasında yakalanan 3 fazlı güç uçları
+
+   Güç yolu: RST (besleme) → e.m1/m2/m3 (termik ana kutuplar, her iki uç) →
+   kontaktör m1/m2 + x1 (her iki uç) → UVW (motor uçları).
+   Bu listedeki uçlara kablo çekerken uç yakalama (snap) devrede olur;
+   diğer uçlar normal tıklamayla bağlanır.
+   ================================================================ */
+
+export const POWER_SOCKETS: ReadonlySet<string> = (() => {
+  const s = new Set<string>();
+  for (const id of ['sup.R', 'sup.S', 'sup.T', 'sup.U', 'sup.V', 'sup.W']) s.add(id);
+  for (const m of ['m1', 'm2', 'm3'] as const) {
+    s.add(`e.${m}.a`);
+    s.add(`e.${m}.b`);
+  }
+  for (const k of CONTACTORS) {
+    for (const c of ['m1', 'm2', 'x1'] as const) {
+      s.add(`${k.id}.${c}.a`);
+      s.add(`${k.id}.${c}.b`);
+    }
+  }
+  return s;
+})();
+
+/** Soketin insan-okur adı — imleç ipucu için (uç adresi aynen gelir) */
+export const SOCKET_LABEL: Record<string, { ad: string; bolge: string }> = {
+  'sup.R':     { ad: 'Besleme R (L1)', bolge: 'Besleme' },
+  'sup.S':     { ad: 'Besleme S (L2)', bolge: 'Besleme' },
+  'sup.T':     { ad: 'Besleme T (L3)', bolge: 'Besleme' },
+  'sup.Rc':    { ad: 'Kumanda fazı Rc', bolge: 'Besleme' },
+  'sup.X':     { ad: 'Lamba fazı X', bolge: 'Besleme' },
+  'sup.U':     { ad: 'Motor U', bolge: 'Motor' },
+  'sup.V':     { ad: 'Motor V', bolge: 'Motor' },
+  'sup.W':     { ad: 'Motor W', bolge: 'Motor' },
+  'sup.Mp':    { ad: 'Nötr Mp', bolge: 'Besleme' },
+  'sup.X2':    { ad: 'Lamba nötr X2', bolge: 'Besleme' },
+  'd1.a1':     { ad: 'd1 bobin A1', bolge: 'd1 röle' },
+  'd1.a2':     { ad: 'd1 bobin A2', bolge: 'd1 röle' },
+  'd1.nc':     { ad: 'd1 NC (kapalı)', bolge: 'd1 röle' },
+  'd1.com':    { ad: 'd1 COM (ortak)', bolge: 'd1 röle' },
+  'd1.no':     { ad: 'd1 NO (açık)', bolge: 'd1 röle' },
+  'd2.no.a':   { ad: 'd2 ZR NO.a', bolge: 'd2 ZR' },
+  'd2.no.b':   { ad: 'd2 ZR NO.b', bolge: 'd2 ZR' },
+  'd2.a1':     { ad: 'd2 bobin A1', bolge: 'd2 ZR' },
+  'd2.a2':     { ad: 'd2 bobin A2', bolge: 'd2 ZR' },
+};
+
+export function socketTitle(id: string): string {
+  const base = SOCKET_LABEL[id] ?? (() => {
+    const m = id.match(/^([a-z0-9]+)\.(\w+?)\.?(\w*)$/);
+    if (!m) return { ad: id, bolge: '' };
+    const [, dev, name, side] = m;
+    const devAd: Record<string, string> = { c1: 'K1', c2: 'K2', c3: 'K3', c4: 'K4', b1: 'b1', b2: 'b2', b3: 'b3', b4: 'b4', e: 'e (termik)' };
+    const cName: Record<string, string> = { a1: 'bobin A1', a2: 'bobin A2', m1: 'güç m1', m2: 'güç m2', k1: 'NC k1 (kapalı)', k2: 'NC k2', x1: 'NO x1', x2: 'NO x2', x3: 'NO x3', c1: 'ortak c1', c2: 'ortak c2', nc: 'NC', no: 'NO', com: 'COM', tn: 'NC tn', tc: 'NC tc' };
+    return { ad: `${devAd[dev] ?? dev} ${cName[name] ?? name}${side ? ` ${side}` : ''}`, bolge: dev };
+  })();
+  return base.bolge ? `${base.ad} — ${id}` : `${base.ad} — ${id}`;
 }
