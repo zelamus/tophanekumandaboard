@@ -53,7 +53,13 @@ export function ConfirmDialogHost() {
       if (!(ae instanceof HTMLElement && ae.closest('.confirmDialog'))) {
         openerRef.current = ae instanceof HTMLElement ? ae : null;
       }
-      setActive({ ...opts, resolve });
+      // R4 GLM #1 (başkan greple doğruladı): `current` yalnızca null'lanıyordu,
+      // hiç atanmıyordu — settle() sonsuz no-op, diyalog 687690c'den beri
+      // kapatılamıyordu. Açılışta atama yapılır: Escape/düğme/perde canlanır,
+      // isConfirmActive() artık doğruyu söyler.
+      const entry: ActiveConfirm = { ...opts, resolve };
+      current = entry;
+      setActive(entry);
     });
     return () => { showFn = null; };
   }, []);

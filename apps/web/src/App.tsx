@@ -124,10 +124,7 @@ export function App() {
         </main>
 
         {/* Apple macOS Denetçi / Yan Çubuk */}
-        <Sidebar
-          open={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
+        <Sidebar open={sidebarOpen} />
 
         {/* Mobil Karartma Perdesi */}
         {sidebarOpen && (

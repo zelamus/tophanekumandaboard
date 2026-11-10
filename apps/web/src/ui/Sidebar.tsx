@@ -12,7 +12,6 @@ const TAB_ORDER: TabId[] = ['devices', 'presets', 'saves', 'settings'];
 
 interface SidebarProps {
   open: boolean;
-  onClose: () => void;
 }
 
 export function Sidebar({ open }: SidebarProps) {

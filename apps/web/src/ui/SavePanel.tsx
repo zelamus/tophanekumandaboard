@@ -192,12 +192,16 @@ export function SavePanel() {
         return;
       }
     }
+    // Komşu satırda odağı koru: silinen kaydın liste dizini refresh'ten ÖNCE
+    // yakalanır; satır kalkınca bir üstteki iş başına gelir, liste boşaldıysa
+    // ad alanına düşer (R4 GLM #2 — önceden her zaman ilk satıra gidiyordu)
+    const deletedIdx = Math.max(0, items.indexOf(m));
     await refresh();
-    // Silinen satır DOM'dan kalkarken odak body'ye düşmesin: sıradaki
-    // kaydın düğmesine, hiç kayıt kalmadıysa ad alanına (R3 DeepSeek #11)
     requestAnimationFrame(() => {
-      const next = document.querySelector<HTMLButtonElement>('.saveItem button');
-      if (next) next.focus();
+      const rows = Array.from(document.querySelectorAll('.saveItem'));
+      const row = rows[Math.min(deletedIdx, rows.length - 1)];
+      const btn = row?.querySelector<HTMLButtonElement>('button');
+      if (btn) btn.focus();
       else document.getElementById('saveNameInput')?.focus();
     });
   };

@@ -1662,6 +1662,13 @@ body {
   .guidanceBadge {
     display: none;
   }
+  /* Sağ kenar düz kesilmesin: kaydırılabilir telemetri şeridinin ucuna
+     küçük bir fade — kesik "Motor:" artık aşırı içerik ipucu verir
+     (R4 GLM #3 / Nemotron #2, çekim 10/11'de düz kesim kanıtı) */
+  .statusSection.center {
+    -webkit-mask-image: linear-gradient(to right, #000 92%, transparent 100%);
+    mask-image: linear-gradient(to right, #000 92%, transparent 100%);
+  }
 }
 
 /* ==========================================================================
