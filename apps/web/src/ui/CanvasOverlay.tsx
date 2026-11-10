@@ -29,10 +29,13 @@ export function CanvasOverlay() {
         )}
       </div>
 
-      {/* Sağ Alt: Gezinme İpucu */}
+      {/* Sağ Alt: Gezinme İpucu — metin işaretçi türüne göre (R4 DeepSeek #10) */}
       <div className="canvasFloatingPill right">
-        <span className="pillHint">
+        <span className="pillHint hintFine">
           <kbd>Tekerlek</kbd> Yakınlaştır · <kbd>Sürükle</kbd> Kaydır · <kbd>Shift</kbd> Zincir
+        </span>
+        <span className="pillHint hintCoarse">
+          <kbd>İki parmak</kbd> Yakınlaştır · <kbd>Kaydır</kbd> Taşı
         </span>
       </div>
     </div>

@@ -85,7 +85,7 @@ export function SavePanel() {
   const guardBoardReplace = useCallback(async (what: string): Promise<boolean> => {
     if (getState().cables.length === 0) return true;
     return confirmAction({
-      title: `${what} mevcut pano yerine geçecek`,
+      title: `${what} mevcut panoyu değiştirir`,
       body: `Panodaki ${getState().cables.length} kablo kalkacak. Panoyu ve motora ait kesici/ZR/termik durumunu Ctrl+Z ile geri alabilirsin.`,
       confirmLabel: 'Devreyi Yükle',
       cancelLabel: 'İptal',
@@ -173,21 +173,35 @@ export function SavePanel() {
       cancelLabel: 'İptal',
     });
     if (!ok) return;
-    if (m.source === 'yerel') {
+    // Tek kimlik iki mağazada yaşayabilir (kaydet hem bulutu hem yereli yazar):
+    // silme İKİSİNİ de hedefler — biri kalırsa satır sonraki yenilemede
+    // "dirilmiş" gibi görünür (R4 DeepSeek #6)
+    let serverOk = false;
+    try {
+      const r = await fetch(`/api/saves/${m.id}`, { method: 'DELETE' });
+      // 404 = zaten yok — silme sayılır (yerel-için kayıt sunucuda olmayabilir)
+      serverOk = r.ok || r.status === 404;
+      if (!serverOk) {
+        flash('Silinemedi — sunucuya erişilemiyor');
+        return;
+      }
       try {
         localStorage.setItem(LS_KEY, JSON.stringify(localList().filter((x) => x.id !== m.id)));
       } catch {
-        /* ignore */
+        flash('Sunucudan silindi; yerel bellek kopyası silinemedi');
       }
-    } else {
-      // Bulut kaydı: DELETE düşerse satır kaybolmasın, dürüst söyle (R3 GLM #2 / DeepSeek öneri)
-      try {
-        const r = await fetch(`/api/saves/${m.id}`, { method: 'DELETE' });
-        if (!r.ok) {
-          flash('Silinemedi — sunucu erişilemiyor');
+    } catch {
+      // Çevrimdışı: bulutla uzlaşamayız. Yerel satırı yalnızca dürüst uyarıyla
+      // sileriz; bulut kopyası varsa "sessiz dirilme" yerine açık söylenir.
+      if (m.source === 'yerel') {
+        try {
+          localStorage.setItem(LS_KEY, JSON.stringify(localList().filter((x) => x.id !== m.id)));
+        } catch {
+          flash('Silinemedi — yerel bellek yazılamadı');
           return;
         }
-      } catch {
+        flash('Yerelden silindi; bulut kopyası çevrimdışıyken silinemez');
+      } else {
         flash('Silinemedi — çevrimdışı olabilirsin');
         return;
       }

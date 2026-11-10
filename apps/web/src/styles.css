@@ -433,6 +433,14 @@ body {
   border-color: var(--apple-blue-hover);
 }
 
+/* Pasif birincil düğme: generic :disabled kuralı .primary'dan ÖNDE geldiği
+   için kaskadı kaybediyordu — kapalı dolgu duruyordu (R4 DeepSeek #4) */
+.appleButton.primary:disabled {
+  background: var(--apple-surface-elevated);
+  border-color: var(--apple-border);
+  color: var(--apple-label-tertiary);
+}
+
 .appleButton.secondary {
   flex: 1;
 }
@@ -1077,9 +1085,16 @@ body {
   border-radius: var(--radius-xs);
 }
 
-/* Kalıcı canlı bölge — boşken görünmez, metin geldiğinde bildirir (R3 DeepSeek #3) */
+/* Kalıcı canlı bölge — boşken display:none YOK: bazı ekran okuyucular
+   hidden→görünür geçişini kaçırır; düğüm render'da kalır, yalnız
+   görsel olarak gizlenir (R4 DeepSeek #8) */
 .toastNotice:empty {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .countBadge {
@@ -1640,6 +1655,10 @@ body {
     justify-content: flex-start;
     overflow-x: auto;
     scrollbar-width: none;
+    /* Kaydırılabilir başlık şeridi: gözden kaçan modlar/palet/geri al bir
+       sağ-kenar fade ile işaretlenir (R4 DeepSeek #3 / Nemotron #2) */
+    -webkit-mask-image: linear-gradient(to right, #000 92%, transparent 100%);
+    mask-image: linear-gradient(to right, #000 92%, transparent 100%);
   }
   .headerCenter::-webkit-scrollbar {
     display: none;
@@ -1866,6 +1885,26 @@ body {
   .appleButton.small,
   .confirmBtn {
     min-height: 44px;
+  }
+  /* Şematik aç/kapa metin düğmesi 28px'ten kurtulur (R4 DeepSeek #12) */
+  .schematicToggle {
+    min-height: 44px;
+    padding: 10px 0;
+  }
+}
+
+/* Tuval gezinme ipucu metni işaretçi türüne göre değişir
+   (dokunmatikte "Tekerlek/Shift" ipucu yanıltıcıydı — R4 DeepSeek #10) */
+.pillHint.hintCoarse {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .pillHint.hintFine {
+    display: none;
+  }
+  .pillHint.hintCoarse {
+    display: inline;
   }
 }
 
