@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Kumanda ve Kontrol Atölyesi 10 — pano simülatörü: kontaktör, termik röle, ZR ve motor ile MEB TEMRİN devrelerini çek, çalıştır, kaydet." />
+    <meta name="theme-color" content="#0d0e11" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <title>Tophane Kumanda — Kumanda ve Motor Kontrol Simülatörü</title>
+    <script>
+      // İlk boyamadan önce tema: kayıtlı ayar → data-theme + theme-color.
+      // Depolama erişimi ayrı try'da: kotasız/blokluyken matchMedia yolun yitmesin (R3 DeepSeek #13)
+      var tema = null;
+      try {
+        var kka = JSON.parse(localStorage.getItem('kka-ayarlar') || '{}');
+        if (kka.theme === 'light' || kka.theme === 'dark') tema = kka.theme;
+      } catch (e) { tema = null; }
+      if (!tema && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        tema = 'light';
+      }
+      if (!tema) tema = 'dark';
+      document.documentElement.dataset.theme = tema;
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', tema === 'light' ? '#f2f2f7' : '#0d0e11');
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
