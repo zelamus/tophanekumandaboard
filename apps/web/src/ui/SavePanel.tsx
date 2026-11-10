@@ -182,14 +182,21 @@ export function SavePanel() {
       // 404 = zaten yok — silme sayılır (yerel-için kayıt sunucuda olmayabilir)
       serverOk = r.ok || r.status === 404;
       if (!serverOk) {
-        flash('Silinemedi — sunucuya erişilemiyor');
+        // Sunucu CEVAP verdiyse "erişilemiyor" ezberi yanlış olur (R5 GLM #1 / Nemotron öneri)
+        if (r.status >= 500) flash(`Silinemedi — sunucu hata verdi (${r.status})`);
+        else flash('Silinemedi — sunucuya erişilemiyor');
         return;
       }
+      let localOk = true;
       try {
         localStorage.setItem(LS_KEY, JSON.stringify(localList().filter((x) => x.id !== m.id)));
       } catch {
-        flash('Sunucudan silindi; yerel bellek kopyası silinemedi');
+        localOk = false;
       }
+      // Başarılı silme dürüst teyit edilir — diğer yolların bildirim deseniyle
+      // uyumlu; satırın yok oluşu tek başına ipucu sayılmaz (R5 GLM öneri)
+      if (localOk) flash('Kayıt silindi');
+      else flash('Sunucudan silindi; yerel bellek kopyası silinemedi');
     } catch {
       // Çevrimdışı: bulutla uzlaşamayız. Yerel satırı yalnızca dürüst uyarıyla
       // sileriz; bulut kopyası varsa "sessiz dirilme" yerine açık söylenir.

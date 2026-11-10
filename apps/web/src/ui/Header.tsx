@@ -1,6 +1,7 @@
 import { A, useStore, resolveTheme } from '../store';
 import type { Mode } from '../store';
 import { useRadioGroup } from './radioGroup';
+import { useScrollFade } from './scrollFade';
 import {
   IconWire,
   IconPan,
@@ -46,6 +47,9 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
   // APG radyo grupları: ok/Home/End + roving tabindex (R2 DeepSeek #10)
   const modeGroup = useRadioGroup<Mode>(['kablo', 'hareket', 'sil'], st.mode, (m) => A.setMode(m));
   const colorGroup = useRadioGroup(COLORS.map((c) => c.c), st.cableColor, (c) => A.setCableColor(c));
+
+  // ≤640'ta şerit gerçekten taşınca sağ-kenar fade ipucu verir (R5 GLM #2)
+  const headerCenterRef = useScrollFade<HTMLDivElement>();
 
   const handleClearWires = async () => {
     if (st.cables.length === 0) return;
@@ -100,7 +104,7 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
       </div>
 
       {/* Orta: Mod Seçici, Renkler ve Hızlı Araçlar */}
-      <div className="headerCenter">
+      <div className="headerCenter" ref={headerCenterRef}>
         {/* Mod Segmented Control */}
         <div className="appleSegmented" role="radiogroup" aria-label="Çalışma Modu" ref={modeGroup.groupRef}>
           {MODES.map((item) => {

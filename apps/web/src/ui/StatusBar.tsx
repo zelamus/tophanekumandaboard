@@ -3,6 +3,7 @@ import type { ZrConf } from '../store';
 import type { SimOutput } from '../sim/model';
 import { IconAlert, IconRefresh } from './Icons';
 import { tr1 } from './format';
+import { useScrollFade } from './scrollFade';
 
 interface LedProps {
   on: boolean;
@@ -130,6 +131,8 @@ export function StatusBar() {
   const st = useStore();
   const sim = st.sim;
   const shorted = sim?.shorts ?? [];
+  // ≤640'ta telemetri gerçekten taşınca sağ-kenar fade ipucu verir (R5 GLM #2)
+  const centerRef = useScrollFade<HTMLDivElement>();
 
   // Durum Rehberi (İmleç ve Etkileşim İpucu)
   let guideText: React.ReactNode;
@@ -169,7 +172,7 @@ export function StatusBar() {
       {/* Orta: Telemetri Rozetleri ve Kısa Devre Uyarısı
           Telemetri ~10Hz tazelenir: canlı bölge ADAYI değil (R1: ZR sayacı '2.7, 2.6…'
           diye okuyucuyu boğar). Yalnız kısa devre uyarısı canlı bölgedir. */}
-      <div className="statusSection center">
+      <div className="statusSection center" ref={centerRef}>
         {shorted.length > 0 ? (
           <div className="shortCircuitAlert" role="alert" aria-live="assertive">
             <IconAlert className="alertIcon" />
