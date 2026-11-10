@@ -104,6 +104,9 @@ function sanitizeTheme(t: unknown): ThemePref {
 export function applyTheme(corrected: 'dark' | 'light'): void {
   if (typeof document !== 'undefined') {
     document.documentElement.dataset.theme = corrected;
+    // Tarayıcı çerçevesi de temayı izlesin (R2 GLM #11 / DeepSeek #8)
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', corrected === 'light' ? '#f2f2f7' : '#0d0e11');
   }
 }
 
@@ -137,14 +140,41 @@ function saveAyar(s: SettingsShape): void {
 const listeners = new Set<() => void>();
 let seq = 0;
 
-/* Geri alma yığını — kablo ekleme/silme/temizleme/yüklemeden önceki durumu tutar.
-   Son 40 kablo işlemi geri alınabilir. */
+/* Geri alma yığını — kablo ekleme/silme/temizleme/yüklemeden önceki TÜM PANO
+   dilimini tutar (R2 GLM #7 / DeepSeek #4: kablo-dışı durum kablosuz kalmasın).
+   Kullanıcı tercihi (tema/ses) bilinçli olarak YOK — o ayarlar geri sarmaz. */
 const MAX_UNDO = 40;
-let undoStack: Cable[][] = [];
+
+interface BoardSnap {
+  cables: Cable[];
+  breakers: BreakerState;
+  zr: ZrConf;
+  termikArmed: boolean;
+  mode: Mode;
+}
+
+let undoStack: BoardSnap[] = [];
 
 function pushHistory(): void {
-  undoStack.push(state.cables.slice());
+  undoStack.push({
+    cables: state.cables.slice(),
+    breakers: { ...state.breakers },
+    zr: { ...state.zr },
+    termikArmed: state.termikArmed,
+    mode: state.mode,
+  });
   if (undoStack.length > MAX_UNDO) undoStack.shift();
+}
+
+/** Kayıt/preset şema doğrulaması — doğrulama onay SORUSUNDAN önce gelir (R2 DeepSeek #12) */
+export function isDocShape(d: unknown): d is DocShape {
+  if (!d || typeof d !== 'object') return false;
+  const o = d as Partial<DocShape>;
+  return (
+    o.v === 1 &&
+    Array.isArray(o.cables) &&
+    o.cables.every((c) => !!c && typeof c === 'object' && typeof (c as Cable).a === 'string' && typeof (c as Cable).b === 'string')
+  );
 }
 
 let state: AppState = {
@@ -246,14 +276,21 @@ export const A = {
     if (state.selCable) A.delCable(state.selCable);
   },
 
-  /** Son kablo işlemini geri al (Ctrl+Z / ⌘Z) */
+  /** Son pano işlemini geri al — kablo + kesici + ZR + termik birlikte döner (R2) */
   undo(): void {
     const snap = undoStack.pop();
     if (!snap) return;
     patch({
-      cables: snap,
+      cables: snap.cables,
+      breakers: snap.breakers,
+      zr: snap.zr,
+      termikArmed: snap.termikArmed,
+      mode: snap.mode,
+      pressed: { b1: false, b2: false, b3: false, b4: false },
       selTerminal: null,
       selCable: null,
+      // clearWires epoch'u geri sarılır → sim motoru eski topolojiyle yeniden başlar
+      simEpoch: state.simEpoch + 1,
       undoDepth: undoStack.length,
     });
   },
@@ -290,11 +327,12 @@ export const A = {
 
   setSim(sim: SimOutput): void { patch({ sim }); },
 
-  /** Kayıt yüklemesi — mevcut kablolar geri alınabilir yığın'a yazılır */
-  loadDoc(doc: DocShape | null): void {
-    if (!doc || doc.v !== 1) return;
+  /** Kayıt yüklemesi — mevcut pano dilimi geri alınabilir yığına yazılır; gerçekten yüklediyse true */
+  loadDoc(doc: DocShape | null): boolean {
+    if (!doc || doc.v !== 1) return false;
     pushHistory();
     this.applyDoc(doc);
+    return true;
   },
 
   /** Preset kurulumu — temizliği ve yüklemeyi TEK geri alınabilir adımda yapar */

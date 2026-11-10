@@ -8,7 +8,7 @@ import { Header } from './ui/Header';
 import { Sidebar } from './ui/Sidebar';
 import { StatusBar } from './ui/StatusBar';
 import { CanvasOverlay } from './ui/CanvasOverlay';
-import { ConfirmDialogHost } from './ui/confirm';
+import { ConfirmDialogHost, isConfirmActive } from './ui/confirm';
 
 export function App() {
   useSimLoop();
@@ -40,6 +40,10 @@ export function App() {
   // Klavye kısayolları: ESC, Delete, Ctrl+Z / Cmd+Z, Alt+B
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Onay penceresi açıkken tüm global kısayollar sustu (duvar confirm.tsx'te,
+      // burada ikinci bir sürgü: R2 DeepSeek #1 — Delete modal arkasında pano değiştirmesin)
+      if (isConfirmActive()) return;
+
       const target = e.target as HTMLElement | null;
       const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA');
 
@@ -48,8 +52,8 @@ export function App() {
         return;
       }
 
-      // Alt+B / Option+B ile denetçi çubuğunu aç/kapat
-      if (e.altKey && e.key.toLowerCase() === 'b') {
+      // Alt+B / Option+B ile denetçi çubuğunu aç/kapat (AltGr = Alt+Ctrl, şişirmesin)
+      if (e.altKey && !e.ctrlKey && e.key.toLowerCase() === 'b') {
         e.preventDefault();
         setSidebarOpen((prev) => !prev);
         return;
@@ -62,7 +66,8 @@ export function App() {
         A.delSelected();
       }
 
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+      // Geri al: ⌘Z / Ctrl+Z; AltGr+Z bir harf üretir, kısayolu ateşlemez (R2 GLM #9)
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         A.undo();
       }
@@ -94,7 +99,8 @@ export function App() {
   }, [st.sim, st.settings.sfx.on, st.settings.sfx.vol]);
 
   return (
-    <div className={`appContainer ${resolveTheme(st.settings.theme)}`}>
+    // sidebarOpen sınıfı masaüstü katlamayı sürer; ölü dark/light sınıfı kaldırıldı (R2 GLM #12)
+    <div className={`appContainer ${sidebarOpen ? 'sidebarOpen' : 'sidebarClosed'}`}>
       {/* 1. Üst Apple macOS Navigasyon Çubuğu */}
       <Header
         sidebarOpen={sidebarOpen}

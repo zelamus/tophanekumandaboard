@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 
 export interface ConfirmOptions {
   title: string;
@@ -13,78 +14,119 @@ interface ActiveConfirm extends ConfirmOptions {
 }
 
 let showFn: ((opts: ConfirmOptions) => Promise<boolean>) | null = null;
+let current: ActiveConfirm | null = null;
 
-/** Tehlikeli eylem onayı — App bu bileşeni kurar; her yerden `confirmAction()` çağrılır. */
+/** Onay penceresi açıkken global kısayolları susturmak için App tarafından okunur. */
+export function isConfirmActive(): boolean {
+  return current !== null;
+}
+
+/**
+ * Tehlikeli eylem onayı — App bu bileşeni kurar; her yerden `confirmAction()` çağrılır.
+ * Ev sahibi bileşen yoksa KAPALI (false) döner — yıkıcı yol asla onaysız ilerlemez (R2 Nemotron/DeepSeek).
+ */
 export function confirmAction(opts: ConfirmOptions): Promise<boolean> {
-  if (!showFn) return Promise.resolve(true); // bileşen yoksa engelleme
+  if (!showFn) return Promise.resolve(false);
   return showFn(opts);
 }
 
 export function ConfirmDialogHost() {
   const [active, setActive] = useState<ActiveConfirm | null>(null);
+  const [announcement, setAnnouncement] = useState('');
   const cancelRef = useRef<HTMLButtonElement>(null);
   const dangerRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     showFn = (opts) => new Promise<boolean>((resolve) => {
+      // Üst üste onay istekleri: bekleyeni iptal edilmiş say, yenisini aç (R2 DeepSeek #1)
+      if (current) {
+        const stale = current.resolve;
+        current = null;
+        setActive(null);
+        setAnnouncement('İptal edildi');
+        stale(false);
+      }
+      openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       setActive({ ...opts, resolve });
     });
     return () => { showFn = null; };
   }, []);
 
   const settle = (ok: boolean) => {
-    if (!active) return;
-    const r = active.resolve;
+    if (!current) return;
+    const r = current.resolve;
+    const label = ok ? current.confirmLabel : (current.cancelLabel ?? 'İptal');
+    current = null;
     setActive(null);
-    r(ok);
+    setAnnouncement(ok ? `Onaylandı: ${label}` : `İptal edildi`);
+    const opener = openerRef.current;
+    openerRef.current = null;
+    opener?.focus(); // Tetikleyen öğeye dön — document.body'ye düşme (R2: 3 delege)
+    window.setTimeout(() => r(ok), 0);
   };
 
   useEffect(() => {
     if (!active) return;
     cancelRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.stopPropagation(); settle(false); }
+      // Pencere açıkken tam kısayol duvarı: tüm tuşlar burada biter (App'in
+      // global handler'ı isConfirmActive() ile bir kez daha korunur)
+      e.stopImmediatePropagation();
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        settle(false);
+        return;
+      }
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        // İki düğmeli halka: iptal ↔ yıkıcı; her iki yönde de tam tur atar
+        const buttons = [cancelRef.current, dangerRef.current];
+        const cur = document.activeElement === cancelRef.current ? 0 : 1;
+        const next = (cur + 1) % 2;
+        buttons[next]?.focus();
+      }
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-    // settle stabildir; active null↔değer geçişini izlemek yeterli
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active !== null]);
+  }, [active]);
 
-  if (!active) return null;
+  if (!active) {
+    // Her zaman bağlı canlı bölge: sonucun ekran okuycuya duyurulmasını sağlar
+    return <div className="srOnly" role="status" aria-live="polite">{announcement}</div>;
+  }
 
   return createPortal(
-    <div
-      className="confirmBackdrop"
-      role="alertdialog"
-      aria-modal="true"
-      aria-labelledby="confirmTitle"
-      aria-describedby={active.body ? 'confirmBody' : undefined}
-      onMouseDown={(e) => { if (e.target === e.currentTarget) settle(false); }}
-    >
+    <>
+      <div className="srOnly" role="status" aria-live="polite">{announcement}</div>
       <div
-        className="confirmDialog"
-        onKeyDown={(e) => {
-          if (e.key === 'Tab') {
-            // Yalnız iki odaklanabilir düğme var → gidip gelen kısır döngü
-            e.preventDefault();
-            const target = e.shiftKey ? dangerRef.current : cancelRef.current;
-            target?.focus();
-          }
-        }}
+        className="confirmBackdrop"
+        onMouseDown={(e) => { if (e.target === e.currentTarget) settle(false); }}
       >
-        <span className="confirmTitle" id="confirmTitle">{active.title}</span>
-        {active.body && <p className="confirmBody" id="confirmBody">{active.body}</p>}
-        <div className="confirmActions">
-          <button ref={cancelRef} type="button" className="confirmBtn" onClick={() => settle(false)}>
-            {active.cancelLabel ?? 'İptal'}
-          </button>
-          <button ref={dangerRef} type="button" className="confirmBtn destructive" onClick={() => settle(true)}>
-            {active.confirmLabel}
-          </button>
+        {/* alertdialog rolü iletişim kutusunda: backdrop düz bir perdedir (R2 DeepSeek #1) */}
+        <div
+          className="confirmDialog"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="confirmTitle"
+          aria-describedby={active.body ? 'confirmBody' : undefined}
+          onKeyDown={(e: ReactKeyboardEvent) => {
+            if (e.key === 'Tab') e.preventDefault(); // küresel yakalayıcı halkalar
+          }}
+        >
+          <span className="confirmTitle" id="confirmTitle">{active.title}</span>
+          {active.body && <p className="confirmBody" id="confirmBody">{active.body}</p>}
+          <div className="confirmActions">
+            <button ref={cancelRef} type="button" className="confirmBtn" onClick={() => settle(false)}>
+              {active.cancelLabel ?? 'İptal'}
+            </button>
+            <button ref={dangerRef} type="button" className="confirmBtn destructive" onClick={() => settle(true)}>
+              {active.confirmLabel}
+            </button>
+          </div>
         </div>
       </div>
-    </div>,
+    </>,
     document.body,
   );
 }

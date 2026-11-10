@@ -10,7 +10,7 @@ export function CanvasOverlay() {
       {/* Sol Alt / Sol Üst: Kablo Sayacı ve İpuçları */}
       <div className="canvasFloatingPill left">
         <span className="pillDot" />
-        <span className="pillText">{cableCount} {cableCount === 1 ? 'Kablo' : 'Kablo'} Bağlı</span>
+        <span className="pillText">{cableCount} Kablo Bağlı</span>
         {st.selCable && (
           <>
             <span className="pillSeparator" />

@@ -47,7 +47,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   };
 
   return (
-    <aside className={`appleSidebar ${open ? 'open' : ''}`} aria-label="Denetçi Çubuğu">
+    <aside id="inspector" className={`appleSidebar ${open ? 'open' : ''}`} aria-label="Denetçi Çubuğu">
       {/* Üst Sekme Çubuğu (APG Tabs sistemi) */}
       <div className="sidebarTopBar">
         <div
@@ -82,13 +82,12 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         </div>
       </div>
 
-      {/* Kaydırılabilir İçerik — etkin sekmeye bağlu tek panel */}
+      {/* Kaydırılabilir İçerik — etkin sekmeye bağlı tek panel (APG: panel odaklanabilir kursun demiyor) */}
       <div
         className="sidebarScrollable"
         role="tabpanel"
         id="inspector-panel"
         aria-labelledby={`inspector-tab-${activeTab}`}
-        tabIndex={0}
       >
         {activeTab === 'devices' && <DevicePanel />}
         {activeTab === 'presets' && <PresetPanel />}

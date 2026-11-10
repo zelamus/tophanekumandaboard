@@ -1,7 +1,8 @@
-import { useRef } from 'react';
-import { A, useStore } from '../store';
+import { useEffect, useRef } from 'react';
+import { A, getState, useStore } from '../store';
 import { sfx } from '../audio/sfx';
 import { tr1 } from './format';
+import { useRadioGroup } from './radioGroup';
 
 const BUTTONS = [
   { id: 'b1', name: 'S0', role: 'Durdurma (Stop)', color: 'red' },
@@ -10,10 +11,13 @@ const BUTTONS = [
   { id: 'b4', name: 'S3', role: 'İkinci Başlat', color: 'teal' },
 ] as const;
 
+const BUTTON_IDS = ['b1', 'b2', 'b3', 'b4'] as const;
+
 export function DevicePanel() {
   const st = useStore();
   // Klavyeyle tutulan buton (fare onMouseLeave'in klavye basılı tutmayı bırakmaması için)
   const heldKeyboard = useRef<string | null>(null);
+  const zrGroup = useRadioGroup<'düz' | 'ters'>(['düz', 'ters'], st.zr.mode, (m) => A.setZr({ mode: m }));
 
   const handleBreaker = (type: 'motor' | 'control') => {
     const next = !st.breakers[type];
@@ -28,15 +32,37 @@ export function DevicePanel() {
 
   // Bas-tut: klavye (Space/Enter) + fare + dokunma aynı yoldan çalışır (R1: klavye körü)
   const press = (id: 'b1' | 'b2' | 'b3' | 'b4') => {
-    if (st.pressed[id]) return;
+    if (getState().pressed[id]) return;
     sfx.button(true);
     A.pressButton(id);
   };
   const release = (id: 'b1' | 'b2' | 'b3' | 'b4') => {
-    if (!st.pressed[id]) return;
+    if (!getState().pressed[id]) return;
     sfx.button(false);
     A.releaseButton(id);
   };
+
+  // Pencere odağını kaybetmek ya da sekmeyi arka plana atmak kontaktörü LATCH ETMESİN
+  // (R2 DeepSeek #11: blur/visibilitychange/touchcancel/pointercancel'da da bırak)
+  useEffect(() => {
+    const releaseAll = () => {
+      heldKeyboard.current = null;
+      for (const id of BUTTON_IDS) {
+        if (getState().pressed[id]) {
+          sfx.button(false);
+          A.releaseButton(id);
+        }
+      }
+    };
+    const onBlur = () => releaseAll();
+    const onVisibility = () => { if (document.hidden) releaseAll(); };
+    window.addEventListener('blur', onBlur);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('blur', onBlur);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
 
   return (
     <div className="inspectorSection" aria-label="Cihaz Kontrolleri">
@@ -116,14 +142,15 @@ export function DevicePanel() {
           <span className="timeBadge tabularNum">{tr1(st.zr.delayMs / 1000)} sn</span>
         </div>
 
-        {/* Mod Segmented — kısa etiket + altında dinamik açıklama (R1: kırpmak yasa) */}
-        <div className="appleSegmented small">
+        {/* Mod Segmented — adlı radyo grubu + dinamik açıklama altında (R1: kırpmak yasa) */}
+        <div className="appleSegmented small" role="radiogroup" aria-label="ZR Gecikme Modu" ref={zrGroup.groupRef}>
           <button
             type="button"
             role="radio"
             aria-checked={st.zr.mode === 'düz'}
             className={`segItem ${st.zr.mode === 'düz' ? 'active' : ''}`}
             onClick={() => A.setZr({ mode: 'düz' })}
+            {...zrGroup.itemProps('düz')}
           >
             <span className="segText">Düz (Çekmede)</span>
           </button>
@@ -133,6 +160,7 @@ export function DevicePanel() {
             aria-checked={st.zr.mode === 'ters'}
             className={`segItem ${st.zr.mode === 'ters' ? 'active' : ''}`}
             onClick={() => A.setZr({ mode: 'ters' })}
+            {...zrGroup.itemProps('ters')}
           >
             <span className="segText">Ters (Düşmede)</span>
           </button>
@@ -157,13 +185,14 @@ export function DevicePanel() {
             value={st.zr.delayMs}
             className="appleRange"
             aria-labelledby="zr-delay-label"
+            aria-valuetext={`${tr1(st.zr.delayMs / 1000)} saniye`}
             onChange={(e) => A.setZr({ delayMs: Number(e.target.value) })}
           />
           <div className="sliderTicks">
-            <span>0,2s</span>
-            <span>5s</span>
-            <span>10s</span>
-            <span>15s</span>
+            <span>0,2 sn</span>
+            <span>5 sn</span>
+            <span>10 sn</span>
+            <span>15 sn</span>
           </div>
         </div>
       </div>
@@ -175,7 +204,7 @@ export function DevicePanel() {
           <span className="cardBadge">Bas-Tut</span>
         </div>
         <p className="cardText">
-          Panodaki butonlara tıklayabileceğiniz gibi buradan da test edebilirsiniz (klavyede Space/Enter ile basılı tutun):
+          Panodaki butonları buradan da test edebilirsiniz: basılı tutmak için tıklayın, klavyede Space/Enter'ı bırakmayın:
         </p>
 
         <div className="pushbuttonGrid">
@@ -186,7 +215,6 @@ export function DevicePanel() {
                 key={btn.id}
                 type="button"
                 className={`tactileButton ${btn.color} ${isPressed ? 'pressed' : ''}`}
-                aria-pressed={isPressed}
                 aria-label={`${btn.name} ${btn.role} — basılı tut`}
                 onMouseDown={() => press(btn.id as 'b1')}
                 onMouseUp={() => release(btn.id as 'b1')}
@@ -195,6 +223,8 @@ export function DevicePanel() {
                 }}
                 onTouchStart={() => press(btn.id as 'b1')}
                 onTouchEnd={() => release(btn.id as 'b1')}
+                onTouchCancel={() => release(btn.id as 'b1')}
+                onPointerCancel={() => release(btn.id as 'b1')}
                 onKeyDown={(e) => {
                   if (e.repeat) return;
                   if (e.key === ' ' || e.key === 'Enter') {

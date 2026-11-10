@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { A, getState } from '../store';
+import { A, getState, isDocShape } from '../store';
 import type { DocShape } from '../store';
 import { confirmAction } from './confirm';
 import { IconDownload, IconUpload, IconTrash, IconFolder } from './Icons';
@@ -39,6 +39,12 @@ export function SavePanel() {
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const fileRef = useRef<HTMLInputElement>(null);
+  const flashTimer = useRef<number | null>(null);
+
+  // Bildirim zamanlayıcısı bileşen değişince temizlenir (R2 GLM #10)
+  useEffect(() => () => {
+    if (flashTimer.current !== null) window.clearTimeout(flashTimer.current);
+  }, []);
 
   const refresh = useCallback(async () => {
     const serverItems: SaveMeta[] = [];
@@ -64,16 +70,17 @@ export function SavePanel() {
   const guardBoardReplace = useCallback(async (what: string): Promise<boolean> => {
     if (getState().cables.length === 0) return true;
     return confirmAction({
-      title: `${what} panoyu değiştirecek`,
-      body: `Mevcut ${getState().cables.length} kablonun üzerine yazılacak. Son işlemi Ctrl+Z ile geri alabilirsin.`,
-      confirmLabel: 'Değiştir',
+      title: `${what} mevcut pano yerine geçecek`,
+      body: `Panodaki ${getState().cables.length} kablo kalkacak. Panoyu ve motora ait kesici/ZR/termik durumunu Ctrl+Z ile geri alabilirsin.`,
+      confirmLabel: 'Devreyi Yükle',
       cancelLabel: 'İptal',
     });
   }, []);
 
   const flash = useCallback((msg: string) => {
     setStatusMessage(msg);
-    setTimeout(() => setStatusMessage(''), 3500);
+    if (flashTimer.current !== null) window.clearTimeout(flashTimer.current);
+    flashTimer.current = window.setTimeout(() => setStatusMessage(''), 3500);
   }, []);
 
   const doSave = async () => {
@@ -104,18 +111,28 @@ export function SavePanel() {
   };
 
   const doLoad = async (m: SaveMeta) => {
-    const ok = await guardBoardReplace(`"${m.name}" kaydını yüklemek`);
-    if (!ok) return;
     try {
+      // Kayıt içeriğini ONAYDAN ÖNCE getir ve doğrula (R2 DeepSeek #12)
+      let doc: DocShape | null = null;
       if (m.doc) {
-        A.loadDoc(m.doc);
+        doc = m.doc;
       } else {
         const r = await fetch(`/api/saves/${m.id}`);
         if (!r.ok) throw new Error(String(r.status));
-        const j = (await r.json()) as { doc: DocShape };
-        A.loadDoc(j.doc);
+        const j = (await r.json()) as { doc?: DocShape };
+        doc = j.doc ?? null;
       }
-      flash(`"${m.name}" panoya yüklendi`);
+      if (!isDocShape(doc)) {
+        flash('Kayıt bozuk: geçersiz devre biçimi');
+        return;
+      }
+      const ok = await guardBoardReplace(`"${m.name}" kaydını yüklemek`);
+      if (!ok) return;
+      if (A.loadDoc(doc)) {
+        flash(`"${m.name}" panoya yüklendi`);
+      } else {
+        flash('Kayıt yüklenemedi: geçersiz devre biçimi');
+      }
     } catch {
       flash('Kayıt yüklenirken hata oluştu');
     }
@@ -124,7 +141,8 @@ export function SavePanel() {
   const doDel = async (m: SaveMeta) => {
     const ok = await confirmAction({
       title: `"${m.name}" kaydı silinsin mi?`,
-      body: `Bu ${m.source === 'sunucu' ? 'bulut' : 'yerel'} kaydı panodan kalıcı olarak silinir. Bu işlem geri alınamaz.`,
+      // Kayıt panoyu değil kayıt listesini etkiler (R2 GLM #8 / DeepSeek #14)
+      body: `Devre kendi bilgisayarınızda okunur. Bu ${m.source === 'sunucu' ? 'bulut kaydını' : 'yerel kaydı'} kalıcı olarak silinir; bu işlem geri alınamaz.`,
       confirmLabel: 'Kaydı Sil',
       cancelLabel: 'İptal',
     });
@@ -158,24 +176,39 @@ export function SavePanel() {
   const importJson = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const ok = await guardBoardReplace('JSON dosyasını yüklemek');
+    // Sıra: oku → şema doğrula → onay sor → uygula; her koşuda dürüst bildirim (R2 DeepSeek #12)
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await file.text());
+    } catch {
+      flash('Geçersiz JSON dosyası');
+      e.target.value = '';
+      return;
+    }
+    if (!isDocShape(parsed)) {
+      flash('JSON yüklenemedi: geçersiz devre biçimi');
+      e.target.value = '';
+      return;
+    }
+    const doc = parsed as DocShape;
+    const ok = await guardBoardReplace('JSON devresini yüklemek');
     if (!ok) {
       e.target.value = '';
       return;
     }
-    const text = await file.text();
-    try {
-      const parsed = JSON.parse(text) as DocShape;
-      A.loadDoc(parsed);
+    if (A.loadDoc(doc)) {
       flash('JSON dosyası başarıyla panoya yüklendi');
-    } catch {
-      flash('Geçersiz JSON dosyası');
+    } else {
+      flash('JSON yüklenirken hata oluştu');
     }
     e.target.value = '';
   };
 
   return (
     <div className="inspectorSection" aria-label="Devre Kayıtları">
+      {/* Panel düzeyinde canlı bildirim: doğru kartın altında değildir (R2 DeepSeek #12) */}
+      {statusMessage && <div className="toastNotice" role="status">{statusMessage}</div>}
+
       {/* Kaydet Girişi */}
       <div className="appleCard">
         <div className="cardHeader">
@@ -202,8 +235,6 @@ export function SavePanel() {
             Kaydet
           </button>
         </div>
-
-        {statusMessage && <div className="toastNotice" role="status">{statusMessage}</div>}
       </div>
 
       {/* Kayıtlar Listesi */}
@@ -240,6 +271,7 @@ export function SavePanel() {
                     className="appleButton small"
                     onClick={() => void doLoad(m)}
                     title="Bu devreyi panoya yükle (üzerine yazar)"
+                    aria-label={`"${m.name}" kaydını panoya yükle`}
                   >
                     Yükle
                   </button>

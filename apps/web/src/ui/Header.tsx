@@ -1,5 +1,6 @@
 import { A, useStore, resolveTheme } from '../store';
 import type { Mode } from '../store';
+import { useRadioGroup } from './radioGroup';
 import {
   IconWire,
   IconPan,
@@ -18,7 +19,7 @@ const COLORS: { c: string; name: string }[] = [
   { c: '#ff3b30', name: 'Kırmızı' },
   { c: '#1c1c1e', name: 'Siyah' },
   { c: '#007aff', name: 'Mavi' },
-  { c: '#ff9500', name: 'Sarı' },
+  { c: '#ffcc00', name: 'Sarı' }, // L3 lambasının gerçek sarısı (R2: #ff9500 turuncu, "Sarı" etiketi değildi)
   { c: '#34c759', name: 'Yeşil' },
 ];
 
@@ -27,8 +28,6 @@ const MODES: { m: Mode; label: string; icon: typeof IconWire; hint: string }[] =
   { m: 'hareket', label: 'Taşı', icon: IconPan, hint: 'Panoyu Taşı & Kaydır (Tekerlek: Yakınlaştır)' },
   { m: 'sil', label: 'Kablo Sil', icon: IconCut, hint: 'Kablo Sil — kaldırmak istediğin kabloya tıkla' },
 ];
-
-const THEME_LABEL: Record<string, string> = { dark: 'Koyu', light: 'Açık', system: 'Sistem' };
 
 interface HeaderProps {
   sidebarOpen: boolean;
@@ -40,6 +39,10 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
   const sim = st.sim;
   const pref = st.settings.theme;
   const effective = resolveTheme(pref);
+
+  // APG radyo grupları: ok/Home/End + roving tabindex (R2 DeepSeek #10)
+  const modeGroup = useRadioGroup<Mode>(['kablo', 'hareket', 'sil'], st.mode, (m) => A.setMode(m));
+  const colorGroup = useRadioGroup(COLORS.map((c) => c.c), st.cableColor, (c) => A.setCableColor(c));
 
   const handleClearWires = async () => {
     if (st.cables.length === 0) return;
@@ -94,7 +97,7 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
       {/* Orta: Mod Seçici, Renkler ve Hızlı Araçlar */}
       <div className="headerCenter">
         {/* Mod Segmented Control */}
-        <div className="appleSegmented" role="radiogroup" aria-label="Çalışma Modu">
+        <div className="appleSegmented" role="radiogroup" aria-label="Çalışma Modu" ref={modeGroup.groupRef}>
           {MODES.map((item) => {
             const Icon = item.icon;
             const active = st.mode === item.m;
@@ -107,6 +110,7 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
                 title={item.hint}
                 className={`segItem ${active ? 'active' : ''}`}
                 onClick={() => A.setMode(item.m)}
+                {...modeGroup.itemProps(item.m)}
               >
                 <Icon className="segIcon" />
                 <span className="segText">{item.label}</span>
@@ -118,7 +122,7 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
         <div className="headerDivider" aria-hidden="true" />
 
         {/* Kablo Renk Paleti */}
-        <div className="colorPalette" role="radiogroup" aria-label="Kablo Rengi">
+        <div className="colorPalette" role="radiogroup" aria-label="Kablo Rengi" ref={colorGroup.groupRef}>
           {COLORS.map((c) => {
             const active = st.cableColor === c.c;
             return (
@@ -132,6 +136,7 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
                 className={`colorDot ${active ? 'active' : ''}`}
                 style={{ backgroundColor: c.c }}
                 onClick={() => A.setCableColor(c.c)}
+                {...colorGroup.itemProps(c.c)}
               />
             );
           })}
@@ -218,24 +223,26 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
           className="appleButton iconOnly"
           title={
             pref === 'system'
-              ? `Görünüm: Sistem (${effective === 'light' ? 'Açık' : 'Koyu'}) — Açık/Koyu gezmek için tıkla`
+              ? `Görünüm: Sistem (${effective === 'light' ? 'Açık' : 'Koyu'}) — Açık/Koyu geçmek için tıkla`
               : effective === 'light'
                 ? 'Koyu moda geç'
                 : 'Açık moda geç'
           }
-          aria-label={`Görünüm — şu an ${THEME_LABEL[pref]}`}
+          // Ekran okuyucu ETKİLİ görünümü duyarsın; tercih ayrıntısı başlığın işi (R2 Nemotron)
+          aria-label={`Görünüm — şu an ${effective === 'light' ? 'Açık' : 'Koyu'}${pref === 'system' ? ' (Sistem tercihi)' : ''}`}
           onClick={cycleTheme}
         >
           {effective === 'light' ? <IconMoon /> : <IconSun />}
         </button>
 
-        {/* Kenar Çubuğu (Inspector) Aç/Kapa */}
+        {/* Kenar Çubuğu (Inspector) Aç/Kapa — masaüstünde gerçek katlama (R2 DeepSeek #2) */}
         <button
           type="button"
           className={`appleButton iconOnly ${sidebarOpen ? 'active' : ''}`}
           title="Denetçi Panelini Aç / Kapat"
           aria-label="Denetçi Paneli"
           aria-expanded={sidebarOpen}
+          aria-controls="inspector"
           onClick={onToggleSidebar}
         >
           <IconSidebar />

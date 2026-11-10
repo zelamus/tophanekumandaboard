@@ -149,8 +149,8 @@ export function PresetPanel() {
     if (getState().cables.length > 0) {
       const ok = await confirmAction({
         title: `"${p.name}" panoya kurulacak`,
-        body: `Mevcut ${getState().cables.length} kablo silinecek ve yerine bu devre kurulacak. Son işlemi Ctrl+Z ile geri alabilirsin.`,
-        confirmLabel: 'Kur',
+        body: `Mevcut ${getState().cables.length} kablo kalkacak. Panoyu ve motora ait kesici/ZR/termik durumunu Ctrl+Z ile geri alabilirsin.`,
+        confirmLabel: 'Devreyi Kur',
         cancelLabel: 'İptal',
       });
       if (!ok) return;
@@ -217,6 +217,7 @@ export function PresetPanel() {
                 type="button"
                 className="appleButton primary"
                 title="Mevcut kablolar silinip bu devre kurulur; önce onay ister"
+                aria-label={`"${p.name}" devresini panoya kur`}
                 onClick={() => void handleInstall(p)}
               >
                 <IconPlay style={{ width: 14, height: 14, marginRight: 6 }} />

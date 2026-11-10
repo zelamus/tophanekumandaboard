@@ -1,5 +1,6 @@
 import { A, useStore, resolveTheme } from '../store';
 import type { PathStyle, ThemePref } from '../store';
+import { useRadioGroup } from './radioGroup';
 import { IconSpeaker } from './Icons';
 import { tr0 } from './format';
 
@@ -19,6 +20,9 @@ export function SettingsPanel() {
   const st = useStore();
   const settings = st.settings;
 
+  const pathGroup = useRadioGroup<PathStyle>(['asılı', 'yumuşak', 'düz'], settings.pathStyle, (v) => A.setSettings({ pathStyle: v }));
+  const themeGroup = useRadioGroup<ThemePref>(['system', 'light', 'dark'], settings.theme, (v) => A.setTheme(v));
+
   return (
     <div className="inspectorSection" aria-label="Görünüm ve Tercihler">
       {/* 1. Kablo Yolu Stili */}
@@ -27,7 +31,7 @@ export function SettingsPanel() {
           <span className="cardTitle">Kablo Çizim Geometrisi</span>
         </div>
 
-        <div className="appleSegmented" role="radiogroup" aria-label="Kablo çizim stili">
+        <div className="appleSegmented" role="radiogroup" aria-label="Kablo çizim stili" ref={pathGroup.groupRef}>
           {PATH_STYLES.map((ps) => (
             <button
               key={ps.id}
@@ -36,6 +40,7 @@ export function SettingsPanel() {
               aria-checked={settings.pathStyle === ps.id}
               className={`segItem ${settings.pathStyle === ps.id ? 'active' : ''}`}
               onClick={() => A.setSettings({ pathStyle: ps.id })}
+              {...pathGroup.itemProps(ps.id)}
             >
               <span className="segText">{ps.label}</span>
             </button>
@@ -109,6 +114,7 @@ export function SettingsPanel() {
                 value={settings.sfx.vol}
                 className="appleRange"
                 aria-labelledby="sfx-vol-label"
+                aria-valuetext={`%${tr0(settings.sfx.vol * 100)}`}
                 onChange={(e) => A.setSettings({ sfx: { ...settings.sfx, vol: Number(e.target.value) } })}
               />
             </div>
@@ -116,7 +122,7 @@ export function SettingsPanel() {
         )}
       </div>
 
-      {/* 2.5 Görünüm Teması — Sistem/Açık/Koyu (R1: app-görünüm dayatması yerine sistem varsayanı) */}
+      {/* 3. Görünüm Teması — Sistem/Açık/Koyu (R1: app-görünüm dayatması yerine sistem varsayanı) */}
       <div className="appleCard">
         <div className="cardHeader">
           <span className="cardTitle">Arayüz Görünümü</span>
@@ -125,7 +131,7 @@ export function SettingsPanel() {
           </span>
         </div>
 
-        <div className="appleSegmented" role="radiogroup" aria-label="Arayüz görünümü">
+        <div className="appleSegmented" role="radiogroup" aria-label="Arayüz görünümü" ref={themeGroup.groupRef}>
           {THEME_OPTIONS.map((t) => (
             <button
               key={t.id}
@@ -134,17 +140,18 @@ export function SettingsPanel() {
               aria-checked={settings.theme === t.id}
               className={`segItem ${settings.theme === t.id ? 'active' : ''}`}
               onClick={() => A.setTheme(t.id)}
+              {...themeGroup.itemProps(t.id)}
             >
               <span className="segText">{t.label}</span>
             </button>
           ))}
         </div>
         <p className="cardText subtle">
-          Sistem seçiliyken açık/koyu, düzenin görünüm tercihiyle (prefers-color-scheme) otomatik uyar.
+          Sistem seçiliyken uygulama, işletim sisteminizin açık/koyu görünüm ayarını izler.
         </p>
       </div>
 
-      {/* 3. Klavye Kısayolları */}
+      {/* 4. Klavye Kısayolları */}
       <div className="appleCard">
         <div className="cardHeader">
           <span className="cardTitle">Klavye Kısayolları</span>

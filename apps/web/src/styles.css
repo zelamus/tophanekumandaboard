@@ -9,6 +9,8 @@
 
 :root {
   /* Apple Pro Dark Theme (Default) */
+  /* Renk şeması: yerel kontroller/ scrollbarlar da temayı izler (R2 DeepSeek #8) */
+  color-scheme: dark;
   --apple-bg: #0d0e11;
   --apple-surface: rgba(28, 28, 30, 0.82);
   --apple-surface-elevated: rgba(44, 44, 46, 0.86);
@@ -35,6 +37,8 @@
   --apple-green-ink: #52d66a;
   --apple-orange-ink: #ffb340;
   --apple-red-ink: #ff8a80;
+  /* LED bankası etiketi: banka her iki temada da koyu gömme plaka — mürekkep tema-değişmez (R2: 2/3) */
+  --led-bank-ink: #c7c7cc;
   --apple-green: #30d158;
   --apple-green-subtle: rgba(48, 209, 88, 0.16);
   --apple-orange: #ff9f0a;
@@ -62,6 +66,7 @@
 
 /* Light Theme Override */
 [data-theme='light'] {
+  color-scheme: light;
   --apple-bg: #f2f2f7;
   --apple-surface: rgba(255, 255, 255, 0.82);
   --apple-surface-elevated: rgba(242, 242, 247, 0.9);
@@ -453,6 +458,13 @@ body {
   border-color: var(--apple-red);
 }
 
+/* Devre dışı yıkıcı buton kırmızı davet etmez — nötr sakat kuralı geçer (R2: 2/3) */
+.appleButton.danger:disabled {
+  color: var(--apple-label-tertiary);
+  background: var(--apple-surface-elevated);
+  border-color: var(--apple-border);
+}
+
 .appleButton.small {
   min-height: 24px;
   padding: 2px 8px;
@@ -677,6 +689,13 @@ body {
   flex-direction: column;
   z-index: 20;
   transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+/* Masaüstünde gerçek katlama: kapalıyken panel yer kaplamaz (R2 DeepSeek #2) */
+@media (min-width: 821px) {
+  .appContainer:not(.sidebarOpen) .appleSidebar {
+    display: none;
+  }
 }
 
 .sidebarTopBar {
@@ -941,12 +960,13 @@ body {
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35);
 }
 
+/* Kapak zeminleri: beyaz 11px btnCode ≥4.5:1 — parlak sistem rengi dolgu değil, mürekkep kapak (R2) */
 .tactileButton.red .btnCap {
-  background: radial-gradient(circle at 35% 35%, #ff453a, #991b1b);
+  background: radial-gradient(circle at 35% 35%, #c0392b, #7a1010);
 }
 
 .tactileButton.teal .btnCap {
-  background: radial-gradient(circle at 35% 35%, #30d158, #065f46);
+  background: radial-gradient(circle at 35% 35%, #0b7c72, #064e46);
 }
 
 .btnCode {
@@ -974,7 +994,7 @@ body {
 .presetNumber {
   font-size: 11px;
   font-weight: 700;
-  color: var(--apple-blue);
+  color: var(--apple-blue-ink);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -1281,14 +1301,14 @@ body {
 }
 
 .pillHighlight {
-  color: var(--apple-orange);
+  color: var(--apple-orange-ink);
   font-weight: 600;
 }
 
 .pillActionBtn {
   background: var(--apple-red-subtle);
-  border: 1px solid var(--apple-red);
-  color: var(--apple-red);
+  border: 1px solid var(--apple-red-ink);
+  color: var(--apple-red-ink);
   font-size: 11px;
   font-weight: 600;
   border-radius: var(--radius-xs);
@@ -1376,7 +1396,7 @@ body {
   gap: 4px;
   font-size: 11px;
   font-weight: 650;
-  color: var(--apple-label-secondary);
+  color: var(--led-bank-ink);
   font-variant-numeric: tabular-nums;
   transition: color 0.12s ease;
 }
@@ -1527,6 +1547,20 @@ body {
   z-index: 15;
 }
 
+/* Orta kırılımlar: başlık yoğunlaşmadan kendi parçalarını bıraksın (R2 DeepSeek #2) */
+@media (max-width: 1120px) {
+  .appSub,
+  .breakerFastGroup {
+    display: none;
+  }
+}
+
+@media (max-width: 960px) {
+  .headerCenter .segText {
+    display: none;
+  }
+}
+
 @media (max-width: 820px) {
   .appHeader {
     padding: 0 10px;
@@ -1658,13 +1692,20 @@ body {
   .appHeader,
   .appStatusBar,
   .canvasFloatingPill,
-  .sidebarBackdrop {
+  .sidebarBackdrop,
+  /* ≤820px çekmece camı ve onay perdesi de saydam kalmaz (R2: 2/3) */
+  .appleSidebar,
+  .confirmBackdrop {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
   .appHeader,
   .appStatusBar,
   .canvasFloatingPill {
+    background: var(--apple-surface-solid);
+  }
+  /* Yüzen çekmece katı yüzeye döner */
+  .appleSidebar {
     background: var(--apple-surface-solid);
   }
   .appleCard {
@@ -1728,8 +1769,8 @@ body {
     transform: translateX(20px);
   }
   .colorDot {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
   }
   .appleRange {
     height: 28px;
@@ -1745,8 +1786,9 @@ body {
   }
   .pillActionBtn,
   .alertResetBtn,
-  .appleButton.small {
-    min-height: 36px;
+  .appleButton.small,
+  .confirmBtn {
+    min-height: 44px;
   }
 }
 
