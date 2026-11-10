@@ -177,8 +177,11 @@ export function SavePanel() {
     // silme İKİSİNİ de hedefler — biri kalırsa satır sonraki yenilemede
     // "dirilmiş" gibi görünür (R4 DeepSeek #6)
     if (navigator.onLine === false) {
-      // Tarayıcı çevrimdışı diyor: bulut adımını beklemeden dürüst yol —
-      // yalnız yerel kopya silinir, bulut kopyası varsa açık söylenir (R5 DeepSeek #3)
+      // Tarayıcı çevrimdışı diyorsa rozet de aynı şeyi söylemeli — yeşil kalmaz
+      // (R6 DeepSeek #1 + Nemotron #1: iki koltuk bağımsız buldu)
+      setIsOnline(false);
+      // Son bilinen listede bulut ikizi yoksa "bulut kopyası" iddiası yalan olur (R6 GLM #1)
+      const hasTwin = items.some((x) => x.id === m.id && x.source === 'sunucu');
       if (m.source === 'yerel') {
         try {
           localStorage.setItem(LS_KEY, JSON.stringify(localList().filter((x) => x.id !== m.id)));
@@ -186,7 +189,7 @@ export function SavePanel() {
           flash('Silinemedi — yerel bellek yazılamadı');
           return;
         }
-        flash('Yerelden silindi; bulut kopyası çevrimdışıyken silinemez');
+        flash('Yerelden silindi' + (hasTwin ? '; bulut kopyası çevrimdışıyken silinemez' : ''));
       } else {
         flash('Silinemedi — çevrimdışı olabilirsiniz');
         return;

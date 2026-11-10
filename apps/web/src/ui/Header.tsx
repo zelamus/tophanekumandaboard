@@ -25,9 +25,9 @@ const COLORS: { c: string; name: string }[] = [
 ];
 
 const MODES: { m: Mode; label: string; icon: typeof IconWire; hint: string }[] = [
-  { m: 'kablo', label: 'Kablo', icon: IconWire, hint: 'Kablo Çek — uca tıkla, sonra diğer uca tıkla' },
+  { m: 'kablo', label: 'Kablo', icon: IconWire, hint: 'Kablo Çek — uca tıklayın, sonra diğer uca tıklayın' },
   { m: 'hareket', label: 'Taşı', icon: IconPan, hint: 'Panoyu Taşı & Kaydır (Tekerlek: Yakınlaştır)' },
-  { m: 'sil', label: 'Kablo Sil', icon: IconCut, hint: 'Kablo Sil — kaldırmak istediğin kabloya tıkla' },
+  { m: 'sil', label: 'Kablo Sil', icon: IconCut, hint: 'Kablo Sil — kaldırmak istediğiniz kabloya tıklayın' },
 ];
 
 const THEME_ORDER: Array<'dark' | 'light' | 'system'> = ['system', 'light', 'dark'];
