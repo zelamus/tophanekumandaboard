@@ -1,4 +1,4 @@
-import { A, useStore } from '../store';
+import { A, useStore, resolveTheme } from '../store';
 import type { Mode } from '../store';
 import {
   IconWire,
@@ -11,6 +11,7 @@ import {
   IconMoon,
   IconAlert,
 } from './Icons';
+import { confirmAction } from './confirm';
 import { sfx } from '../audio/sfx';
 
 const COLORS: { c: string; name: string }[] = [
@@ -24,8 +25,10 @@ const COLORS: { c: string; name: string }[] = [
 const MODES: { m: Mode; label: string; icon: typeof IconWire; hint: string }[] = [
   { m: 'kablo', label: 'Kablo', icon: IconWire, hint: 'Kablo Çek — uca tıkla, sonra diğer uca tıkla' },
   { m: 'hareket', label: 'Taşı', icon: IconPan, hint: 'Panoyu Taşı & Kaydır (Tekerlek: Yakınlaştır)' },
-  { m: 'sil', label: 'Sil', icon: IconCut, hint: 'Kablo Sil — kaldırmak istediğin kabloya tıkla' },
+  { m: 'sil', label: 'Kablo Sil', icon: IconCut, hint: 'Kablo Sil — kaldırmak istediğin kabloya tıkla' },
 ];
+
+const THEME_LABEL: Record<string, string> = { dark: 'Koyu', light: 'Açık', system: 'Sistem' };
 
 interface HeaderProps {
   sidebarOpen: boolean;
@@ -35,7 +38,22 @@ interface HeaderProps {
 export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
   const st = useStore();
   const sim = st.sim;
-  const isLight = st.settings.theme === 'light';
+  const pref = st.settings.theme;
+  const effective = resolveTheme(pref);
+
+  const handleClearWires = async () => {
+    if (st.cables.length === 0) return;
+    const ok = await confirmAction({
+      title: 'Tüm kablolar temizlensin mi?',
+      body: `Panodaki ${st.cables.length} kablo silinecek. Son işlemi Ctrl+Z ile geri alabilirsin.`,
+      confirmLabel: 'Temizle',
+      cancelLabel: 'İptal',
+    });
+    if (ok) {
+      sfx.breaker(false);
+      A.clearWires();
+    }
+  };
 
   const toggleMotorBreaker = () => {
     sfx.breaker(!st.breakers.motor);
@@ -45,6 +63,12 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
   const toggleControlBreaker = () => {
     sfx.breaker(!st.breakers.control);
     A.toggleBreaker('control');
+  };
+
+  // Görünüm: system'dayken etkili görünümün tersine geç (açık←→koyu)
+  const cycleTheme = () => {
+    const next = effective === 'light' ? 'dark' : 'light';
+    A.setTheme(next);
   };
 
   return (
@@ -120,9 +144,9 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
           <button
             type="button"
             className="appleButton iconOnly"
-            disabled={st.cables.length === 0}
-            title="Son kabloyu geri al (Ctrl+Z / ⌘Z)"
-            aria-label="Geri al"
+            disabled={st.undoDepth === 0}
+            title="Son kablo işlemini geri al (Ctrl+Z / ⌘Z)"
+            aria-label="Son kablo işlemini geri al"
             onClick={() => A.undo()}
           >
             <IconUndo />
@@ -132,8 +156,8 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
             className="appleButton iconOnly danger"
             disabled={st.cables.length === 0}
             title="Panodaki tüm kabloları temizle"
-            aria-label="Tüm kabloları sil"
-            onClick={() => A.clearWires()}
+            aria-label="Tüm kabloları temizle"
+            onClick={() => void handleClearWires()}
           >
             <IconTrash />
           </button>
@@ -146,20 +170,26 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
         <div className="breakerFastGroup" title="Pano ana kesicileri">
           <button
             type="button"
+            role="switch"
+            aria-checked={st.breakers.motor}
             className={`breakerPill ${st.breakers.motor ? 'active' : ''}`}
             onClick={toggleMotorBreaker}
             title="F3 — 3 Fazlı Motor Kesici (3P 400V)"
+            aria-label={`F3 motor kesici ${st.breakers.motor ? 'açık' : 'kapalı'}`}
           >
-            <span className="dot" />
+            <span className="dot" aria-hidden="true" />
             <span className="lbl">F3 3P</span>
           </button>
           <button
             type="button"
+            role="switch"
+            aria-checked={st.breakers.control}
             className={`breakerPill ${st.breakers.control ? 'active' : ''}`}
             onClick={toggleControlBreaker}
             title="F1 — 1 Fazlı Kumanda Kesici (1P 230V)"
+            aria-label={`F1 kumanda kesici ${st.breakers.control ? 'açık' : 'kapalı'}`}
           >
-            <span className="dot" />
+            <span className="dot" aria-hidden="true" />
             <span className="lbl">F1 1P</span>
           </button>
         </div>
@@ -186,11 +216,17 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
         <button
           type="button"
           className="appleButton iconOnly"
-          title={isLight ? 'Koyu moda geç' : 'Açık moda geç'}
-          aria-label="Görünüm modu"
-          onClick={() => A.setTheme(isLight ? 'dark' : 'light')}
+          title={
+            pref === 'system'
+              ? `Görünüm: Sistem (${effective === 'light' ? 'Açık' : 'Koyu'}) — Açık/Koyu gezmek için tıkla`
+              : effective === 'light'
+                ? 'Koyu moda geç'
+                : 'Açık moda geç'
+          }
+          aria-label={`Görünüm — şu an ${THEME_LABEL[pref]}`}
+          onClick={cycleTheme}
         >
-          {isLight ? <IconMoon /> : <IconSun />}
+          {effective === 'light' ? <IconMoon /> : <IconSun />}
         </button>
 
         {/* Kenar Çubuğu (Inspector) Aç/Kapa */}

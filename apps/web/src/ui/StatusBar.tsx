@@ -2,6 +2,7 @@ import { A, useStore } from '../store';
 import type { ZrConf } from '../store';
 import type { SimOutput } from '../sim/model';
 import { IconAlert, IconRefresh } from './Icons';
+import { tr1 } from './format';
 
 interface LedProps {
   on: boolean;
@@ -11,10 +12,16 @@ interface LedProps {
 }
 
 function HardwareLed({ on, color, label, title }: LedProps) {
+  // Durum yalnızca renk/ışıldamadan gelmez: ad+Açık/Kapalı ekran okuyucuya söylenir
   return (
-    <div className={`hardwareLed ${on ? 'on' : ''}`} title={title}>
+    <div
+      className={`hardwareLed ${on ? 'on' : ''}`}
+      role="img"
+      aria-label={`${label}: ${on ? 'açık' : 'kapalı'} — ${title}`}
+      title={title}
+    >
       <span className="ledPip" style={{ '--led-color': color } as React.CSSProperties} />
-      <span className="ledLabel">{label}</span>
+      <span className="ledLabel" aria-hidden="true">{label}</span>
     </div>
   );
 }
@@ -83,16 +90,16 @@ function renderTelemetry(sim: SimOutput | null, zr: ZrConf) {
     pills.push(
       <div key="zr" className="telemetryPill info">
         {zr.mode === 'ters'
-          ? `ZR Çekili (Ters) — Bırakınca ${(zr.delayMs / 1000).toFixed(1)} sn`
+          ? `ZR Çekili (Ters) — Bırakınca ${tr1(zr.delayMs / 1000)} sn`
           : sim.dev.zr.closed
             ? 'ZR Çekili (Gecikme Doldu)'
-            : `ZR Sayıyor: ${(sim.dev.zr.elapsed / 1000).toFixed(1)} sn`}
+            : `ZR Sayıyor: ${tr1(sim.dev.zr.elapsed / 1000)} sn`}
       </div>
     );
   } else if (sim.dev.zr.closed) {
     pills.push(
       <div key="zrh" className="telemetryPill info">
-        <span>ZR Tutuyor: Kalan {(sim.dev.zr.elapsed / 1000).toFixed(1)} sn</span>
+        <span>ZR Tutuyor: Kalan {tr1(sim.dev.zr.elapsed / 1000)} sn</span>
       </div>
     );
   }
@@ -159,10 +166,12 @@ export function StatusBar() {
         </div>
       </div>
 
-      {/* Orta: Telemetri Rozetleri ve Kısa Devre Uyarısı */}
-      <div className="statusSection center" aria-live="polite">
+      {/* Orta: Telemetri Rozetleri ve Kısa Devre Uyarısı
+          Telemetri ~10Hz tazelenir: canlı bölge ADAYI değil (R1: ZR sayacı '2.7, 2.6…'
+          diye okuyucuyu boğar). Yalnız kısa devre uyarısı canlı bölgedir. */}
+      <div className="statusSection center">
         {shorted.length > 0 ? (
-          <div className="shortCircuitAlert">
+          <div className="shortCircuitAlert" role="alert" aria-live="assertive">
             <IconAlert className="alertIcon" />
             <span className="alertMsg">
               Kısa Devre Algılandı! ({shorted.length} Terminal) — Termik attı, kumanda koptu.
@@ -177,7 +186,7 @@ export function StatusBar() {
             </button>
           </div>
         ) : (
-          <div className="telemetryList">
+          <div className="telemetryList" aria-live="off">
             {renderTelemetry(sim, st.zr)}
           </div>
         )}

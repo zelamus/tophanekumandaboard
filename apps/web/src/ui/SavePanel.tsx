@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
-import { A } from '../store';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { A, getState } from '../store';
 import type { DocShape } from '../store';
+import { confirmAction } from './confirm';
 import { IconDownload, IconUpload, IconTrash, IconFolder } from './Icons';
 
 interface SaveMeta {
@@ -37,6 +38,7 @@ export function SavePanel() {
   const [items, setItems] = useState<SaveMeta[]>([]);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [isOnline, setIsOnline] = useState<boolean>(true);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
     const serverItems: SaveMeta[] = [];
@@ -58,6 +60,22 @@ export function SavePanel() {
     void refresh();
   }, [refresh]);
 
+  /** Panoda bekleyen iş varken değiştirme/temizlik onayı (R1: dört yıkıcı yol onaysızdı) */
+  const guardBoardReplace = useCallback(async (what: string): Promise<boolean> => {
+    if (getState().cables.length === 0) return true;
+    return confirmAction({
+      title: `${what} panoyu değiştirecek`,
+      body: `Mevcut ${getState().cables.length} kablonun üzerine yazılacak. Son işlemi Ctrl+Z ile geri alabilirsin.`,
+      confirmLabel: 'Değiştir',
+      cancelLabel: 'İptal',
+    });
+  }, []);
+
+  const flash = useCallback((msg: string) => {
+    setStatusMessage(msg);
+    setTimeout(() => setStatusMessage(''), 3500);
+  }, []);
+
   const doSave = async () => {
     const trimmed = name.trim();
     const nm = trimmed || `Pano Devresi ${new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
@@ -78,15 +96,16 @@ export function SavePanel() {
         body: JSON.stringify({ id: meta.id, name: nm, doc }),
       });
       if (!r.ok) throw new Error(String(r.status));
-      setStatusMessage('Buluta ve yerel belleğe kaydedildi');
+      flash('Buluta ve yerel belleğe kaydedildi');
     } catch {
-      setStatusMessage('Tarayıcı yerel hafızasına kaydedildi');
+      flash('Tarayıcı yerel hafızasına kaydedildi');
     }
     void refresh();
-    setTimeout(() => setStatusMessage(''), 3500);
   };
 
   const doLoad = async (m: SaveMeta) => {
+    const ok = await guardBoardReplace(`"${m.name}" kaydını yüklemek`);
+    if (!ok) return;
     try {
       if (m.doc) {
         A.loadDoc(m.doc);
@@ -96,14 +115,20 @@ export function SavePanel() {
         const j = (await r.json()) as { doc: DocShape };
         A.loadDoc(j.doc);
       }
-      setStatusMessage(`"${m.name}" panoya yüklendi`);
+      flash(`"${m.name}" panoya yüklendi`);
     } catch {
-      setStatusMessage('Kayıt yüklenirken hata oluştu');
+      flash('Kayıt yüklenirken hata oluştu');
     }
-    setTimeout(() => setStatusMessage(''), 3500);
   };
 
   const doDel = async (m: SaveMeta) => {
+    const ok = await confirmAction({
+      title: `"${m.name}" kaydı silinsin mi?`,
+      body: `Bu ${m.source === 'sunucu' ? 'bulut' : 'yerel'} kaydı panodan kalıcı olarak silinir. Bu işlem geri alınamaz.`,
+      confirmLabel: 'Kaydı Sil',
+      cancelLabel: 'İptal',
+    });
+    if (!ok) return;
     if (m.source === 'yerel') {
       try {
         localStorage.setItem(LS_KEY, JSON.stringify(localList().filter((x) => x.id !== m.id)));
@@ -130,19 +155,22 @@ export function SavePanel() {
     URL.revokeObjectURL(url);
   };
 
-  const importJson = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const importJson = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    file.text().then((text) => {
-      try {
-        const parsed = JSON.parse(text) as DocShape;
-        A.loadDoc(parsed);
-        setStatusMessage('JSON dosyası başarıyla panoya yüklendi');
-      } catch {
-        setStatusMessage('Geçersiz JSON dosyası');
-      }
-      setTimeout(() => setStatusMessage(''), 3500);
-    });
+    const ok = await guardBoardReplace('JSON dosyasını yüklemek');
+    if (!ok) {
+      e.target.value = '';
+      return;
+    }
+    const text = await file.text();
+    try {
+      const parsed = JSON.parse(text) as DocShape;
+      A.loadDoc(parsed);
+      flash('JSON dosyası başarıyla panoya yüklendi');
+    } catch {
+      flash('Geçersiz JSON dosyası');
+    }
     e.target.value = '';
   };
 
@@ -157,8 +185,10 @@ export function SavePanel() {
           </span>
         </div>
 
+        <label className="fieldLabel" htmlFor="saveNameInput">Kayıt adı</label>
         <div className="inputActionRow">
           <input
+            id="saveNameInput"
             type="text"
             className="appleInput"
             placeholder="Örn: 10-A Otomatik Kumanda"
@@ -209,7 +239,7 @@ export function SavePanel() {
                     type="button"
                     className="appleButton small"
                     onClick={() => void doLoad(m)}
-                    title="Bu devreyi panoya yükle"
+                    title="Bu devreyi panoya yükle (üzerine yazar)"
                   >
                     Yükle
                   </button>
@@ -217,8 +247,8 @@ export function SavePanel() {
                     type="button"
                     className="appleButton small danger iconOnly"
                     onClick={() => void doDel(m)}
-                    title="Bu kaydı sil"
-                    aria-label="Kaydı sil"
+                    title="Bu kaydı sil (kalıcı, geri alınamaz)"
+                    aria-label={`"${m.name}" kaydını sil`}
                   >
                     <IconTrash />
                   </button>
@@ -240,11 +270,25 @@ export function SavePanel() {
             <span>JSON İndir</span>
           </button>
 
-          <label className="appleButton secondary fileLabel">
+          {/* Gerçek düğme + odaklanabilir görsel-gizli input (R1: display:none klavye dışıydı) */}
+          <button
+            type="button"
+            className="appleButton secondary"
+            title="JSON dosyasından devre yükle"
+            onClick={() => fileRef.current?.click()}
+          >
             <IconUpload className="btnIcon" />
             <span>JSON Yükle</span>
-            <input type="file" accept="application/json" onChange={importJson} style={{ display: 'none' }} />
-          </label>
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json"
+            className="visuallyHidden"
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={(e) => { void importJson(e); }}
+          />
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { PRESETS, presetCables } from '../presets';
 import type { Preset } from '../presets';
 import { A, getState } from '../store';
+import { confirmAction } from './confirm';
 import { IconPlay } from './Icons';
 
 const INK = '#2c251d';
@@ -142,9 +143,19 @@ const SCHEMATICS: Record<string, () => React.ReactNode> = {
 export function PresetPanel() {
   const [openSchematic, setOpenSchematic] = useState<string | null>(null);
 
-  const handleInstall = (p: Preset) => {
-    A.clearWires();
-    A.loadDoc({
+  // Kurulum: temizliği + yüklemeyi TEK geri alınabilir adımda yapar.
+  // Panoda iş varken açıkça sorar — öğrencinin 20 dakikalık kablosu uyarısız silinmez (R1 #5).
+  const handleInstall = async (p: Preset) => {
+    if (getState().cables.length > 0) {
+      const ok = await confirmAction({
+        title: `"${p.name}" panoya kurulacak`,
+        body: `Mevcut ${getState().cables.length} kablo silinecek ve yerine bu devre kurulacak. Son işlemi Ctrl+Z ile geri alabilirsin.`,
+        confirmLabel: 'Kur',
+        cancelLabel: 'İptal',
+      });
+      if (!ok) return;
+    }
+    A.replaceDoc({
       v: 1,
       cables: presetCables(p),
       breakers: { motor: true, control: true },
@@ -183,6 +194,7 @@ export function PresetPanel() {
                   <button
                     type="button"
                     className="schematicToggle"
+                    aria-expanded={isSchematicOpen}
                     onClick={() => setOpenSchematic(isSchematicOpen ? null : p.id)}
                   >
                     <span>{isSchematicOpen ? 'Şemayı Gizle' : 'Elektrik Şemasını Göster'}</span>
@@ -204,7 +216,8 @@ export function PresetPanel() {
               <button
                 type="button"
                 className="appleButton primary"
-                onClick={() => handleInstall(p)}
+                title="Mevcut kablolar silinip bu devre kurulur; önce onay ister"
+                onClick={() => void handleInstall(p)}
               >
                 <IconPlay style={{ width: 14, height: 14, marginRight: 6 }} />
                 <span>Devreyi Panoya Kur</span>

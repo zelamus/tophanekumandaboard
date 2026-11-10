@@ -1,6 +1,7 @@
-import { A, useStore } from '../store';
-import type { PathStyle } from '../store';
-import { IconSpeaker, IconMoon, IconSun } from './Icons';
+import { A, useStore, resolveTheme } from '../store';
+import type { PathStyle, ThemePref } from '../store';
+import { IconSpeaker } from './Icons';
+import { tr0 } from './format';
 
 const PATH_STYLES: { id: PathStyle; label: string; desc: string }[] = [
   { id: 'asılı', label: 'Asılı', desc: 'Gerçek eğitim kartındaki sarkan doğal kablo yerçekimi eğrisi' },
@@ -8,10 +9,15 @@ const PATH_STYLES: { id: PathStyle; label: string; desc: string }[] = [
   { id: 'düz', label: 'Düz', desc: 'Terminaller arasında dosdoğru CAD hattı' },
 ];
 
+const THEME_OPTIONS: { id: ThemePref; label: string }[] = [
+  { id: 'system', label: 'Sistem' },
+  { id: 'light', label: 'Açık' },
+  { id: 'dark', label: 'Koyu' },
+];
+
 export function SettingsPanel() {
   const st = useStore();
   const settings = st.settings;
-  const isLight = settings.theme === 'light';
 
   return (
     <div className="inspectorSection" aria-label="Görünüm ve Tercihler">
@@ -21,11 +27,13 @@ export function SettingsPanel() {
           <span className="cardTitle">Kablo Çizim Geometrisi</span>
         </div>
 
-        <div className="appleSegmented">
+        <div className="appleSegmented" role="radiogroup" aria-label="Kablo çizim stili">
           {PATH_STYLES.map((ps) => (
             <button
               key={ps.id}
               type="button"
+              role="radio"
+              aria-checked={settings.pathStyle === ps.id}
               className={`segItem ${settings.pathStyle === ps.id ? 'active' : ''}`}
               onClick={() => A.setSettings({ pathStyle: ps.id })}
             >
@@ -43,13 +51,14 @@ export function SettingsPanel() {
         {/* Uç Vurgusu Switch */}
         <div className="switchRow">
           <div className="switchInfo">
-            <span className="switchLabel">Terminal Uç Vurgusu</span>
+            <span className="switchLabel" id="sw-vurgula">Terminal Uç Vurgusu</span>
             <span className="switchDesc">İmleç kablonun üzerindeyken bağlı soketleri aydınlatır</span>
           </div>
           <button
             type="button"
             role="switch"
             aria-checked={settings.vurgula}
+            aria-labelledby="sw-vurgula"
             className={`appleSwitch ${settings.vurgula ? 'on' : ''}`}
             onClick={() => A.setSettings({ vurgula: !settings.vurgula })}
           >
@@ -69,13 +78,14 @@ export function SettingsPanel() {
 
         <div className="switchRow">
           <div className="switchInfo">
-            <span className="switchLabel">Cihaz Ses Sentezi</span>
+            <span className="switchLabel" id="sw-sfx">Cihaz Ses Sentezi</span>
             <span className="switchDesc">Kontaktör çakısı, motor humu, termik atma ve kesici sesi</span>
           </div>
           <button
             type="button"
             role="switch"
             aria-checked={settings.sfx.on}
+            aria-labelledby="sw-sfx"
             className={`appleSwitch ${settings.sfx.on ? 'on' : ''}`}
             onClick={() => A.setSettings({ sfx: { ...settings.sfx, on: !settings.sfx.on } })}
           >
@@ -86,8 +96,8 @@ export function SettingsPanel() {
         {settings.sfx.on && (
           <div className="sliderGroup" style={{ marginTop: 12 }}>
             <div className="sliderLabels">
-              <span className="sliderSub">Ses Seviyesi</span>
-              <span className="sliderValue">{Math.round(settings.sfx.vol * 100)}%</span>
+              <span className="sliderSub" id="sfx-vol-label">Ses Seviyesi</span>
+              <span className="sliderValue">%{tr0(settings.sfx.vol * 100)}</span>
             </div>
             <div className="volumeControlRow">
               <IconSpeaker className="volumeIcon" />
@@ -98,7 +108,7 @@ export function SettingsPanel() {
                 step={0.05}
                 value={settings.sfx.vol}
                 className="appleRange"
-                aria-label="Ses Düzeyi"
+                aria-labelledby="sfx-vol-label"
                 onChange={(e) => A.setSettings({ sfx: { ...settings.sfx, vol: Number(e.target.value) } })}
               />
             </div>
@@ -106,33 +116,35 @@ export function SettingsPanel() {
         )}
       </div>
 
-      {/* 3. Görünüm Teması */}
+      {/* 2.5 Görünüm Teması — Sistem/Açık/Koyu (R1: app-görünüm dayatması yerine sistem varsayanı) */}
       <div className="appleCard">
         <div className="cardHeader">
           <span className="cardTitle">Arayüz Görünümü</span>
+          <span className="cardBadge">
+            {settings.theme === 'system' ? `Sistem → ${resolveTheme('system') === 'light' ? 'Açık' : 'Koyu'}` : THEME_OPTIONS.find((t) => t.id === settings.theme)?.label}
+          </span>
         </div>
 
-        <div className="appleSegmented">
-          <button
-            type="button"
-            className={`segItem ${!isLight ? 'active' : ''}`}
-            onClick={() => A.setTheme('dark')}
-          >
-            <IconMoon className="segIcon" />
-            <span className="segText">Koyu Stüdyo</span>
-          </button>
-          <button
-            type="button"
-            className={`segItem ${isLight ? 'active' : ''}`}
-            onClick={() => A.setTheme('light')}
-          >
-            <IconSun className="segIcon" />
-            <span className="segText">Açık</span>
-          </button>
+        <div className="appleSegmented" role="radiogroup" aria-label="Arayüz görünümü">
+          {THEME_OPTIONS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="radio"
+              aria-checked={settings.theme === t.id}
+              className={`segItem ${settings.theme === t.id ? 'active' : ''}`}
+              onClick={() => A.setTheme(t.id)}
+            >
+              <span className="segText">{t.label}</span>
+            </button>
+          ))}
         </div>
+        <p className="cardText subtle">
+          Sistem seçiliyken açık/koyu, düzenin görünüm tercihiyle (prefers-color-scheme) otomatik uyar.
+        </p>
       </div>
 
-      {/* 4. Klavye Kısayolları */}
+      {/* 3. Klavye Kısayolları */}
       <div className="appleCard">
         <div className="cardHeader">
           <span className="cardTitle">Klavye Kısayolları</span>
@@ -149,12 +161,16 @@ export function SettingsPanel() {
             <span className="shortcutKey"><kbd>Delete</kbd> / <kbd>Backspace</kbd></span>
           </div>
           <div className="shortcutRow">
-            <span className="shortcutName">Son Eylemi Geri Al</span>
+            <span className="shortcutName">Son Kablo İşlemini Geri Al</span>
             <span className="shortcutKey"><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>⌘</kbd><kbd>Z</kbd></span>
           </div>
           <div className="shortcutRow">
             <span className="shortcutName">Seçimi İptal Et</span>
             <span className="shortcutKey"><kbd>Esc</kbd></span>
+          </div>
+          <div className="shortcutRow">
+            <span className="shortcutName">Denetçiyi Aç / Kapat</span>
+            <span className="shortcutKey"><kbd>Alt</kbd>+<kbd>B</kbd></span>
           </div>
           <div className="shortcutRow">
             <span className="shortcutName">Yakınlaştır / Kaydır</span>

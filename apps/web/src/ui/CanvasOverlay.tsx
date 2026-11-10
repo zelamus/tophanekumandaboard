@@ -19,6 +19,7 @@ export function CanvasOverlay() {
               type="button"
               className="pillActionBtn"
               title="Seçili kabloyu sil (Delete)"
+              aria-label="Seçili kabloyu sil"
               onClick={() => A.delSelected()}
             >
               <IconTrash style={{ width: 13, height: 13 }} />

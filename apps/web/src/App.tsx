@@ -2,21 +2,39 @@ import { useEffect, useRef, useState } from 'react';
 import { useSimLoop } from './sim/useSim';
 import type { SimOutput } from './sim/model';
 import { Board } from './board/render';
-import { A, useStore } from './store';
+import { A, useStore, resolveTheme, applyTheme } from './store';
 import { sfx } from './audio/sfx';
 import { Header } from './ui/Header';
 import { Sidebar } from './ui/Sidebar';
 import { StatusBar } from './ui/StatusBar';
 import { CanvasOverlay } from './ui/CanvasOverlay';
+import { ConfirmDialogHost } from './ui/confirm';
 
 export function App() {
   useSimLoop();
   const st = useStore();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Tablet/telefonda çekmece kapalı başlar; masaüstünde açık (R1: tablet ilk yük perde)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      return window.matchMedia('(min-width: 821px)').matches;
+    } catch {
+      return true;
+    }
+  });
 
   // Tema özniteliğini documentElement üzerinde senkronize tut
+  // ('system' ayarı resolve edilir; applyTheme store'da da çağrılır — tek doğruluk burada)
   useEffect(() => {
-    document.documentElement.dataset.theme = st.settings.theme;
+    applyTheme(resolveTheme(st.settings.theme));
+  }, [st.settings]);
+
+  // System temasında düzen tercihi değişirse yeniden çöz
+  useEffect(() => {
+    if (st.settings.theme !== 'system') return;
+    const mq = window.matchMedia('(prefers-color-scheme: light)');
+    const onChange = () => A.refreshSystemTheme();
+    mq.addEventListener?.('change', onChange);
+    return () => mq.removeEventListener?.('change', onChange);
   }, [st.settings.theme]);
 
   // Klavye kısayolları: ESC, Delete, Ctrl+Z / Cmd+Z, Alt+B
@@ -76,7 +94,7 @@ export function App() {
   }, [st.sim, st.settings.sfx.on, st.settings.sfx.vol]);
 
   return (
-    <div className={`appContainer ${st.settings.theme}`}>
+    <div className={`appContainer ${resolveTheme(st.settings.theme)}`}>
       {/* 1. Üst Apple macOS Navigasyon Çubuğu */}
       <Header
         sidebarOpen={sidebarOpen}
@@ -110,6 +128,9 @@ export function App() {
 
       {/* 3. Alt Apple Donanım Teşhis & Durum Çubuğu */}
       <StatusBar />
+
+      {/* Tehlikeli eylem onayları tüm app için tek noktada */}
+      <ConfirmDialogHost />
     </div>
   );
 }

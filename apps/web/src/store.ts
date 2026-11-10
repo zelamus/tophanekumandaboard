@@ -22,7 +22,20 @@ export interface SettingsShape {
   /** Kabloya gelince uçlarını vurgula + diğerlerini kıs (hover focus) */
   vurgula: boolean;
   sfx: SfxSetting;
-  theme: 'dark' | 'light';
+  /** 'system' düzenin tercihini izler (prefers-color-scheme) */
+  theme: 'dark' | 'light' | 'system';
+}
+
+export type ThemePref = SettingsShape['theme'];
+
+/** Gerçekten uygulanan temayı çöz (system → medya sorgusu) */
+export function resolveTheme(t: ThemePref): 'dark' | 'light' {
+  if (t !== 'system') return t;
+  try {
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
 }
 
 export interface Cable {
@@ -67,6 +80,8 @@ export interface AppState {
   simEpoch: number;
   /** Termik sıfırlamada artar → uğuldama sayacı yeni pencere alır (bobin/ZR İÇİNE DOKUNMAZ) */
   stallEpoch: number;
+  /** Geri alma yığını derinliği (0 = geri alınacak kablo işlemi yok) */
+  undoDepth: number;
 }
 
 /* ---------------- ayarlar — kalıcılık ---------------- */
@@ -78,18 +93,27 @@ const DEFAULT_SETTINGS: SettingsShape = {
   cableType: 'normal',
   vurgula: true,
   sfx: { on: true, vol: 0.5 },
-  theme: 'dark',
+  theme: 'system',
 };
+
+/** Kayıtlı temayı geçerli anahtar kelimeye indirger; eski kayıtlar bozulmaz */
+function sanitizeTheme(t: unknown): ThemePref {
+  return t === 'light' || t === 'dark' || t === 'system' ? t : 'system';
+}
+
+export function applyTheme(corrected: 'dark' | 'light'): void {
+  if (typeof document !== 'undefined') {
+    document.documentElement.dataset.theme = corrected;
+  }
+}
 
 function loadAyar(): SettingsShape {
   try {
     const raw = localStorage.getItem(AYAR_KEY);
+    const th = raw ? sanitizeTheme((JSON.parse(raw) as Partial<SettingsShape>).theme) : DEFAULT_SETTINGS.theme;
+    applyTheme(resolveTheme(th));
     if (!raw) return { ...DEFAULT_SETTINGS };
     const j = JSON.parse(raw) as Partial<SettingsShape>;
-    const th = j.theme === 'light' ? 'light' : 'dark';
-    if (typeof document !== 'undefined') {
-      document.documentElement.dataset.theme = th;
-    }
     return {
       pathStyle: j.pathStyle === 'düz' || j.pathStyle === 'yumuşak' ? j.pathStyle : 'asılı',
       cableType: j.cableType === 'güç' ? 'güç' : 'normal',
@@ -97,24 +121,35 @@ function loadAyar(): SettingsShape {
       sfx: { on: j.sfx?.on !== false, vol: typeof j.sfx?.vol === 'number' ? Math.min(1, Math.max(0, j.sfx.vol)) : 0.5 },
       theme: th,
     };
-  } catch { return { ...DEFAULT_SETTINGS }; }
+  } catch {
+    applyTheme(resolveTheme(DEFAULT_SETTINGS.theme));
+    return { ...DEFAULT_SETTINGS };
+  }
 }
 
 function saveAyar(s: SettingsShape): void {
   try {
     localStorage.setItem(AYAR_KEY, JSON.stringify(s));
-    if (typeof document !== 'undefined') {
-      document.documentElement.dataset.theme = s.theme;
-    }
   } catch { /* yoksay */ }
+  applyTheme(resolveTheme(s.theme));
 }
 
 const listeners = new Set<() => void>();
 let seq = 0;
 
+/* Geri alma yığını — kablo ekleme/silme/temizleme/yüklemeden önceki durumu tutar.
+   Son 40 kablo işlemi geri alınabilir. */
+const MAX_UNDO = 40;
+let undoStack: Cable[][] = [];
+
+function pushHistory(): void {
+  undoStack.push(state.cables.slice());
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+}
+
 let state: AppState = {
   mode: 'kablo',
-  cableColor: '#b71c1c',
+  cableColor: '#ff3b30',
   settings: loadAyar(),
   cables: [],
   pressed: { b1: false, b2: false, b3: false, b4: false },
@@ -126,6 +161,7 @@ let state: AppState = {
   sim: null,
   simEpoch: 0,
   stallEpoch: 0,
+  undoDepth: 0,
 };
 
 function notify(): void { listeners.forEach((f) => f()); }
@@ -161,8 +197,13 @@ export const A = {
     patch({ settings });
   },
 
-  setTheme(theme: 'dark' | 'light'): void {
+  setTheme(theme: ThemePref): void {
     A.setSettings({ theme });
+  },
+
+  /** System temasındayken düzen görünümü değişince yeniden çözer */
+  refreshSystemTheme(): void {
+    patch({ settings: { ...state.settings } });
   },
 
   /** Bir kablodan uzaklaştırmadan uç yakalamayı isteyeceğim; yoksa aynen */
@@ -180,9 +221,11 @@ export const A = {
       color: state.cableColor, güç: kpcTipi,
     };
     // Shift ile çekim zinciri: ikinci uç yeni taslak başlangıcı olur
+    pushHistory();
     patch({
       cables: [...state.cables, cable],
       selTerminal: zincir ? id : null,
+      undoDepth: undoStack.length,
     });
   },
 
@@ -195,23 +238,31 @@ export const A = {
   },
 
   delCable(id: string): void {
-    patch({ cables: state.cables.filter((c) => c.id !== id), selCable: null });
+    pushHistory();
+    patch({ cables: state.cables.filter((c) => c.id !== id), selCable: null, undoDepth: undoStack.length });
   },
 
   delSelected(): void {
     if (state.selCable) A.delCable(state.selCable);
   },
 
-  /** Son çekilen kabloyu geri al (Ctrl+Z) */
+  /** Son kablo işlemini geri al (Ctrl+Z / ⌘Z) */
   undo(): void {
-    const last = state.cables[state.cables.length - 1];
-    if (last) A.delCable(last.id);
+    const snap = undoStack.pop();
+    if (!snap) return;
+    patch({
+      cables: snap,
+      selTerminal: null,
+      selCable: null,
+      undoDepth: undoStack.length,
+    });
   },
 
   cancelSel(): void { patch({ selTerminal: null, selCable: null }); },
 
   clearWires(): void {
-    patch({ cables: [], selTerminal: null, selCable: null, simEpoch: state.simEpoch + 1 });
+    pushHistory();
+    patch({ cables: [], selTerminal: null, selCable: null, simEpoch: state.simEpoch + 1, undoDepth: undoStack.length });
   },
 
   pressButton(id: 'b1' | 'b2' | 'b3' | 'b4'): void {
@@ -239,9 +290,25 @@ export const A = {
 
   setSim(sim: SimOutput): void { patch({ sim }); },
 
-  /** Kayıt/prefabrik dokümanını yükler — sim motoru yeni devreden başlar */
+  /** Kayıt yüklemesi — mevcut kablolar geri alınabilir yığın'a yazılır */
   loadDoc(doc: DocShape | null): void {
     if (!doc || doc.v !== 1) return;
+    pushHistory();
+    this.applyDoc(doc);
+  },
+
+  /** Preset kurulumu — temizliği ve yüklemeyi TEK geri alınabilir adımda yapar */
+  replaceDoc(doc: DocShape | null): void {
+    if (!doc || doc.v !== 1) return;
+    pushHistory();
+    this.applyDoc({ ...doc, cables: [] });
+    this.applyDoc(doc);
+    patch({ undoDepth: undoStack.length });
+  },
+
+  /** loadDoc iç skeci — snapshot zaten alınmış olmalı */
+  applyDoc(doc: DocShape): void {
+    if (doc.v !== 1) return;
     const ayar = doc.ayar ?? {};
     patch({
       cables: (doc.cables ?? []).filter((c) => c && c.a && c.b),
@@ -254,6 +321,7 @@ export const A = {
       selCable: null,
       mode: 'kablo',
       simEpoch: state.simEpoch + 1,
+      undoDepth: undoStack.length,
     });
     saveAyar(state.settings);
   },
