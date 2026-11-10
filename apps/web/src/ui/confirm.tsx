@@ -47,7 +47,12 @@ export function ConfirmDialogHost() {
         setAnnouncement('İptal edildi');
         stale(false);
       }
-      openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      // Kapatılmak üzere olan kutunun İÇİNDEKİ odak, tetikleyiciyi ezmesin:
+      // aksi durumda restore kopuk bir düğüme gider (R3 GLM #3 / DeepSeek #4)
+      const ae = document.activeElement;
+      if (!(ae instanceof HTMLElement && ae.closest('.confirmDialog'))) {
+        openerRef.current = ae instanceof HTMLElement ? ae : null;
+      }
       setActive({ ...opts, resolve });
     });
     return () => { showFn = null; };
@@ -91,42 +96,41 @@ export function ConfirmDialogHost() {
     return () => window.removeEventListener('keydown', onKey, true);
   }, [active]);
 
-  if (!active) {
-    // Her zaman bağlı canlı bölge: sonucun ekran okuycuya duyurulmasını sağlar
-    return <div className="srOnly" role="status" aria-live="polite">{announcement}</div>;
-  }
-
-  return createPortal(
+  // Kalıcı canlı bölge: kuruluşlar arası aynı düğüm yaşar; "metinle birlikte
+  // kurulma" duyurulamaması olmasın (R3 DeepSeek #3)
+  return (
     <>
       <div className="srOnly" role="status" aria-live="polite">{announcement}</div>
-      <div
-        className="confirmBackdrop"
-        onMouseDown={(e) => { if (e.target === e.currentTarget) settle(false); }}
-      >
-        {/* alertdialog rolü iletişim kutusunda: backdrop düz bir perdedir (R2 DeepSeek #1) */}
+      {active && createPortal(
         <div
-          className="confirmDialog"
-          role="alertdialog"
-          aria-modal="true"
-          aria-labelledby="confirmTitle"
-          aria-describedby={active.body ? 'confirmBody' : undefined}
-          onKeyDown={(e: ReactKeyboardEvent) => {
-            if (e.key === 'Tab') e.preventDefault(); // küresel yakalayıcı halkalar
-          }}
+          className="confirmBackdrop"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) settle(false); }}
         >
-          <span className="confirmTitle" id="confirmTitle">{active.title}</span>
-          {active.body && <p className="confirmBody" id="confirmBody">{active.body}</p>}
-          <div className="confirmActions">
-            <button ref={cancelRef} type="button" className="confirmBtn" onClick={() => settle(false)}>
-              {active.cancelLabel ?? 'İptal'}
-            </button>
-            <button ref={dangerRef} type="button" className="confirmBtn destructive" onClick={() => settle(true)}>
-              {active.confirmLabel}
-            </button>
+          {/* alertdialog rolü iletişim kutusunda: backdrop düz bir perdedir (R2 DeepSeek #1) */}
+          <div
+            className="confirmDialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="confirmTitle"
+            aria-describedby={active.body ? 'confirmBody' : undefined}
+            onKeyDown={(e: ReactKeyboardEvent) => {
+              if (e.key === 'Tab') e.preventDefault(); // küresel yakalayıcı halkalar
+            }}
+          >
+            <span className="confirmTitle" id="confirmTitle">{active.title}</span>
+            {active.body && <p className="confirmBody" id="confirmBody">{active.body}</p>}
+            <div className="confirmActions">
+              <button ref={cancelRef} type="button" className="confirmBtn" onClick={() => settle(false)}>
+                {active.cancelLabel ?? 'İptal'}
+              </button>
+              <button ref={dangerRef} type="button" className="confirmBtn destructive" onClick={() => settle(true)}>
+                {active.confirmLabel}
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
-    </>,
-    document.body,
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }

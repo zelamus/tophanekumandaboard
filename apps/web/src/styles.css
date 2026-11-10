@@ -28,7 +28,7 @@
 
   /* Apple System Semantic Colors */
   --apple-blue: #0a84ff;
-  --apple-blue-hover: #0077ed;
+  --apple-blue-hover: #0062c4;
   --apple-blue-subtle: rgba(10, 132, 255, 0.16);
   /* Dolgulu kontrollerin zemini: beyaz metinle 4.5:1 üstü (7ab: a11y R1) */
   --apple-blue-fill: #0071e3;
@@ -82,7 +82,7 @@
   --apple-label-tertiary: #6e6e73;
 
   --apple-blue: #0071e3;
-  --apple-blue-hover: #0077ed;
+  --apple-blue-hover: #0062c4;
   --apple-blue-subtle: rgba(0, 113, 227, 0.12);
   --apple-blue-fill: #0071e3;
   --apple-blue-ink: #1d4ed8;
@@ -274,7 +274,8 @@ body {
 }
 
 [data-theme='light'] .appleSegmented {
-  background: rgba(0, 0, 0, 0.06);
+  /* şerit açıkta nonaktif etiket 4.5:1 altına düşüyordu (R3 GLM #4) */
+  background: rgba(0, 0, 0, 0.045);
 }
 
 .appleSegmented.fullWidth {
@@ -1076,6 +1077,11 @@ body {
   border-radius: var(--radius-xs);
 }
 
+/* Kalıcı canlı bölge — boşken görünmez, metin geldiğinde bildirir (R3 DeepSeek #3) */
+.toastNotice:empty {
+  display: none;
+}
+
 .countBadge {
   font-size: 11px;
   font-weight: 600;
@@ -1574,7 +1580,8 @@ body {
   .breakerFastGroup {
     display: none;
   }
-  /* Yüzen çekmece: cam yalnız burada kullanılır (yerleşik panel katıdır) */
+  /* Yüzen çekmece: cam yalnız burada kullanılır (yerleşik panel katıdır).
+     Kapalıyken görünmez: ekran-dışı olsa da sekme/odak ağacında durmasın (R3 DeepSeek #1) */
   .appleSidebar {
     position: absolute;
     top: 0;
@@ -1585,12 +1592,75 @@ body {
     -webkit-backdrop-filter: blur(25px) saturate(190%);
     box-shadow: var(--apple-shadow-lg);
     transform: translateX(100%);
+    visibility: hidden;
+    transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, visibility 0s 0.24s;
   }
   .appleSidebar.open {
     transform: translateX(0);
+    visibility: visible;
+    transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
   }
   .sidebarBackdrop {
     display: block;
+  }
+}
+
+/* Telefon künyesi (≤640): başlık kısalır, orta küme yatay kayar, sağ düğmeler
+   ve durum çubuğu taşmadan kalır — 390–760px aralığı R3'te kanıtsızdı (DeepSeek #2) */
+@media (max-width: 640px) {
+  .appHeader,
+  .appStatusBar {
+    padding: 6px 8px;
+    gap: 8px;
+  }
+  .appHeader {
+    height: var(--header-height);
+    min-height: var(--header-height);
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .appVersionBadge {
+    display: none;
+  }
+  .headerLeft {
+    min-width: 0;
+  }
+  .appTitles {
+    min-width: 0;
+  }
+  .appTitleRow .appTitle {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .headerCenter {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .headerCenter::-webkit-scrollbar {
+    display: none;
+  }
+  .headerDivider {
+    display: none;
+  }
+  .quickActions {
+    gap: 4px;
+  }
+  .appStatusBar {
+    height: auto;
+    min-height: var(--status-height);
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  .statusDivider {
+    display: none;
+  }
+  .guidanceBadge {
+    display: none;
   }
 }
 

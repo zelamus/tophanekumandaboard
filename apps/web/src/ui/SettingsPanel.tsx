@@ -168,7 +168,7 @@ export function SettingsPanel() {
             <span className="shortcutKey"><kbd>Delete</kbd> / <kbd>Backspace</kbd></span>
           </div>
           <div className="shortcutRow">
-            <span className="shortcutName">Son Kablo İşlemini Geri Al</span>
+            <span className="shortcutName">Son Pano İşlemini Geri Al</span>
             <span className="shortcutKey"><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>⌘</kbd><kbd>Z</kbd></span>
           </div>
           <div className="shortcutRow">

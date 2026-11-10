@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { useStore } from '../store';
+import { PRESETS } from '../presets';
 import { DevicePanel } from './DevicePanel';
 import { PresetPanel } from './PresetPanel';
 import { SavePanel } from './SavePanel';
@@ -15,14 +15,14 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-export function Sidebar({ open, onClose }: SidebarProps) {
+export function Sidebar({ open }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<TabId>('devices');
-  const st = useStore();
   const tabListRef = useRef<HTMLDivElement>(null);
 
   const TABS: { id: TabId; label: string; icon: typeof IconCpu; count?: number }[] = [
     { id: 'devices', label: 'Cihazlar', icon: IconCpu },
-    { id: 'presets', label: 'Devreler', icon: IconBook, count: 3 },
+    // Sayaç kaynakla senkron: koda gömülü 3 değil, gerçek liste boyu (R3 DeepSeek)
+    { id: 'presets', label: 'Devreler', icon: IconBook, count: PRESETS.length },
     { id: 'saves', label: 'Kayıtlar', icon: IconFolder },
     { id: 'settings', label: 'Ayarlar', icon: IconSettings },
   ];

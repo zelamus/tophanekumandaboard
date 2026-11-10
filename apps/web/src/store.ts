@@ -335,26 +335,50 @@ export const A = {
     return true;
   },
 
-  /** Preset kurulumu — temizliği ve yüklemeyi TEK geri alınabilir adımda yapar */
+  /** Preset kurulumu — TEK geri alınabilir adım: bir snapshot, tek patch.
+      (R3 Nemotron'ın "çift undo girdisi" bulgusu kaynakta yanlıştı — pushHistory
+      bir kez alınıyor; çift applyDoc patch'i artıklardı, kaldırıldı) */
   replaceDoc(doc: DocShape | null): void {
     if (!doc || doc.v !== 1) return;
     pushHistory();
-    this.applyDoc({ ...doc, cables: [] });
     this.applyDoc(doc);
-    patch({ undoDepth: undoStack.length });
   },
 
   /** loadDoc iç skeci — snapshot zaten alınmış olmalı */
   applyDoc(doc: DocShape): void {
     if (doc.v !== 1) return;
-    const ayar = doc.ayar ?? {};
+    const ayar: Partial<SettingsShape> = doc.ayar ?? {};
+    // Güven küresi: bilinmeyen/arsız değerleri varsayılana geri döndür — aksi
+    // durumda bir radyo grubunda hiçbir öge gezinti taşıyamaz (R3 DeepSeek #9)
+    const sfxAyar = ayar.sfx;
+    const safeSettings: SettingsShape = {
+      pathStyle: ayar.pathStyle === 'asılı' || ayar.pathStyle === 'yumuşak' || ayar.pathStyle === 'düz'
+        ? ayar.pathStyle
+        : state.settings.pathStyle,
+      cableType: ayar.cableType === 'güç' ? 'güç' : 'normal',
+      vurgula: typeof ayar.vurgula === 'boolean' ? ayar.vurgula : state.settings.vurgula,
+      sfx: {
+        on: sfxAyar && typeof sfxAyar.on === 'boolean' ? sfxAyar.on : state.settings.sfx.on,
+        vol: sfxAyar && typeof sfxAyar.vol === 'number'
+          ? Math.min(1, Math.max(0, sfxAyar.vol))
+          : state.settings.sfx.vol,
+      },
+      theme: ayar.theme === 'dark' || ayar.theme === 'light' || ayar.theme === 'system'
+        ? ayar.theme
+        : state.settings.theme,
+    };
     patch({
       cables: (doc.cables ?? []).filter((c) => c && c.a && c.b),
       pressed: { b1: false, b2: false, b3: false, b4: false },
       breakers: { motor: doc.breakers?.motor ?? true, control: doc.breakers?.control ?? true },
-      zr: { delayMs: doc.zr?.delayMs ?? 3000, mode: doc.zr?.mode ?? 'düz' },
+      zr: {
+        delayMs: typeof doc.zr?.delayMs === 'number' && doc.zr.delayMs >= 200 && doc.zr.delayMs <= 15000
+          ? doc.zr.delayMs
+          : 3000,
+        mode: doc.zr?.mode === 'ters' ? 'ters' : 'düz',
+      },
       termikArmed: doc.termikArmed ?? true,
-      settings: { ...state.settings, ...ayar },
+      settings: safeSettings,
       selTerminal: null,
       selCable: null,
       mode: 'kablo',

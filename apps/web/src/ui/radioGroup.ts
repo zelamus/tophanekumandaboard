@@ -49,10 +49,16 @@ export function useRadioGroup<T extends string>(
 
   return {
     groupRef,
-    itemProps: (v: T) => ({
-      'data-value': v,
-      tabIndex: v === value ? 0 : -1,
-      onKeyDown,
-    }),
+    itemProps: (v: T) => {
+      // Değer listede yoksa gezinti İLK ogede kalır — aksi durumda tüm ögeler
+      // tabIndex=-1 kalır ve grup klavyede kör kalır (R3 DeepSeek #9)
+      const activeIdx = values.indexOf(value);
+      const roving = activeIdx === -1 ? 0 : activeIdx;
+      return {
+        'data-value': v,
+        tabIndex: values.indexOf(v) === roving ? 0 : -1,
+        onKeyDown,
+      };
+    },
   };
 }

@@ -23,14 +23,28 @@ function localList(): SaveMeta[] {
   }
 }
 
-function saveLocally(meta: SaveMeta): void {
+function saveLocally(meta: SaveMeta): boolean {
   const list = localList().filter((m) => m.id !== meta.id);
   list.unshift(meta);
   try {
     localStorage.setItem(LS_KEY, JSON.stringify(list.slice(0, 50)));
+    return true;
   } catch {
-    /* ignore */
+    // Kota/kapalı depolama yutulmaz — çağıran dürüst bildirir (R3 DeepSeek #5)
+    return false;
   }
+}
+
+/** randomUUID yalnız güvenli bağlamda var — düz HTTP LAN'da kayıt asla patlamasın (R3 DeepSeek #6) */
+function newId(): string {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+  } catch {
+    /* düş */
+  }
+  return `pdu-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export function SavePanel() {
@@ -38,6 +52,7 @@ export function SavePanel() {
   const [items, setItems] = useState<SaveMeta[]>([]);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const flashTimer = useRef<number | null>(null);
 
@@ -84,30 +99,41 @@ export function SavePanel() {
   }, []);
 
   const doSave = async () => {
-    const trimmed = name.trim();
-    const nm = trimmed || `Pano Devresi ${new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
-    const doc = A.exportDoc();
-    const meta: SaveMeta = {
-      id: crypto.randomUUID(),
-      name: nm,
-      updatedAt: new Date().toISOString(),
-      source: 'yerel',
-      doc,
-    };
-    saveLocally(meta);
-    setName('');
+    if (isSaving) return; // çift gönderim: Enter/uçakta ikinci tık (R3 GLM öneri)
+    setIsSaving(true);
     try {
-      const r = await fetch('/api/saves', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: meta.id, name: nm, doc }),
-      });
-      if (!r.ok) throw new Error(String(r.status));
-      flash('Buluta ve yerel belleğe kaydedildi');
-    } catch {
-      flash('Tarayıcı yerel hafızasına kaydedildi');
+      const trimmed = name.trim();
+      const nm = trimmed || `Pano Devresi ${new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
+      const doc = A.exportDoc();
+      const meta: SaveMeta = {
+        id: newId(),
+        name: nm,
+        updatedAt: new Date().toISOString(),
+        source: 'yerel',
+        doc,
+      };
+      const localOk = saveLocally(meta);
+      let serverOk = true;
+      try {
+        const r = await fetch('/api/saves', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: meta.id, name: nm, doc }),
+        });
+        if (!r.ok) throw new Error(String(r.status));
+      } catch {
+        serverOk = false;
+      }
+      // Dürüst tablo: ikimiz / biri / hiçkimiz — beyaz yalan yok (R3 DeepSeek #5)
+      if (serverOk && localOk) flash('Buluta ve yerel belleğe kaydedildi');
+      else if (serverOk) flash('Buluta kaydedildi; yerel bellek yazılamadı');
+      else if (localOk) flash('Tarayıcı yerel hafızasına kaydedildi');
+      else flash('Kaydedilemedi — sunucu ve yerel bellek yazılamadı');
+      if (serverOk || localOk) setName('');
+      void refresh();
+    } finally {
+      setIsSaving(false);
     }
-    void refresh();
   };
 
   const doLoad = async (m: SaveMeta) => {
@@ -141,8 +167,8 @@ export function SavePanel() {
   const doDel = async (m: SaveMeta) => {
     const ok = await confirmAction({
       title: `"${m.name}" kaydı silinsin mi?`,
-      // Kayıt panoyu değil kayıt listesini etkiler (R2 GLM #8 / DeepSeek #14)
-      body: `Devre kendi bilgisayarınızda okunur. Bu ${m.source === 'sunucu' ? 'bulut kaydını' : 'yerel kaydı'} kalıcı olarak silinir; bu işlem geri alınamaz.`,
+      // Kayım panoyu değil kayıt listesini etkiler; dilbilgisi düz (R3 GLM #1 / DeepSeek #10)
+      body: `Bu ${m.source === 'sunucu' ? 'bulut kaydı' : 'yerel kayıt'} kalıcı olarak silinecek; bu işlem geri alınamaz. Panodaki devre etkilenmez.`,
       confirmLabel: 'Kaydı Sil',
       cancelLabel: 'İptal',
     });
@@ -153,13 +179,27 @@ export function SavePanel() {
       } catch {
         /* ignore */
       }
+    } else {
+      // Bulut kaydı: DELETE düşerse satır kaybolmasın, dürüst söyle (R3 GLM #2 / DeepSeek öneri)
+      try {
+        const r = await fetch(`/api/saves/${m.id}`, { method: 'DELETE' });
+        if (!r.ok) {
+          flash('Silinemedi — sunucu erişilemiyor');
+          return;
+        }
+      } catch {
+        flash('Silinemedi — çevrimdışı olabilirsin');
+        return;
+      }
     }
-    try {
-      await fetch(`/api/saves/${m.id}`, { method: 'DELETE' });
-    } catch {
-      /* ignore */
-    }
-    void refresh();
+    await refresh();
+    // Silinen satır DOM'dan kalkarken odak body'ye düşmesin: sıradaki
+    // kaydın düğmesine, hiç kayıt kalmadıysa ad alanına (R3 DeepSeek #11)
+    requestAnimationFrame(() => {
+      const next = document.querySelector<HTMLButtonElement>('.saveItem button');
+      if (next) next.focus();
+      else document.getElementById('saveNameInput')?.focus();
+    });
   };
 
   const exportJson = () => {
@@ -206,8 +246,8 @@ export function SavePanel() {
 
   return (
     <div className="inspectorSection" aria-label="Devre Kayıtları">
-      {/* Panel düzeyinde canlı bildirim: doğru kartın altında değildir (R2 DeepSeek #12) */}
-      {statusMessage && <div className="toastNotice" role="status">{statusMessage}</div>}
+      {/* Panel düzeyinde kalıcı canlı bölge — boşken :empty ile gizli (R3 DeepSeek #3) */}
+      <div className="toastNotice" role="status" aria-live="polite">{statusMessage}</div>
 
       {/* Kaydet Girişi */}
       <div className="appleCard">
@@ -228,10 +268,15 @@ export function SavePanel() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') void doSave();
+              if (e.key === 'Enter' && !isSaving) void doSave();
             }}
           />
-          <button type="button" className="appleButton primary" onClick={() => void doSave()}>
+          <button
+            type="button"
+            className="appleButton primary"
+            disabled={isSaving}
+            onClick={() => void doSave()}
+          >
             Kaydet
           </button>
         </div>

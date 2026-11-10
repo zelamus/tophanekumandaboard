@@ -48,12 +48,18 @@ export function App() {
       const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA');
 
       if (e.key === 'Escape') {
+        // Mobil çekmece açıksa önce o kapansın; seçim iptali ikinci Escape'te (R3 öneri)
+        if (sidebarOpen && window.innerWidth <= 820) {
+          setSidebarOpen(false);
+          return;
+        }
         A.cancelSel();
         return;
       }
 
-      // Alt+B / Option+B ile denetçi çubuğunu aç/kapat (AltGr = Alt+Ctrl, şişirmesin)
-      if (e.altKey && !e.ctrlKey && e.key.toLowerCase() === 'b') {
+      // Alt+B / Option+B ile denetçi çubuğunu aç/kapat (AltGr = Alt+Ctrl, şişirmesin).
+      // KeyB via e.code: macOS Option+B bir "∫" üretir, key değeri 'b' olmaz (R3 DeepSeek #12)
+      if (e.altKey && !e.ctrlKey && (e.code === 'KeyB' || e.key.toLowerCase() === 'b')) {
         e.preventDefault();
         setSidebarOpen((prev) => !prev);
         return;
@@ -75,7 +81,8 @@ export function App() {
 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [st.selCable]);
+    // sidebarOpen bağlaçta: Escape'in mobil çekmeceyi kapatması güncel durumu okur
+  }, [st.selCable, sidebarOpen]);
 
   // Ses Sentezi Olayları (kontaktör, röle, motor döngüsü, termik atma, kısa devre)
   const prevSim = useRef<SimOutput | null>(null);

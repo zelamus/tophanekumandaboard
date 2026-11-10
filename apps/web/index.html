@@ -8,16 +8,20 @@
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <title>Tophane Kumanda — Kumanda ve Motor Kontrol Simülatörü</title>
     <script>
-      // İlk boyamadan önce tema: kayıtlı ayar → data-theme + theme-color (R2: açık tema koyu flaş etmesin)
+      // İlk boyamadan önce tema: kayıtlı ayar → data-theme + theme-color.
+      // Depolama erişimi ayrı try'da: kotasız/blokluyken matchMedia yolun yitmesin (R3 DeepSeek #13)
+      var tema = null;
       try {
         var kka = JSON.parse(localStorage.getItem('kka-ayarlar') || '{}');
-        var tema = (kka.theme === 'light' || kka.theme === 'dark')
-          ? kka.theme
-          : (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-        document.documentElement.dataset.theme = tema;
-        var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', tema === 'light' ? '#f2f2f7' : '#0d0e11');
-      } catch (e) { /* varsayılan koyu kalır */ }
+        if (kka.theme === 'light' || kka.theme === 'dark') tema = kka.theme;
+      } catch (e) { tema = null; }
+      if (!tema && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        tema = 'light';
+      }
+      if (!tema) tema = 'dark';
+      document.documentElement.dataset.theme = tema;
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', tema === 'light' ? '#f2f2f7' : '#0d0e11');
     </script>
   </head>
   <body>

@@ -29,6 +29,9 @@ const MODES: { m: Mode; label: string; icon: typeof IconWire; hint: string }[] =
   { m: 'sil', label: 'Kablo Sil', icon: IconCut, hint: 'Kablo Sil — kaldırmak istediğin kabloya tıkla' },
 ];
 
+const THEME_ORDER: Array<'dark' | 'light' | 'system'> = ['system', 'light', 'dark'];
+const THEME_PREF_TR: Record<'dark' | 'light' | 'system', string> = { dark: 'Koyu', light: 'Açık', system: 'Sistem' };
+
 interface HeaderProps {
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
@@ -68,10 +71,12 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
     A.toggleBreaker('control');
   };
 
-  // Görünüm: system'dayken etkili görünümün tersine geç (açık←→koyu)
+  // Görünüm tam turu: system → açık → koyu → system (R3 DeepSeek: sistem tercihi
+  // tek tıkla ZATEN geri dönülebilir olmalıydı — kafa düğmesi bir yönlüydü)
+  const nextTheme = THEME_ORDER[(THEME_ORDER.indexOf(pref) + 1) % 3];
+  const appearanceTr = effective === 'light' ? 'Açık' : 'Koyu';
   const cycleTheme = () => {
-    const next = effective === 'light' ? 'dark' : 'light';
-    A.setTheme(next);
+    A.setTheme(nextTheme);
   };
 
   return (
@@ -107,6 +112,7 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
                 type="button"
                 role="radio"
                 aria-checked={active}
+                aria-label={item.label} /* ≤960px'te metin gizlenir de bu isim kalır (R3 GLM #5 / DeepSeek #8) */
                 title={item.hint}
                 className={`segItem ${active ? 'active' : ''}`}
                 onClick={() => A.setMode(item.m)}
@@ -150,8 +156,8 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
             type="button"
             className="appleButton iconOnly"
             disabled={st.undoDepth === 0}
-            title="Son kablo işlemini geri al (Ctrl+Z / ⌘Z)"
-            aria-label="Son kablo işlemini geri al"
+            title="Son pano işlemini geri al — kablo, kesici, ZR ve termik birlikte (Ctrl+Z / ⌘Z)"
+            aria-label="Son pano işlemini geri al"
             onClick={() => A.undo()}
           >
             <IconUndo />
@@ -221,15 +227,9 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
         <button
           type="button"
           className="appleButton iconOnly"
-          title={
-            pref === 'system'
-              ? `Görünüm: Sistem (${effective === 'light' ? 'Açık' : 'Koyu'}) — Açık/Koyu geçmek için tıkla`
-              : effective === 'light'
-                ? 'Koyu moda geç'
-                : 'Açık moda geç'
-          }
-          // Ekran okuyucu ETKİLİ görünümü duyarsın; tercih ayrıntısı başlığın işi (R2 Nemotron)
-          aria-label={`Görünüm — şu an ${effective === 'light' ? 'Açık' : 'Koyu'}${pref === 'system' ? ' (Sistem tercihi)' : ''}`}
+          title={`Görünüm: ${pref === 'system' ? `Sistem (${appearanceTr})` : THEME_PREF_TR[pref]} — tıkla: ${THEME_PREF_TR[nextTheme]} yapar`}
+          // Ekran okuyucu ETKİLİ görünümü ve sıradaki durumun duyarsın (R2 Nemotron / R3 DeepSeek)
+          aria-label={`Görünüm — şu an ${appearanceTr}${pref === 'system' ? ' (Sistem tercihi)' : ''}, tıkla: ${THEME_PREF_TR[nextTheme]} yapar`}
           onClick={cycleTheme}
         >
           {effective === 'light' ? <IconMoon /> : <IconSun />}
