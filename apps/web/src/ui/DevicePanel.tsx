@@ -121,14 +121,11 @@ export function DevicePanel() {
 
         <p className="cardText">
           {st.termikArmed
-            ? 'Aşırı yük ve kısa devre koruması aktif. Motor nominal akımı izleniyor.'
+            ? 'Aşırı yük ve kısa devre koruması aktif — motor nominal akımı izleniyor.'
             : 'Motor zorlanması veya kısa devre algılandı! Kontak açıldı (e.tc koptu). Devreyi kontrol edip sıfırlayın.'}
         </p>
 
-        {st.termikArmed ? (
-          // Devrede: eylem yok — düğme yerine durum satırı (2.07:1 "kırık düğme" değil)
-          <p className="cardText subtle">Termik durumu: Normal — koruma aktif</p>
-        ) : (
+        {!st.termikArmed && (
           <button type="button" className="appleButton primary" onClick={handleResetTermik}>
             Termiği Sıfırla
           </button>
@@ -225,6 +222,14 @@ export function DevicePanel() {
                 onTouchEnd={() => release(btn.id as 'b1')}
                 onTouchCancel={() => release(btn.id as 'b1')}
                 onPointerCancel={() => release(btn.id as 'b1')}
+                onClick={(e) => {
+                  // AT/sesli erişim sentetik click (detail 0) düğmeyi basılı
+                  // bırakır — kısa nabız ver sonra kaldır (R5 DeepSeek öneri)
+                  if (e.detail === 0) {
+                    press(btn.id as 'b1');
+                    window.setTimeout(() => release(btn.id as 'b1'), 200);
+                  }
+                }}
                 onKeyDown={(e) => {
                   if (e.repeat) return;
                   if (e.key === ' ' || e.key === 'Enter') {

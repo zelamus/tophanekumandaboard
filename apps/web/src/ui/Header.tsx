@@ -55,7 +55,7 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
     if (st.cables.length === 0) return;
     const ok = await confirmAction({
       title: 'Tüm kablolar temizlensin mi?',
-      body: `Panodaki ${st.cables.length} kablo silinecek. Son işlemi Ctrl+Z ile geri alabilirsin.`,
+      body: `Panodaki ${st.cables.length} kablo silinecek. Son işlemi Ctrl+Z ile geri alabilirsiniz.`,
       confirmLabel: 'Temizle',
       cancelLabel: 'İptal',
     });

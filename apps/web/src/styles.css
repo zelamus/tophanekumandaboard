@@ -1106,6 +1106,16 @@ body {
   border-radius: 10px;
 }
 
+/* R5 DeepSeek: açık temada nötr çip mürekkebi ~4.0:1'ydi (11px etiket) —
+   koyu nötr mürekkep kontrastı 4.5 tabanın üstüne çıkarır */
+[data-theme='light'] .statusPill {
+  color: #5b5b60;
+}
+
+[data-theme='light'] .countBadge {
+  color: #5b5b60;
+}
+
 .emptyState {
   display: flex;
   flex-direction: column;
@@ -1602,6 +1612,10 @@ body {
     top: 0;
     bottom: 0;
     right: 0;
+    /* 320px ve altı görünümlerde 360px sabit genişlik taşar (R5 DeepSeek #7) */
+    width: min(360px, 100vw);
+    max-width: 100vw;
+    min-width: 0;
     background: var(--apple-surface);
     backdrop-filter: blur(25px) saturate(190%);
     -webkit-backdrop-filter: blur(25px) saturate(190%);
@@ -1689,6 +1703,17 @@ body {
   .statusSection.center.isScrollable {
     -webkit-mask-image: linear-gradient(to right, #000 85%, transparent 100%);
     mask-image: linear-gradient(to right, #000 85%, transparent 100%);
+  }
+  /* Kaydırmanın sonunda fade kapanır: son kontrol karartılmasın (R5 DeepSeek öneri) */
+  .headerCenter.atScrollEnd,
+  .statusSection.center.atScrollEnd {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  /* Telefondaki ikinci LED kümesi (Harici Sinyal) dar barı yiyor —
+     telemetri okunur kalsın diye ≤640'ta gizlenir (>640'ta geri gelir) (R5 DeepSeek #4) */
+  .ledBankGroup.external {
+    display: none;
   }
 }
 
@@ -1892,6 +1917,15 @@ body {
   .schematicToggle {
     min-height: 44px;
     padding: 10px 0;
+  }
+  /* R5 DeepSeek major: dokunmatikte 44px taban — ad girdisi ve kesici etiketi
+     32/24px'ten kurtulur. .appleSwitch 51×31 Apple UISwitch kanonu,
+     .colorDot 40px R1/R2'de kararlaştırılmış istisna — bilinçli değişmez. */
+  .appleInput {
+    min-height: 44px;
+  }
+  .breakerPill {
+    min-height: 44px;
   }
 }
 

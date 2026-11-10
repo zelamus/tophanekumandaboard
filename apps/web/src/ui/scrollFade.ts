@@ -12,7 +12,11 @@ export function useScrollFade<T extends HTMLElement>() {
     const el = ref.current;
     if (!el) return;
     const update = () => {
-      el.classList.toggle('isScrollable', el.scrollWidth > el.clientWidth + 1);
+      const max = el.scrollWidth - el.clientWidth;
+      const overflow = max > 1;
+      el.classList.toggle('isScrollable', overflow);
+      // Kaydırmanın sonunda fade kalkar: son kontrol karartılmasın (R5 DeepSeek öneri)
+      el.classList.toggle('atScrollEnd', !overflow || el.scrollLeft >= max - 1);
     };
     update();
     el.addEventListener('scroll', update, { passive: true });

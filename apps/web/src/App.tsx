@@ -22,6 +22,15 @@ export function App() {
     }
   });
 
+  // Mobil çekmece odak yönetimi (R5 DeepSeek #8): açılışta etkin sekme odağı alır
+  useEffect(() => {
+    if (!sidebarOpen || window.innerWidth > 820) return;
+    const id = window.setTimeout(() => {
+      document.querySelector<HTMLElement>('.appleSidebar [role="tab"][aria-selected="true"]')?.focus();
+    }, 30);
+    return () => window.clearTimeout(id);
+  }, [sidebarOpen]);
+
   // Tema özniteliğini documentElement üzerinde senkronize tut
   // ('system' ayarı resolve edilir; applyTheme store'da da çağrılır — tek doğruluk burada)
   useEffect(() => {
@@ -51,6 +60,10 @@ export function App() {
         // Mobil çekmece açıksa önce o kapansın; seçim iptali ikinci Escape'te (R3 öneri)
         if (sidebarOpen && window.innerWidth <= 820) {
           setSidebarOpen(false);
+          // Klavyeyle kapanışta odağı açan düğmeye iade et (R5 DeepSeek #8)
+          window.requestAnimationFrame(() => {
+            document.querySelector<HTMLButtonElement>('button[aria-controls="inspector"]')?.focus();
+          });
           return;
         }
         A.cancelSel();

@@ -162,7 +162,7 @@ export function StatusBar() {
 
         <span className="statusDivider" aria-hidden="true" />
 
-        <div className="ledBankGroup" title="Harici Sinyal Lambaları">
+        <div className="ledBankGroup external" title="Harici Sinyal Lambaları">
           <HardwareLed on={sim?.ext.yellow === true} color="#ffcc00" label="Hs" title="Harici Sarı Sinyal Lambası" />
           <HardwareLed on={sim?.ext.red === true} color="#ff3b30" label="Hk" title="Harici Kırmızı Sinyal Lambası" />
           <HardwareLed on={sim?.ext.green === true} color="#34c759" label="Hy" title="Harici Yeşil Sinyal Lambası" />
@@ -185,7 +185,7 @@ export function StatusBar() {
               onClick={() => A.termikArm()}
             >
               <IconRefresh style={{ width: 12, height: 12, marginRight: 4 }} />
-              <span>Sıfırla</span>
+              <span>Termiği sıfırla</span>
             </button>
           </div>
         ) : (

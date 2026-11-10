@@ -86,7 +86,7 @@ export function SavePanel() {
     if (getState().cables.length === 0) return true;
     return confirmAction({
       title: `${what} mevcut panoyu değiştirir`,
-      body: `Panodaki ${getState().cables.length} kablo kalkacak. Panoyu ve motora ait kesici/ZR/termik durumunu Ctrl+Z ile geri alabilirsin.`,
+      body: `Panodaki ${getState().cables.length} kablo kalkacak. Panoyu ve motora ait kesici/ZR/termik durumunu Ctrl+Z ile geri alabilirsiniz.`,
       confirmLabel: 'Devreyi Yükle',
       cancelLabel: 'İptal',
     });
@@ -127,8 +127,8 @@ export function SavePanel() {
       // Dürüst tablo: ikimiz / biri / hiçkimiz — beyaz yalan yok (R3 DeepSeek #5)
       if (serverOk && localOk) flash('Buluta ve yerel belleğe kaydedildi');
       else if (serverOk) flash('Buluta kaydedildi; yerel bellek yazılamadı');
-      else if (localOk) flash('Tarayıcı yerel hafızasına kaydedildi');
-      else flash('Kaydedilemedi — sunucu ve yerel bellek yazılamadı');
+      else if (localOk) flash('Tarayıcı yerel belleğine kaydedildi');
+      else flash('Kaydedilemedi — sunucuya ve tarayıcı belleğine yazılamadı');
       if (serverOk || localOk) setName('');
       void refresh();
     } finally {
@@ -176,30 +176,9 @@ export function SavePanel() {
     // Tek kimlik iki mağazada yaşayabilir (kaydet hem bulutu hem yereli yazar):
     // silme İKİSİNİ de hedefler — biri kalırsa satır sonraki yenilemede
     // "dirilmiş" gibi görünür (R4 DeepSeek #6)
-    let serverOk = false;
-    try {
-      const r = await fetch(`/api/saves/${m.id}`, { method: 'DELETE' });
-      // 404 = zaten yok — silme sayılır (yerel-için kayıt sunucuda olmayabilir)
-      serverOk = r.ok || r.status === 404;
-      if (!serverOk) {
-        // Sunucu CEVAP verdiyse "erişilemiyor" ezberi yanlış olur (R5 GLM #1 / Nemotron öneri)
-        if (r.status >= 500) flash(`Silinemedi — sunucu hata verdi (${r.status})`);
-        else flash('Silinemedi — sunucuya erişilemiyor');
-        return;
-      }
-      let localOk = true;
-      try {
-        localStorage.setItem(LS_KEY, JSON.stringify(localList().filter((x) => x.id !== m.id)));
-      } catch {
-        localOk = false;
-      }
-      // Başarılı silme dürüst teyit edilir — diğer yolların bildirim deseniyle
-      // uyumlu; satırın yok oluşu tek başına ipucu sayılmaz (R5 GLM öneri)
-      if (localOk) flash('Kayıt silindi');
-      else flash('Sunucudan silindi; yerel bellek kopyası silinemedi');
-    } catch {
-      // Çevrimdışı: bulutla uzlaşamayız. Yerel satırı yalnızca dürüst uyarıyla
-      // sileriz; bulut kopyası varsa "sessiz dirilme" yerine açık söylenir.
+    if (navigator.onLine === false) {
+      // Tarayıcı çevrimdışı diyor: bulut adımını beklemeden dürüst yol —
+      // yalnız yerel kopya silinir, bulut kopyası varsa açık söylenir (R5 DeepSeek #3)
       if (m.source === 'yerel') {
         try {
           localStorage.setItem(LS_KEY, JSON.stringify(localList().filter((x) => x.id !== m.id)));
@@ -209,8 +188,45 @@ export function SavePanel() {
         }
         flash('Yerelden silindi; bulut kopyası çevrimdışıyken silinemez');
       } else {
-        flash('Silinemedi — çevrimdışı olabilirsin');
+        flash('Silinemedi — çevrimdışı olabilirsiniz');
         return;
+      }
+    } else {
+      let serverOk = false;
+      try {
+        const r = await fetch(`/api/saves/${m.id}`, { method: 'DELETE' });
+        serverOk = r.ok || r.status === 404;
+        if (!serverOk) {
+          // Sunucu CEVAP verdiyse "erişilemiyor" ezberi yanlış olur (R5 GLM #1 / Nemotron öneri)
+          if (r.status >= 500) flash(`Silinemedi — sunucu hata verdi (${r.status})`);
+          else flash('Silinemedi — sunucuya erişilemiyor');
+          return;
+        }
+        let localOk = true;
+        try {
+          localStorage.setItem(LS_KEY, JSON.stringify(localList().filter((x) => x.id !== m.id)));
+        } catch {
+          localOk = false;
+        }
+        // Başarılı silme dürüst teyit edilir — diğer yolların bildirim deseniyle
+        // uyumlu; satırın yok oluşu tek başına ipucu sayılmaz (R5 GLM öneri)
+        if (localOk) flash('Kayıt silindi');
+        else flash('Sunucudan silindi; yerel bellek kopyası silinemedi');
+      } catch {
+        // Ağ düştü: "Sunucu Aktif" rozası hemen yeşilden çıkmalı (R5 DeepSeek #3)
+        setIsOnline(false);
+        if (m.source === 'yerel') {
+          try {
+            localStorage.setItem(LS_KEY, JSON.stringify(localList().filter((x) => x.id !== m.id)));
+          } catch {
+            flash('Silinemedi — yerel bellek yazılamadı');
+            return;
+          }
+          flash('Yerelden silindi; bulut kopyası çevrimdışıyken silinemez');
+        } else {
+          flash('Silinemedi — çevrimdışı olabilirsiniz');
+          return;
+        }
       }
     }
     // Komşu satırda odağı koru: silinen kaydın liste dizini refresh'ten ÖNCE

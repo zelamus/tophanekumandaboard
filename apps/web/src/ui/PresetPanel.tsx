@@ -149,7 +149,7 @@ export function PresetPanel() {
     if (getState().cables.length > 0) {
       const ok = await confirmAction({
         title: `"${p.name}" panoya kurulacak`,
-        body: `Mevcut ${getState().cables.length} kablo kalkacak. Panoyu ve motora ait kesici/ZR/termik durumunu Ctrl+Z ile geri alabilirsin.`,
+        body: `Mevcut ${getState().cables.length} kablo kalkacak. Panoyu ve motora ait kesici/ZR/termik durumunu Ctrl+Z ile geri alabilirsiniz.`,
         confirmLabel: 'Devreyi Kur',
         cancelLabel: 'İptal',
       });
@@ -190,11 +190,12 @@ export function PresetPanel() {
 
               {/* Şema Önizleme Butonu & Çizim */}
               {SchematicComponent && (
-                <div className="schematicContainer">
+                <div className="schematicContainer" id={`schem-${p.id}`}>
                   <button
                     type="button"
                     className="schematicToggle"
                     aria-expanded={isSchematicOpen}
+                    aria-controls={`schem-${p.id}`}
                     onClick={() => setOpenSchematic(isSchematicOpen ? null : p.id)}
                   >
                     <span>{isSchematicOpen ? 'Şemayı Gizle' : 'Elektrik Şemasını Göster'}</span>
