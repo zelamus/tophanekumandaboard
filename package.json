@@ -3,16 +3,24 @@
   "private": true,
   "workspaces": [
     "apps/web",
-    "apps/server"
+    "apps/server",
+    "apps/video"
   ],
   "scripts": {
     "dev": "npm run dev -w apps/web",
     "server": "node apps/server/index.mjs",
     "build": "npm run build -w apps/web",
-    "start": "node apps/server/index.mjs"
+    "start": "node apps/server/index.mjs",
+    "video": "npm run studio -w apps/video",
+    "video:render": "npm run render -w apps/video",
+    "video:gif": "npm run render:gif -w apps/video"
   },
   "devDependencies": {
     "@puppeteer/browsers": "^3.2.6",
     "puppeteer-core": "^25.16.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "esbuild@0.28.2": true
   }
 }
