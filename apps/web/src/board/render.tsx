@@ -789,6 +789,31 @@ export function Board() {
   const [hoverId, setHoverId] = useState<string | null>(null);
   const cablesApi = useRef<CablesApi | null>(null);
   const drag = useRef<{ on: boolean; moved: boolean; px: number; py: number; vb: Vb } | null>(null);
+  /** Dokunmatik: basılı işaretçiler — iki tanesi pinch yakınlaştırma başlatır */
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ dist: number; mx: number; my: number; vb: Vb; anchor: { x: number; y: number }; cw: number; ch: number } | null>(null);
+  /** Pinch sonrası tarayıcının sentetik tıkını yut (yanlışlıkla soket seçilmesin) */
+  const suppressClick = useRef(false);
+
+  /** İki parmak ölçeğini o anki viewBox'a göre yeniden kur */
+  const pinchBaseline = () => {
+    const svg = svgRef.current;
+    const ct = svg?.getScreenCTM();
+    const pts = [...pointers.current.values()];
+    if (!svg || !ct || pts.length < 2) return;
+    const [a, b] = pts;
+    const mx = (a.x + b.x) / 2;
+    const my = (a.y + b.y) / 2;
+    const anchor = new DOMPoint(mx, my).matrixTransform(ct.inverse());
+    pinch.current = {
+      dist: Math.max(1, Math.hypot(b.x - a.x, b.y - a.y)),
+      mx, my,
+      vb,
+      anchor: { x: anchor.x, y: anchor.y },
+      cw: svg.clientWidth || 1,
+      ch: svg.clientHeight || 1,
+    };
+  };
 
   // seçim/çizim tipi değişince çekim hedefi bayatlar
   useEffect(() => { snapRef.current = null; setSnapTgt(null); }, [st.selTerminal, st.mode, st.settings.cableType]);
@@ -849,7 +874,23 @@ export function Board() {
       className={`boardSvg mode-${st.mode}${st.carry ? ' carrying' : ''}`}
       viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
       preserveAspectRatio="xMidYMid meet"
+      onPointerDownCapture={(e) => {
+        const wasEmpty = pointers.current.size === 0;
+        pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (wasEmpty) suppressClick.current = false;
+        if (pointers.current.size === 2) {
+          // İki parmak: tek parmak pan/çekimi bırak, pinch başlat. İkinci
+          // parmağın altındaki düğme/soket kendi işleyicisini görmesin.
+          drag.current = null;
+          suppressClick.current = true;
+          pinchBaseline();
+          try { svgRef.current?.setPointerCapture(e.pointerId); } catch { /* sentetik olay */ }
+          e.stopPropagation();
+        }
+      }}
       onPointerDown={(e) => {
+        // pinch sürerken alt katman işleyicileri çalışmasın
+        if (pinch.current) return;
         // orta tuş (buton 1): her yerden pan — hedef kablo/soket olsa da (R7 #9)
         if (e.button === 1) {
           e.preventDefault();
@@ -869,6 +910,26 @@ export function Board() {
         (e.target as Element).setPointerCapture(e.pointerId);
       }}
       onPointerMove={(e) => {
+        const pt = pointers.current.get(e.pointerId);
+        if (pt) { pt.x = e.clientX; pt.y = e.clientY; }
+        // İki parmak: mesafe = ölçek, orta nokta = kaydırma
+        const pz = pinch.current;
+        if (pz && pointers.current.size >= 2) {
+          const [a, b] = [...pointers.current.values()];
+          const dist = Math.max(1, Math.hypot(b.x - a.x, b.y - a.y));
+          const w = Math.min(2400, Math.max(380, pz.vb.w * (pz.dist / dist)));
+          const h = w * (pz.vb.h / pz.vb.w);
+          const mx = (a.x + b.x) / 2;
+          const my = (a.y + b.y) / 2;
+          const kx = pz.vb.w / pz.cw;
+          const ky = pz.vb.h / pz.ch;
+          setVb({
+            x: pz.anchor.x - (pz.anchor.x - pz.vb.x) * (w / pz.vb.w) - (mx - pz.mx) * kx,
+            y: pz.anchor.y - (pz.anchor.y - pz.vb.y) * (h / pz.vb.h) - (my - pz.my) * ky,
+            w, h,
+          });
+          return;
+        }
         const d = drag.current;
         if (d?.on) {
           const k = e.currentTarget.viewBox.baseVal;
@@ -891,12 +952,30 @@ export function Board() {
           }
         }
       }}
+      onPointerUpCapture={(e) => {
+        pointers.current.delete(e.pointerId);
+        if (pointers.current.size < 2) pinch.current = null;
+        else if (pinch.current) pinchBaseline();
+      }}
+      onPointerCancelCapture={(e) => {
+        pointers.current.delete(e.pointerId);
+        if (pointers.current.size < 2) pinch.current = null;
+        else if (pinch.current) pinchBaseline();
+      }}
       onPointerUp={(e) => {
         const d = drag.current;
         drag.current = null;
         // orta tuş panı tık sayılmaz; sol tık boşlukta seçimi bırakır
         // (uç bırakma pointerDown'da boş zemin tıkından gelir)
         if (d && !d.moved && e.button === 0) A.cancelSel();
+      }}
+      onClickCapture={(e) => {
+        // pinch'ten arta kalan sentetik tık soket seçmesin
+        if (suppressClick.current) {
+          suppressClick.current = false;
+          e.preventDefault();
+          e.stopPropagation();
+        }
       }}
       onAuxClick={(e) => e.preventDefault()}
     >
