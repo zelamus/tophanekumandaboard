@@ -1,14 +1,8 @@
 import { A, useStore, resolveTheme } from '../store';
-import type { PathStyle, ThemePref } from '../store';
+import type { ThemePref } from '../store';
 import { useRadioGroup } from './radioGroup';
 import { IconSpeaker } from './Icons';
 import { tr0 } from './format';
-
-const PATH_STYLES: { id: PathStyle; label: string; desc: string }[] = [
-  { id: 'asılı', label: 'Asılı', desc: 'Gerçek eğitim kartındaki sarkan doğal kablo yerçekimi eğrisi' },
-  { id: 'yumuşak', label: 'Yumuşak', desc: 'Sakin ve okunaklı, hafif kavisli bağlantı' },
-  { id: 'düz', label: 'Düz', desc: 'Terminaller arasında dosdoğru CAD hattı' },
-];
 
 const THEME_OPTIONS: { id: ThemePref; label: string }[] = [
   { id: 'system', label: 'Sistem' },
@@ -20,7 +14,6 @@ export function SettingsPanel() {
   const st = useStore();
   const settings = st.settings;
 
-  const pathGroup = useRadioGroup<PathStyle>(['asılı', 'yumuşak', 'düz'], settings.pathStyle, (v) => A.setSettings({ pathStyle: v }));
   const themeGroup = useRadioGroup<ThemePref>(['system', 'light', 'dark'], settings.theme, (v) => A.setTheme(v));
 
   return (
@@ -29,27 +22,28 @@ export function SettingsPanel() {
       <div className="appleCard">
         <div className="cardHeader">
           <span className="cardTitle">Kablo Çizim Geometrisi</span>
+          <span className="sliderValue">{tr0(settings.sag)}</span>
         </div>
 
-        <div className="appleSegmented" role="radiogroup" aria-label="Kablo çizim stili" ref={pathGroup.groupRef}>
-          {PATH_STYLES.map((ps) => (
-            <button
-              key={ps.id}
-              type="button"
-              role="radio"
-              aria-checked={settings.pathStyle === ps.id}
-              className={`segItem ${settings.pathStyle === ps.id ? 'active' : ''}`}
-              onClick={() => A.setSettings({ pathStyle: ps.id })}
-              {...pathGroup.itemProps(ps.id)}
-            >
-              <span className="segText">{ps.label}</span>
-            </button>
-          ))}
+        {/* Sürekli sarkma kaydırıcısı: 0 düz hat, ~35 yumuşak, 100 tam asılı */}
+        <div className="sliderGroup">
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={Math.round(settings.sag)}
+            className="appleRange"
+            aria-label="Kablo çizim geometrisi"
+            aria-valuetext={`${tr0(settings.sag)} — ${settings.sag === 0 ? 'düz' : settings.sag <= 55 ? 'yumuşak' : 'asılı'}`}
+            onChange={(e) => A.setSettings({ sag: Number(e.target.value) })}
+          />
+          <div className="sliderTicks">
+            <span>Düz (0)</span>
+            <span>Yumuşak (35)</span>
+            <span>Asılı (100)</span>
+          </div>
         </div>
-
-        <p className="cardText subtle">
-          {PATH_STYLES.find((ps) => ps.id === settings.pathStyle)?.desc}
-        </p>
 
         <div className="cardDivider" />
 
@@ -84,7 +78,7 @@ export function SettingsPanel() {
         <div className="switchRow">
           <div className="switchInfo">
             <span className="switchLabel" id="sw-sfx">Cihaz Ses Sentezi</span>
-            <span className="switchDesc">Kontaktör çakısı, motor humu, termik atma ve kesici sesi</span>
+            <span className="switchDesc">Kontaktör çakısı, motor humu, termik atma ve sigorta sesi</span>
           </div>
           <button
             type="button"

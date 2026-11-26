@@ -586,6 +586,11 @@ body {
   background-color: var(--apple-green);
 }
 
+/* acil stop basılıyken kırmızı (yeşil "açık" kanonu yerine tehlike rengi) */
+.appleSwitch.danger.on {
+  background-color: #c4202a;
+}
+
 .appleSwitch.on .switchThumb {
   transform: translateX(18px);
 }
@@ -2050,4 +2055,60 @@ body {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* ================================================================
+   Etkileşim katmanı — uç vurgusu, uç taşıma, orta tuş panı
+   (R7 #4 hover katmanı, #5 taşıma, #9 orta tuş kaydırma)
+   ================================================================ */
+
+/* uç vurgusu: hovered/seçili kablo dışındaki kablolar saydamlaşır;
+   hovered kablonun görsel kopyası .cablesTop'ta en üstte tam opak çizilir */
+.cable {
+  transition: opacity 0.15s;
+}
+
+.cables.focus .cable:not(.hov) {
+  opacity: 0.22;
+}
+
+/* yerindeki görünmez vurma kopyası — çizimi yoktur, yalnız olay taşır */
+.cable.ghost {
+  pointer-events: all;
+}
+
+/* üst katman görsel kopya — olay almaz (JSX pointerEvents=none ile birlikte) */
+.cablesTop {
+  pointer-events: none;
+}
+
+/* uç vurgu halkası — bağlı iki soket de parlar (R7 #4) */
+.endRing {
+  stroke: #f4d13b;
+  stroke-width: 2;
+  opacity: 0.95;
+}
+
+.snapRing {
+  stroke: #f4d13b;
+  stroke-width: 1.6;
+  opacity: 0.8;
+}
+
+/* uç eldeyken imleç "tutuyorum" hissi verir (R7 #5) */
+.boardSvg.carrying,
+.boardSvg.carrying .term,
+.boardSvg.carrying .cable.ghost {
+  cursor: grabbing;
+}
+
+/* acil stop + paket şalter artık tıklanır (R7 #3 #6) */
+.boardSvg .estop,
+.boardSvg .paketSel {
+  cursor: pointer;
+}
+
+.boardSvg .estop:hover,
+.boardSvg .paketSel:hover {
+  filter: brightness(1.08);
 }

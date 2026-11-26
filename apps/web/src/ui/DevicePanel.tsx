@@ -1,22 +1,10 @@
-import { useEffect, useRef } from 'react';
-import { A, getState, useStore } from '../store';
+import { A, useStore } from '../store';
 import { sfx } from '../audio/sfx';
 import { tr1 } from './format';
 import { useRadioGroup } from './radioGroup';
 
-const BUTTONS = [
-  { id: 'b1', name: 'S0', role: 'Durdurma (Stop)', color: 'red' },
-  { id: 'b2', name: 'S1', role: 'Başlatma (Start)', color: 'teal' },
-  { id: 'b3', name: 'S2', role: 'Yön / Durdur', color: 'red' },
-  { id: 'b4', name: 'S3', role: 'İkinci Başlat', color: 'teal' },
-] as const;
-
-const BUTTON_IDS = ['b1', 'b2', 'b3', 'b4'] as const;
-
 export function DevicePanel() {
   const st = useStore();
-  // Klavyeyle tutulan buton (fare onMouseLeave'in klavye basılı tutmayı bırakmaması için)
-  const heldKeyboard = useRef<string | null>(null);
   const zrGroup = useRadioGroup<'düz' | 'ters'>(['düz', 'ters'], st.zr.mode, (m) => A.setZr({ mode: m }));
 
   const handleBreaker = (type: 'motor' | 'control') => {
@@ -30,52 +18,40 @@ export function DevicePanel() {
     A.termikArm();
   };
 
-  // Bas-tut: klavye (Space/Enter) + fare + dokunma aynı yoldan çalışır (R1: klavye körü)
-  const press = (id: 'b1' | 'b2' | 'b3' | 'b4') => {
-    if (getState().pressed[id]) return;
-    sfx.button(true);
-    A.pressButton(id);
-  };
-  const release = (id: 'b1' | 'b2' | 'b3' | 'b4') => {
-    if (!getState().pressed[id]) return;
-    sfx.button(false);
-    A.releaseButton(id);
-  };
-
-  // Pencere odağını kaybetmek ya da sekmeyi arka plana atmak kontaktörü LATCH ETMESİN
-  // (R2 DeepSeek #11: blur/visibilitychange/touchcancel/pointercancel'da da bırak)
-  useEffect(() => {
-    const releaseAll = () => {
-      heldKeyboard.current = null;
-      for (const id of BUTTON_IDS) {
-        if (getState().pressed[id]) {
-          sfx.button(false);
-          A.releaseButton(id);
-        }
-      }
-    };
-    const onBlur = () => releaseAll();
-    const onVisibility = () => { if (document.hidden) releaseAll(); };
-    window.addEventListener('blur', onBlur);
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => {
-      window.removeEventListener('blur', onBlur);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, []);
-
   return (
     <div className="inspectorSection" aria-label="Cihaz Kontrolleri">
-      {/* 1. Güç Kesicileri */}
+      {/* 1. Pano Sigortası */}
       <div className="appleCard">
         <div className="cardHeader">
-          <span className="cardTitle">Pano Kesicileri</span>
+          <span className="cardTitle">Pano Sigortası</span>
           <span className="cardBadge">MCB</span>
         </div>
 
         <div className="switchRow">
           <div className="switchInfo">
-            <span className="switchLabel" id="sw-f3">F3 Motor Kesici (3P)</span>
+            <span className="switchLabel" id="sw-paket">Paket Şalter</span>
+            <span className="switchDesc">Güç devresi (R/S/T) ana 0/1 şalteri — kapalıyken motor tarafı beslemesiz; kumanda devresi çalışmaya devam eder</span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={st.paket}
+            aria-labelledby="sw-paket"
+            className={`appleSwitch ${st.paket ? 'on' : ''}`}
+            onClick={() => {
+              sfx.breaker(!st.paket);
+              A.setPaket(!st.paket);
+            }}
+          >
+            <span className="switchThumb" />
+          </button>
+        </div>
+
+        <div className="cardDivider" />
+
+        <div className="switchRow">
+          <div className="switchInfo">
+            <span className="switchLabel" id="sw-f3">F3 Motor Sigortası (3P)</span>
             <span className="switchDesc">400V 3-Fazlı ana motor beslemesi</span>
           </div>
           <button
@@ -94,7 +70,7 @@ export function DevicePanel() {
 
         <div className="switchRow">
           <div className="switchInfo">
-            <span className="switchLabel" id="sw-f1">F1 Kumanda Kesici (1P)</span>
+            <span className="switchLabel" id="sw-f1">F1 Kumanda Sigortası (1P)</span>
             <span className="switchDesc">230V Kumanda devresi (Rc) fazı</span>
           </div>
           <button
@@ -104,6 +80,28 @@ export function DevicePanel() {
             aria-labelledby="sw-f1"
             className={`appleSwitch ${st.breakers.control ? 'on' : ''}`}
             onClick={() => handleBreaker('control')}
+          >
+            <span className="switchThumb" />
+          </button>
+        </div>
+
+        <div className="cardDivider" />
+
+        <div className="switchRow">
+          <div className="switchInfo">
+            <span className="switchLabel" id="sw-estop">Acil Stop</span>
+            <span className="switchDesc">Basılıyken TÜM besleme kaynakları kesilir; tekrar tıklayınca bırakılır</span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={st.estop}
+            aria-labelledby="sw-estop"
+            className={`appleSwitch danger ${st.estop ? 'on' : ''}`}
+            onClick={() => {
+              sfx.breaker(!st.estop);
+              A.setEstop(!st.estop);
+            }}
           >
             <span className="switchThumb" />
           </button>
@@ -191,73 +189,6 @@ export function DevicePanel() {
             <span>10 sn</span>
             <span>15 sn</span>
           </div>
-        </div>
-      </div>
-
-      {/* 4. Kumanda Butonları */}
-      <div className="appleCard">
-        <div className="cardHeader">
-          <span className="cardTitle">Test Butonları</span>
-          <span className="cardBadge">Bas-Tut</span>
-        </div>
-        <p className="cardText">
-          Panodaki butonları buradan da test edebilirsiniz: basılı tutmak için tıklayın, klavyede Space/Enter'ı bırakmayın:
-        </p>
-
-        <div className="pushbuttonGrid">
-          {BUTTONS.map((btn) => {
-            const isPressed = st.pressed[btn.id as 'b1'];
-            return (
-              <button
-                key={btn.id}
-                type="button"
-                className={`tactileButton ${btn.color} ${isPressed ? 'pressed' : ''}`}
-                aria-label={`${btn.name} ${btn.role} — basılı tut`}
-                onMouseDown={() => press(btn.id as 'b1')}
-                onMouseUp={() => release(btn.id as 'b1')}
-                onMouseLeave={() => {
-                  if (heldKeyboard.current !== (btn.id as string)) release(btn.id as 'b1');
-                }}
-                onTouchStart={() => press(btn.id as 'b1')}
-                onTouchEnd={() => release(btn.id as 'b1')}
-                onTouchCancel={() => release(btn.id as 'b1')}
-                onPointerCancel={() => release(btn.id as 'b1')}
-                onClick={(e) => {
-                  // AT/sesli erişim sentetik click (detail 0) düğmeyi basılı
-                  // bırakır — kısa nabız ver sonra kaldır (R5 DeepSeek öneri)
-                  if (e.detail === 0) {
-                    press(btn.id as 'b1');
-                    window.setTimeout(() => release(btn.id as 'b1'), 200);
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.repeat) return;
-                  if (e.key === ' ' || e.key === 'Enter') {
-                    e.preventDefault();
-                    heldKeyboard.current = btn.id as string;
-                    press(btn.id as 'b1');
-                  }
-                }}
-                onKeyUp={(e) => {
-                  if (e.key === ' ' || e.key === 'Enter') {
-                    heldKeyboard.current = null;
-                    release(btn.id as 'b1');
-                  }
-                }}
-                onBlur={() => {
-                  if (heldKeyboard.current === (btn.id as string)) {
-                    heldKeyboard.current = null;
-                    release(btn.id as 'b1');
-                  }
-                }}
-              >
-                <span className="btnCap" aria-hidden="true">
-                  <span className="btnCode">{btn.name}</span>
-                </span>
-                <span className="btnDesc" aria-hidden="true">{btn.role}</span>
-              </button>
-            );
-          })}
         </div>
       </div>
     </div>

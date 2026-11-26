@@ -33,7 +33,7 @@ Arayüz — koyu ve açık tema, denetçi çubuğu, mobil görünüm:
 | Genel görünüm (koyu) | Devreler — MEB TEMRİN'leri |
 | --- | --- |
 | <img src="ui_screens/01_dark_overview.png" width="455" alt=""> | <img src="ui_screens/05_sidebar_devreler.png" width="455" alt=""> |
-| **Cihazlar** — kesiciler, termik, ZR, test butonları | **Ayarlar** — kablo stili, uç vurgusu, sesler |
+| **Cihazlar** — sigortalar, paket şalter, acil stop, termik, ZR | **Ayarlar** — kablo geometrisi (kaydırıcı), uç vurgusu, sesler |
 | <img src="ui_screens/04_sidebar_cihazlar.png" width="455" alt=""> | <img src="ui_screens/07_sidebar_ayarlar.png" width="455" alt=""> |
 | **Açık tema** | **Mobil görünüm (koyu)** |
 | <img src="ui_screens/08_light_overview.png" width="455" alt=""> | <img src="ui_screens/10_mobile_dark.png" width="455" alt=""> |

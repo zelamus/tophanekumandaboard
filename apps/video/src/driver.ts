@@ -9,9 +9,10 @@ import type { Cable } from '../../web/src/store';
 import { presetCables } from '../../web/src/presets';
 import { BTN, FPS, T5, WIRE_START, WIRE_STEP } from './timeline';
 
-/** useSim.ts PROBES kopyası — aynen korunur */
+/** useSim.ts PROBES kopyası — aynen korunur. R/S/T lambaları F3 çıkışını
+ *  (motor tarafını) izler: kesici kapalıyken uçlar canlı da olsa sönük kalır */
 const PROBES: SolveProbes = {
-  indicators: { red: 'sup.R', green: 'sup.S', yellow: 'sup.T', ctrl: 'sup.Rc' },
+  indicators: { red: 'e.m1.a', green: 'e.m2.a', yellow: 'e.m3.a', ctrl: 'sup.Rc' },
   lamp5: ['sup.X', 'sup.X2'],
   ext: { yellow: 'ext.fazY', red: 'ext.fazR', green: 'ext.fazG', gnd: 'ext.gnd' },
   motor: ['sup.U', 'sup.V', 'sup.W'],
@@ -38,9 +39,7 @@ function deviceContacts(
   const edges: { a: string; b: string; closed: boolean }[] = [];
   for (const b of ['b1', 'b2', 'b3', 'b4'] as const) {
     const on = pressed[b];
-    edges.push({ a: `${b}.c1`, b: `${b}.c2`, closed: true });
     edges.push({ a: `${b}.c1`, b: `${b}.nc`, closed: !on });
-    edges.push({ a: `${b}.c2`, b: `${b}.nc`, closed: !on });
     edges.push({ a: `${b}.c1`, b: `${b}.no`, closed: on });
     edges.push({ a: `${b}.c2`, b: `${b}.no`, closed: on });
   }
@@ -73,16 +72,25 @@ function deviceContacts(
   return edges;
 }
 
-function sources(breakers: { motor: boolean; control: boolean }) {
-  const list: { tid: string; pot: 'L1' | 'L2' | 'L3' | 'N' }[] = [
-    { tid: 'sup.R', pot: 'L1' },
-    { tid: 'sup.S', pot: 'L2' },
-    { tid: 'sup.T', pot: 'L3' },
-    { tid: 'sup.Mp', pot: 'N' },
-    { tid: 'sup.X', pot: 'L1' },
-    { tid: 'sup.X2', pot: 'N' },
-  ];
-  if (breakers.control) list.push({ tid: 'sup.Rc', pot: 'L1' });
+/** useSim.ts kaynak listesinin saf sürümü. Paket şalter yalnız GÜÇ tarafını
+ *  (R/S/T) keser; kumanda devresi (Mp/X/X2 + Rc) paketten bağımsızdır. Acil
+ *  stop basılıyken pano tamamı beslemesiz kalır. Varsayılanlar (paket açık,
+ *  stop bırakılmış) eski çağrıları korur. */
+function sources(
+  breakers: { motor: boolean; control: boolean },
+  paket = true,
+  estop = false,
+) {
+  const motorFeed = paket && !estop;
+  const ctrlFeed = !estop;
+  const list: { tid: string; pot: 'L1' | 'L2' | 'L3' | 'N' }[] = [];
+  if (motorFeed && breakers.motor) {
+    list.push({ tid: 'sup.R', pot: 'L1' }, { tid: 'sup.S', pot: 'L2' }, { tid: 'sup.T', pot: 'L3' });
+  }
+  if (ctrlFeed) {
+    list.push({ tid: 'sup.Mp', pot: 'N' }, { tid: 'sup.X', pot: 'L1' }, { tid: 'sup.X2', pot: 'N' });
+  }
+  if (ctrlFeed && breakers.control) list.push({ tid: 'sup.Rc', pot: 'L1' });
   return list;
 }
 

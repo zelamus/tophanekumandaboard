@@ -76,6 +76,8 @@ export class RelayEngine {
   private zrMode: TimerConfig['mode'] | null = null;
   /** ters kipte enerji kesilip tail sayarken re-enerjilemeyi ayırt eder */
   private zrHolding = false;
+  /** Çakışan bobinlerin frame'den frame'e ters döndürülmesi (görünür çakışma) */
+  private chatterFlip = false;
 
   reset(): void {
     this.coils = { c1: false, c2: false, c3: false, c4: false, d1: false };
@@ -84,6 +86,7 @@ export class RelayEngine {
     this.zrTail = 0;
     this.zrMode = null;
     this.zrHolding = false;
+    this.chatterFlip = false;
   }
 
   solve(args: SolveArgs): SimOutput {
@@ -110,6 +113,7 @@ export class RelayEngine {
     // --- 2) Bobin çözümleninceye kadar graf + BFS tekrar edilir ---
     let reach: Map<string, Set<Pot>> = new Map();
     let unstable = false;
+    let prev: CoilState = this.coils;
     for (let iter = 0; iter < 12; iter++) {
       reach = this.reachable(adj, args.contacts(this.coils, this.zrClosed, args.termikArmed), args.sources);
       const energize = makeEnergizer(reach);
@@ -121,6 +125,7 @@ export class RelayEngine {
         d1: energize(...args.probes.coils.d1),
       };
       const stable = sameCoils(next, this.coils);
+      prev = this.coils;
       this.coils = next;
       dev.contactors = { c1: next.c1, c2: next.c2, c3: next.c3, c4: next.c4 };
       dev.d1 = next.d1;
@@ -129,6 +134,17 @@ export class RelayEngine {
     }
     if (unstable) {
       // Çözüm 12 adımda oturmadı (bobin kendi NC kontağıyla besleniyordu vb.):
+      // gerçek panoda bu devre ÇAKAR — armatür hızla çeker/düşer. Görünür kıl-
+      // mak için son adımda hâlâ değişen bobinler her çözümde (frame'de) ters
+      // çevrilir: kontaktör kare dalga ile çakar (yaklaşık 30 Hz).
+      this.chatterFlip = !this.chatterFlip;
+      if (this.chatterFlip) {
+        for (const k of ['c1', 'c2', 'c3', 'c4', 'd1'] as const) {
+          if (prev[k] !== this.coils[k]) this.coils[k] = !this.coils[k];
+        }
+        dev.contactors = { c1: this.coils.c1, c2: this.coils.c2, c3: this.coils.c3, c4: this.coils.c4 };
+        dev.d1 = this.coils.d1;
+      }
       // SON bobin durumuyla kontak grafiğini bir kez daha kur — böylece
       // pot/lamba/motor çıktıları görüntülenen bobinlerle tutarlı kalır.
       reach = this.reachable(adj, args.contacts(this.coils, this.zrClosed, args.termikArmed), args.sources);

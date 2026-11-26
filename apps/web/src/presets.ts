@@ -31,7 +31,7 @@ export const PRESETS: Preset[] = [
     gorsel: 'Görsel 1.40.1 (s.45)',
     kisa: 'b1 (S0) durdur butonuyla harici kırmızı lamba (H1) yanar; S0 basılıyken lamba söner.',
     aciklama: [
-      'Kumanda kesicisini (F1) kapalı tut.',
+      'Kumanda sigortasını (F1) kapalı tut.',
       'Fazı (R) S0 butonunun ortak ucuna çek: sup.Rc → b1.c1',
       'S0 kapalı ucundan harici lambanın (H1) faz ucuna: b1.nc → ext.fazR',
       'Lambanın toprak ucunu nötr Mp’ye bağla: ext.gnd → sup.Mp',
@@ -52,7 +52,7 @@ export const PRESETS: Preset[] = [
       'Kumanda devresi: Rc → e.tc.a | e.tc.b → b2.c1 | b2.no → c1.a1 | c1.a2 → Mp',
       'H1 kırmızı (K1 NC 21-22): e.tc.b → c1.k1.a | c1.k1.b → ext.fazR | ext.gnd → Mp',
       'H2 yeşil (K1 NO 13-14): e.tc.b → c1.x2.a | c1.x2.b → ext.fazG',
-      'Güç: F3 (motor kesicisi) açıkken R/S/T beslemesi pano içinden e.m1/m2/m3.a uçlarına geçer; bu yola kablo çekmeyin.',
+      'Güç: F3 (motor sigortası) açıkken R/S/T beslemesi pano içinden e.m1/m2/m3.a uçlarına geçer; bu yola kablo çekmeyin.',
       'Öğrenci güç kabloları: e.m1.b → c1.m1.a | e.m2.b → c1.m2.a | e.m3.b → c1.x1.a',
       'c1.m1.b → U | c1.m2.b → V | c1.x1.b → W  (3. faz termik m3 üzerinden x1 NO’ya)',
       'b2 basılı kaldıkça motor döner; bırakınca durur.',

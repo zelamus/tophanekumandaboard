@@ -10,7 +10,9 @@ import { A, getState } from '../store';
 import type { CoilState, SolveProbes } from './engine';
 
 const PROBES: SolveProbes = {
-  indicators: { red: 'sup.R', green: 'sup.S', yellow: 'sup.T', ctrl: 'sup.Rc' },
+  // R/S/T lambaları motor tarafını (F3 çıkışını) izler: F3 açık + pano
+  // beslemeliyken yanar — kesici kapalıyken R/S/T uçları canlı da olsa sönük kalır
+  indicators: { red: 'e.m1.a', green: 'e.m2.a', yellow: 'e.m3.a', ctrl: 'sup.Rc' },
   lamp5: ['sup.X', 'sup.X2'],
   ext: { yellow: 'ext.fazY', red: 'ext.fazR', green: 'ext.fazG', gnd: 'ext.gnd' },
   motor: ['sup.U', 'sup.V', 'sup.W'],
@@ -35,12 +37,13 @@ function deviceContacts(coils: CoilState, zrClosed: boolean, termikArmed: boolea
   const s = getState();
   const edges: ContactEdge[] = [];
 
-  // butonlar: c1/c2 ortak çifti + nc (kapalı) / no (açık)
+  // butonlar: c1 ortak (NC + NO bloğu), c2 ikinci ortak (yalnız NO bloğu).
+  // Basılıyken ortaklar NO ucuna kapanır; c1↔c2 arasında SÜREKLİ köprü yoktur —
+  // eski köprü (c1-c2 closed:true) kendi NC kontağıyla beslenen bobinleri
+  // (osilatör devresi) hiç düşüremiyordu: K1 sürekli çekili kalıyordu.
   for (const b of SWITCHES) {
     const pressed = s.pressed[b];
-    edges.push({ a: `${b}.c1`, b: `${b}.c2`, closed: true });
     edges.push({ a: `${b}.c1`, b: `${b}.nc`, closed: !pressed });
-    edges.push({ a: `${b}.c2`, b: `${b}.nc`, closed: !pressed });
     edges.push({ a: `${b}.c1`, b: `${b}.no`, closed: pressed });
     edges.push({ a: `${b}.c2`, b: `${b}.no`, closed: pressed });
   }
@@ -126,15 +129,20 @@ export function useSimLoop(): void {
         contacts: deviceContacts,
         termikArmed: st.termikArmed,
         sources: (() => {
-          const list: { tid: string; pot: Pot }[] = [
-            { tid: 'sup.R', pot: 'L1' },
-            { tid: 'sup.S', pot: 'L2' },
-            { tid: 'sup.T', pot: 'L3' },
-            { tid: 'sup.Mp', pot: 'N' },
-            { tid: 'sup.X', pot: 'L1' },
-            { tid: 'sup.X2', pot: 'N' },
-          ];
-          if (st.breakers.control) list.push({ tid: 'sup.Rc', pot: 'L1' });
+          // Paket şalter yalnız GÜÇ tarafını (R/S/T) keser; kumanda devresi
+          // (Mp/X/X2 + F1 çıkışı Rc) paketten bağımsızdır. Acil stop basılıyken
+          // pano TAMAMEN beslemesiz kalır. F3/F1 kendi iç kenarlarıyla
+          // (deviceContacts) ayrıca seridir.
+          const motorFeed = st.paket && !st.estop;
+          const ctrlFeed = !st.estop;
+          const list: { tid: string; pot: Pot }[] = [];
+          if (motorFeed && st.breakers.motor) {
+            list.push({ tid: 'sup.R', pot: 'L1' }, { tid: 'sup.S', pot: 'L2' }, { tid: 'sup.T', pot: 'L3' });
+          }
+          if (ctrlFeed) {
+            list.push({ tid: 'sup.Mp', pot: 'N' }, { tid: 'sup.X', pot: 'L1' }, { tid: 'sup.X2', pot: 'N' });
+          }
+          if (ctrlFeed && st.breakers.control) list.push({ tid: 'sup.Rc', pot: 'L1' });
           return list;
         })(),
         dtMs: dt,

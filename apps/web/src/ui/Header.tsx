@@ -26,7 +26,7 @@ const COLORS: { c: string; name: string }[] = [
 
 const MODES: { m: Mode; label: string; icon: typeof IconWire; hint: string }[] = [
   { m: 'kablo', label: 'Kablo', icon: IconWire, hint: 'Kablo Çek — uca tıklayın, sonra diğer uca tıklayın' },
-  { m: 'hareket', label: 'Taşı', icon: IconPan, hint: 'Panoyu Taşı & Kaydır (Tekerlek: Yakınlaştır)' },
+  { m: 'hareket', label: 'Taşı', icon: IconPan, hint: 'Yuva: yuvaya bağlı son kablonun ucunu eline alır · Kablo: imlece en yakın uç taşınır · Boş zemin/Esc: ucu geri koyar' },
   { m: 'sil', label: 'Kablo Sil', icon: IconCut, hint: 'Kablo Sil — kaldırmak istediğiniz kabloya tıklayın' },
 ];
 
@@ -160,7 +160,7 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
             type="button"
             className="appleButton iconOnly"
             disabled={st.undoDepth === 0}
-            title="Son pano işlemini geri al — kablo, kesici, ZR ve termik birlikte (Ctrl+Z / ⌘Z)"
+            title="Son pano işlemini geri al — kablo, sigorta, ZR ve termik birlikte (Ctrl+Z / ⌘Z)"
             aria-label="Son pano işlemini geri al"
             onClick={() => A.undo()}
           >
@@ -179,18 +179,18 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
         </div>
       </div>
 
-      {/* Sağ: Kesiciler, Termik Hata ve Panel / Tema Düğmeleri */}
+      {/* Sağ: Sigortalar, Termik Hata ve Panel / Tema Düğmeleri */}
       <div className="headerRight">
-        {/* Kesici Hızlı Toggles */}
-        <div className="breakerFastGroup" title="Pano ana kesicileri">
+        {/* Sigorta Hızlı Toggles */}
+        <div className="breakerFastGroup" title="Pano ana sigortaları">
           <button
             type="button"
             role="switch"
             aria-checked={st.breakers.motor}
             className={`breakerPill ${st.breakers.motor ? 'active' : ''}`}
             onClick={toggleMotorBreaker}
-            title="F3 — 3 Fazlı Motor Kesici (3P 400V)"
-            aria-label={`F3 motor kesici ${st.breakers.motor ? 'açık' : 'kapalı'}`}
+            title="F3 — 3 Fazlı Motor Sigortası (3P 400V)"
+            aria-label={`F3 motor sigortası ${st.breakers.motor ? 'açık' : 'kapalı'}`}
           >
             <span className="dot" aria-hidden="true" />
             <span className="lbl">F3 3P</span>
@@ -201,8 +201,8 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
             aria-checked={st.breakers.control}
             className={`breakerPill ${st.breakers.control ? 'active' : ''}`}
             onClick={toggleControlBreaker}
-            title="F1 — 1 Fazlı Kumanda Kesici (1P 230V)"
-            aria-label={`F1 kumanda kesici ${st.breakers.control ? 'açık' : 'kapalı'}`}
+            title="F1 — 1 Fazlı Kumanda Sigortası (1P 230V)"
+            aria-label={`F1 kumanda sigortası ${st.breakers.control ? 'açık' : 'kapalı'}`}
           >
             <span className="dot" aria-hidden="true" />
             <span className="lbl">F1 1P</span>

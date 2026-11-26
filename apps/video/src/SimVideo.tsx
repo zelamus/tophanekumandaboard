@@ -36,7 +36,7 @@ function useStoreBridge(
       ayar: {
         sfx: { on: false, vol: 0 },
         theme: 'dark',
-        pathStyle: 'asılı',
+        sag: 100,
         cableType: 'normal',
         vurgula: false,
       },

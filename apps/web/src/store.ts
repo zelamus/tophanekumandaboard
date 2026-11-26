@@ -2,14 +2,12 @@
 
 import { useSyncExternalStore } from 'react';
 import type { SimOutput } from './sim/model';
+import { socketPos } from './board/geometry';
 
 export type Mode = 'kablo' | 'hareket' | 'sil';
 
 /** Kablo zamki / çekiç tipi — çekim modu: normal veya TTR (güç, yakalama destekli) */
 export type CableType = 'normal' | 'güç';
-
-/** Kablo yolu stili — asılı varsayılandır (gerçek kartdaki sarkık çekiç) */
-export type PathStyle = 'asılı' | 'düz' | 'yumuşak';
 
 export interface SfxSetting {
   on: boolean;
@@ -17,7 +15,8 @@ export interface SfxSetting {
 }
 
 export interface SettingsShape {
-  pathStyle: PathStyle;
+  /** Kablo sarkması 0..100 — 0 düz hat, ~35 yumuşak, 100 tam asılı (eski 3 seçeneğin sürekli hali) */
+  sag: number;
   cableType: CableType;
   /** Kabloya gelince uçlarını vurgula + diğerlerini kıs (hover focus) */
   vurgula: boolean;
@@ -54,12 +53,25 @@ export interface ZrConf {
 
 export interface BreakerState { motor: boolean; control: boolean; }
 
+/** Hareket modunda elde taşınan kablo ucu — seçim non-destrüktiftir,
+ *  bırakışta bağlantı gerçekten değiştiyse tek geri alınabilir adım yazılır */
+export interface Carry {
+  cableId: string;
+  end: 'a' | 'b';
+  /** ucun alındığı soket — aynı yere bırakmak iptal sayılır */
+  from: string;
+}
+
 export interface DocShape {
   v: 1;
   cables: Cable[];
   breakers: BreakerState;
   zr: ZrConf;
   termikArmed: boolean;
+  /** paket şalter (ana 0/1 seçici) — eski kayıtlarda yoksa açık varsayılır */
+  paket?: boolean;
+  /** acil stop basılı mı — eski kayıtlarda yoksa bırakılmış varsayılır */
+  estop?: boolean;
   /** ayarlar (isteğe bağlı) — yükleme bunları kabul eder, eski kayıtlar bozulmaz */
   ayar?: Partial<SettingsShape>;
 }
@@ -71,10 +83,16 @@ export interface AppState {
   cables: Cable[];
   pressed: { b1: boolean; b2: boolean; b3: boolean; b4: boolean };
   breakers: BreakerState;
+  /** paket şalter (ana 0/1 seçici) — kapalıyken tüm besleme yok */
+  paket: boolean;
+  /** acil stop basılı — tüm besleme kaynaklarını keser */
+  estop: boolean;
   termikArmed: boolean;
   zr: ZrConf;
   selTerminal: string | null;
   selCable: string | null;
+  /** hareket modunda elde taşınan kablo ucu (null = elde değil) */
+  carry: Carry | null;
   sim: SimOutput | null;
   /** Doküman/preset yükleme ya da kablo temizliğinde artar → sim motoru sıfırlanır */
   simEpoch: number;
@@ -89,7 +107,7 @@ export interface AppState {
 const AYAR_KEY = 'kka-ayarlar';
 
 const DEFAULT_SETTINGS: SettingsShape = {
-  pathStyle: 'asılı',
+  sag: 100,
   cableType: 'normal',
   vurgula: true,
   sfx: { on: true, vol: 0.5 },
@@ -110,15 +128,22 @@ export function applyTheme(corrected: 'dark' | 'light'): void {
   }
 }
 
+/** Eski 3 seçenekli kayıtları sürekli sarkmaya çevirir: düz→0, yumuşak→35, asılı→100 */
+function legacySag(p: unknown): number {
+  return p === 'düz' ? 0 : p === 'yumuşak' ? 35 : 100;
+}
+
 function loadAyar(): SettingsShape {
   try {
     const raw = localStorage.getItem(AYAR_KEY);
     const th = raw ? sanitizeTheme((JSON.parse(raw) as Partial<SettingsShape>).theme) : DEFAULT_SETTINGS.theme;
     applyTheme(resolveTheme(th));
     if (!raw) return { ...DEFAULT_SETTINGS };
-    const j = JSON.parse(raw) as Partial<SettingsShape>;
+    const j = JSON.parse(raw) as Partial<SettingsShape> & { pathStyle?: unknown };
     return {
-      pathStyle: j.pathStyle === 'düz' || j.pathStyle === 'yumuşak' ? j.pathStyle : 'asılı',
+      sag: typeof j.sag === 'number' && Number.isFinite(j.sag)
+        ? Math.min(100, Math.max(0, j.sag))
+        : legacySag(j.pathStyle),
       cableType: j.cableType === 'güç' ? 'güç' : 'normal',
       vurgula: j.vurgula !== false,
       sfx: { on: j.sfx?.on !== false, vol: typeof j.sfx?.vol === 'number' ? Math.min(1, Math.max(0, j.sfx.vol)) : 0.5 },
@@ -140,6 +165,15 @@ function saveAyar(s: SettingsShape): void {
 const listeners = new Set<() => void>();
 let seq = 0;
 
+/** benzersiz kablo id — yüklenen dokümanlardaki özel id'ler (ör. k1) ile
+ *  çakışmasın: aynı id iki kabloda olursa seçim/silme ikisini birden tutar */
+function nextCableId(): string {
+  for (;;) {
+    const id = `k${(++seq).toString(36)}`;
+    if (!state.cables.some((c) => c.id === id)) return id;
+  }
+}
+
 /* Geri alma yığını — kablo ekleme/silme/temizleme/yüklemeden önceki TÜM PANO
    dilimini tutar (R2 GLM #7 / DeepSeek #4: kablo-dışı durum kablosuz kalmasın).
    Kullanıcı tercihi (tema/ses) bilinçli olarak YOK — o ayarlar geri sarmaz. */
@@ -148,6 +182,8 @@ const MAX_UNDO = 40;
 interface BoardSnap {
   cables: Cable[];
   breakers: BreakerState;
+  paket: boolean;
+  estop: boolean;
   zr: ZrConf;
   termikArmed: boolean;
   mode: Mode;
@@ -159,6 +195,8 @@ function pushHistory(): void {
   undoStack.push({
     cables: state.cables.slice(),
     breakers: { ...state.breakers },
+    paket: state.paket,
+    estop: state.estop,
     zr: { ...state.zr },
     termikArmed: state.termikArmed,
     mode: state.mode,
@@ -184,10 +222,13 @@ let state: AppState = {
   cables: [],
   pressed: { b1: false, b2: false, b3: false, b4: false },
   breakers: { motor: true, control: true },
+  paket: true,
+  estop: false,
   termikArmed: true,
   zr: { delayMs: 3000, mode: 'düz' },
   selTerminal: null,
   selCable: null,
+  carry: null,
   sim: null,
   simEpoch: 0,
   stallEpoch: 0,
@@ -217,7 +258,7 @@ export function useStore(): AppState {
 /* ---------------- eylemler ---------------- */
 
 export const A = {
-  setMode(mode: Mode): void { patch({ mode, selCable: null }); },
+  setMode(mode: Mode): void { patch({ mode, selCable: null, carry: null }); },
 
   setCableColor(cableColor: string): void { patch({ cableColor }); },
 
@@ -247,7 +288,7 @@ export const A = {
     }
     const kpcTipi = state.settings.cableType === 'güç' || undefined;
     const cable: Cable = {
-      id: `k${(++seq).toString(36)}`, a: state.selTerminal, b: id,
+      id: nextCableId(), a: state.selTerminal, b: id,
       color: state.cableColor, güç: kpcTipi,
     };
     // Shift ile çekim zinciri: ikinci uç yeni taslak başlangıcı olur
@@ -259,7 +300,14 @@ export const A = {
     });
   },
 
-  clickCable(id: string): void {
+  clickCable(id: string, pt?: { x: number; y: number }): void {
+    // hareket modunda kablo tıkı = imlece en yakın ucu eline al (bağlantıyı bozmaz)
+    if (state.mode === 'hareket' && !state.carry && pt) {
+      A.pickCableEnd(id, pt);
+      return;
+    }
+    // elde uç varken kablo tıkı bir şey yapmaz — bırakış yalnız soketledir
+    if (state.mode === 'hareket' && state.carry) return;
     if (state.mode === 'sil') {
       A.delCable(id);
       return;
@@ -283,23 +331,99 @@ export const A = {
     patch({
       cables: snap.cables,
       breakers: snap.breakers,
+      paket: snap.paket,
+      estop: snap.estop,
       zr: snap.zr,
       termikArmed: snap.termikArmed,
       mode: snap.mode,
       pressed: { b1: false, b2: false, b3: false, b4: false },
       selTerminal: null,
       selCable: null,
+      carry: null,
       // clearWires epoch'u geri sarılır → sim motoru eski topolojiyle yeniden başlar
       simEpoch: state.simEpoch + 1,
       undoDepth: undoStack.length,
     });
   },
 
-  cancelSel(): void { patch({ selTerminal: null, selCable: null }); },
+  cancelSel(): void { patch({ selTerminal: null, selCable: null, carry: null }); },
 
   clearWires(): void {
     pushHistory();
-    patch({ cables: [], selTerminal: null, selCable: null, simEpoch: state.simEpoch + 1, undoDepth: undoStack.length });
+    patch({ cables: [], selTerminal: null, selCable: null, carry: null, simEpoch: state.simEpoch + 1, undoDepth: undoStack.length });
+  },
+
+  /* ---- paket şalter (ana 0/1 seçici) + acil stop ---- */
+
+  setPaket(paket: boolean): void { patch({ paket }); },
+
+  /** Acil stop basılıyken TÜM besleme kaynakları kesilir; taşınan uç da geri konur */
+  setEstop(estop: boolean): void {
+    patch(estop ? { estop: true, carry: null, selTerminal: null } : { estop: false });
+  },
+
+  /* ---- hareket modu: uç taşıma ----
+     Sokete tık → o sokete bağlı EN SON konmuş kablonun ucunu alır.
+     Kabloya tık → imlece en yakın uç taşınır. Bırakış bağlantıyı
+     gerçekten değiştirirse TEK geri alınabilir adım yazılır. */
+
+  /** Soket tıklarını moduna göre yönlendirir (kablo çekme / taşıma) */
+  socketTap(id: string, zincir = false): void {
+    if (state.mode === 'hareket') {
+      if (state.carry) A.dropCarry(id);
+      else A.pickFromSocket(id);
+      return;
+    }
+    A.clickTerminal(id, zincir);
+  },
+
+  pickFromSocket(socketId: string): void {
+    for (let i = state.cables.length - 1; i >= 0; i--) {
+      const c = state.cables[i];
+      if (c.a === socketId || c.b === socketId) {
+        patch({
+          carry: { cableId: c.id, end: c.a === socketId ? 'a' : 'b', from: socketId },
+          selCable: c.id,
+          selTerminal: null,
+        });
+        return;
+      }
+    }
+  },
+
+  pickCableEnd(cableId: string, pt: { x: number; y: number }): void {
+    const c = state.cables.find((k) => k.id === cableId);
+    if (!c) return;
+    const pa = socketPos(c.a), pb = socketPos(c.b);
+    const end = Math.hypot(pt.x - pa.x, pt.y - pa.y) <= Math.hypot(pt.x - pb.x, pt.y - pb.y) ? 'a' : 'b';
+    patch({
+      carry: { cableId, end, from: end === 'a' ? c.a : c.b },
+      selCable: cableId,
+      selTerminal: null,
+    });
+  },
+
+  dropCarry(target: string | null): void {
+    const carry = state.carry;
+    if (!carry) return;
+    const c = state.cables.find((k) => k.id === carry.cableId);
+    if (!c) { patch({ carry: null }); return; }
+    const other = carry.end === 'a' ? c.b : c.a;
+    // boş zemin / aynı soket / kendi diğer ucu → iptal: bağlantı değişmedi, geçmiş yazılmaz
+    if (!target || target === carry.from || target === other) {
+      patch({ carry: null });
+      return;
+    }
+    pushHistory();
+    patch({
+      cables: state.cables.map((k) => (k.id === carry.cableId
+        ? (carry.end === 'a' ? { ...k, a: target } : { ...k, b: target })
+        : k)),
+      carry: null,
+      selTerminal: null,
+      selCable: null,
+      undoDepth: undoStack.length,
+    });
   },
 
   pressButton(id: 'b1' | 'b2' | 'b3' | 'b4'): void {
@@ -352,9 +476,9 @@ export const A = {
     // durumda bir radyo grubunda hiçbir öge gezinti taşıyamaz (R3 DeepSeek #9)
     const sfxAyar = ayar.sfx;
     const safeSettings: SettingsShape = {
-      pathStyle: ayar.pathStyle === 'asılı' || ayar.pathStyle === 'yumuşak' || ayar.pathStyle === 'düz'
-        ? ayar.pathStyle
-        : state.settings.pathStyle,
+      sag: typeof ayar.sag === 'number' && Number.isFinite(ayar.sag)
+        ? Math.min(100, Math.max(0, ayar.sag))
+        : legacySag((ayar as { pathStyle?: unknown }).pathStyle),
       cableType: ayar.cableType === 'güç' ? 'güç' : 'normal',
       vurgula: typeof ayar.vurgula === 'boolean' ? ayar.vurgula : state.settings.vurgula,
       sfx: {
@@ -371,6 +495,9 @@ export const A = {
       cables: (doc.cables ?? []).filter((c) => c && c.a && c.b),
       pressed: { b1: false, b2: false, b3: false, b4: false },
       breakers: { motor: doc.breakers?.motor ?? true, control: doc.breakers?.control ?? true },
+      paket: doc.paket ?? true,
+      estop: doc.estop ?? false,
+      carry: null,
       zr: {
         delayMs: typeof doc.zr?.delayMs === 'number' && doc.zr.delayMs >= 200 && doc.zr.delayMs <= 15000
           ? doc.zr.delayMs
@@ -393,6 +520,8 @@ export const A = {
       v: 1,
       cables: state.cables,
       breakers: state.breakers,
+      paket: state.paket,
+      estop: state.estop,
       zr: state.zr,
       termikArmed: state.termikArmed,
       ayar: state.settings,

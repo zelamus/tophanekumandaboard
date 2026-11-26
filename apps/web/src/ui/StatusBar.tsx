@@ -115,14 +115,8 @@ function renderTelemetry(sim: SimOutput | null, zr: ZrConf) {
     );
   }
 
-  // 6. Titreşim / Salınım
-  if (sim.unstable) {
-    pills.push(
-      <div key="unstable" className="telemetryPill warning">
-        <span>Devre Salınıyor (Kontaktör Çakıyor)</span>
-      </div>
-    );
-  }
+  // 6. Devre salınımı artık uyarı rozeti olarak gösterilmez (R7 #10):
+  // motor gevşek son durumda çözülür, çakışma simüle edilmez.
 
   return pills;
 }
@@ -143,7 +137,9 @@ export function StatusBar() {
   } else if (st.mode === 'sil') {
     guideText = <span><b>Silme Modu</b> · Kaldırmak istediğiniz kabloya tıklayın</span>;
   } else if (st.mode === 'hareket') {
-    guideText = <span><b>Taşıma Modu</b> · Boşluğu sürükleyin, tekerlekle yakınlaştırın</span>;
+    guideText = st.carry
+      ? <span><b>Uç Elde</b> · Hedef yuvaya tıkla · boş zemin/Esc geri koyar</span>
+      : <span><b>Taşıma Modu</b> · Yuvaya tıkla: son kablo ucunu al · kabloya tıkla: en yakın uç · Orta tuş: kaydır</span>;
   } else {
     guideText = <span><b>Hazır</b> · Kablo çekmek için terminallere tıklayın</span>;
   }

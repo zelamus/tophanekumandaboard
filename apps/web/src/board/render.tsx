@@ -5,12 +5,12 @@
 // kablolar olarak çizilir; soketler (düğler) kabloların UCUNU örter şekilde
 // en sonda çizilir.
 
-import { useEffect, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import * as G from './geometry';
 import type { SocketDef } from './geometry';
 import { A, useStore } from '../store';
-import type { BreakerState, Cable, PathStyle } from '../store';
+import type { BreakerState, Cable, Carry } from '../store';
 import type { SimOutput } from '../sim/model';
 import { sfx } from '../audio/sfx';
 
@@ -161,7 +161,12 @@ function Knob({ s, selected, ring, snapP }: KnobProps) {
   // güç yakalama: hedef çevresinde geniş görünmez vurma alanı — imleç yakınsa
   // uzaktan tık da uca düşer (snap)
   return (
-    <g className={'term' + (snapP ? ' snap' : '')} onClick={(e) => { e.stopPropagation(); A.clickTerminal(s.id, e.shiftKey); }}>
+    <g className={'term' + (snapP ? ' snap' : '')} onClick={(e) => {
+      if (e.button !== 0) return;
+      e.stopPropagation();
+      // hareket modunda soket tıkı uç alır/bırakır; kablo modunda çekim yapar
+      A.socketTap(s.id, e.shiftKey);
+    }}>
       {snapP && <circle cx={s.x} cy={s.y} r={r + 22} fill="transparent" pointerEvents="all" />}
       <circle cx={s.x} cy={s.y} r={r + 3.5} fill="transparent" />
       {/* metal somun gölgesi */}
@@ -180,70 +185,204 @@ function Knob({ s, selected, ring, snapP }: KnobProps) {
 
 /* ================================================================
    kablo katmanı — istiflenen yuvarlak kablolar
-   Yol stili mağazadan (ayar.pathStyle) gelir:
-   'asılı'   → gerçek kart görseli, birebir eski yol (varsayılan)
-   'düz'     → iki uç arasında düz hat (paralel ofsetli)
-   'yumuşak' → hafif sarkma
+   Sarkma mağazadan sürekli sag (0..100) gelir:
+   0   → iki uç arasında düz hat (paralel ofsetli, eski 'düz')
+   ~35 → hafif sarkma (eski 'yumuşak')
+   100 → gerçek kart görseli, birebir eski 'asılı' yolu (varsayılan)
+   Tüm uçlar (buton yuvaları dahil) aynı doğal eğriyi kullanır: dik saplama yok.
    ================================================================ */
 
 function cablePath(
   aId: string, bId: string, ia: number, ib: number,
-  stil: PathStyle = 'asılı',
+  sag = 100,
   aPos?: { x: number; y: number }, bPos?: { x: number; y: number },
 ): string {
   const A0 = aPos ?? G.socketPos(aId), B0 = bPos ?? G.socketPos(bId);
-  if (stil === 'düz') {
-    const dx = B0.x - A0.x, dy = B0.y - A0.y;
-    const dist = Math.hypot(dx, dy) || 1;
-    // istif çakışmayi önlemek için yönlere dik küçük ofset
-    const off = (ia + ib) * 2.6;
+  const t = Math.min(1, Math.max(0, sag / 100));
+  const dx = B0.x - A0.x, dy = B0.y - A0.y;
+  const dist = Math.hypot(dx, dy) || 1;
+  const perp = (ia + ib) * 2.6 * (1 - t);
+  // sarkma yerçekimlidir: çukur derinliği düşey açıklım (|dx|) ile ölçeklenir —
+  // kısa DİKEY bağlantılar artık derin U çizmez, yatay koşular "asılı" sarkar.
+  // Q kontrol noktası kirişin ORTASINA konur: eğri uçların üstüne hiç çıkamaz
+  // (konveks örtü) → rocketer/aşırı salınım şekli imkânsız.
+  const dip = t * Math.min(96, Math.max(0, Math.abs(dx)) * 0.38) + Math.max(ia, ib) * 9 * t;
+
+  if (t < 0.02) {
+    // istif çakışmasını önlemek için yöne dik küçük ofset
     const ux = dx / dist, uy = dy / dist;
-    return `M ${A0.x + uy * off} ${A0.y - ux * off} L ${B0.x + uy * off} ${B0.y - ux * off}`;
+    return `M ${A0.x + uy * perp} ${A0.y - ux * perp} L ${B0.x + uy * perp} ${B0.y - ux * perp}`;
   }
-  if (stil === 'yumuşak') {
-    const dist = Math.hypot(B0.x - A0.x, B0.y - A0.y);
-    const sag = Math.min(46, 10 + dist * 0.10);
-    const cx = (A0.x + B0.x) / 2;
-    const cy = Math.max(A0.y, B0.y) + sag + Math.max(ia, ib) * 4;
-    return `M ${A0.x} ${A0.y} Q ${cx} ${cy} ${B0.x} ${B0.y}`;
-  }
-  const dist = Math.hypot(B0.x - A0.x, B0.y - A0.y);
-  const sag = Math.min(135, 24 + dist * 0.20) + Math.max(ia, ib) * 12;
   const cx = (A0.x + B0.x) / 2;
-  const cy = Math.max(A0.y, B0.y) + sag;
+  const cy = (A0.y + B0.y) / 2 + dip;
   return `M ${A0.x} ${A0.y} Q ${cx} ${cy} ${B0.x} ${B0.y}`;
 }
 
-function Cables({ cables, pathStil, focusId, selId, onHover }: {
+/** Cables'ın imperative arayüzü — pointermove'da React render OLMADAN
+ *  taslak/taşıma yollarını günceller (N4: "kablo çekerken takılıyor") */
+export interface CablesApi {
+  update: (p: { x: number; y: number }) => void;
+}
+
+function Cables({ cables, sag, focusId, selId, carry, draft, onHover, apiRef }: {
   cables: Cable[];
-  pathStil: PathStyle;
+  sag: number;
   focusId: string | null;
   selId: string | null;
+  carry: Carry | null;
+  /** kablo modunda yeni kablo önizlemesi: seçili soketten imlece */
+  draft: { from: string; snap: string | null; color: string; güç: boolean } | null;
   onHover: (id: string | null) => void;
+  apiRef: RefObject<CablesApi | null>;
 }) {
   const counts = new Map<string, number>();
-  const nodes: ReactNode[] = [];
+
+  // --- imperative üst katman (N4) ---
+  const carryGRef = useRef<SVGGElement | null>(null);
+  const draftGRef = useRef<SVGGElement | null>(null);
+  const carryGeo = useRef<((p: { x: number; y: number }) => string) | null>(null);
+  const draftGhost = useRef<((p: { x: number; y: number }) => string) | null>(null);
+  const draftReal = useRef('');
+
+  // seçili soketten imlece kılavuz çizgi + çekim varken gerçek yol
+  if (draft) {
+    const A0 = G.socketPos(draft.from);
+    draftGhost.current = (p) => `M ${A0.x} ${A0.y} Q ${(A0.x + p.x) / 2} ${Math.max(A0.y, p.y) + 40} ${p.x} ${p.y}`;
+    draftReal.current = draft.snap
+      ? cablePath(draft.from, draft.snap, 0, 0, sag, undefined, G.socketPos(draft.snap))
+      : '';
+  } else {
+    draftGhost.current = null;
+    draftReal.current = '';
+  }
+
+  /** görünmez vurma kopyası — hover'lı elemanı yeniden mound etmeden
+   *  hover'ı sabit tutar (üst kopya görseli taşır, pointer olayı burada) */
+  const ghost = (w: Cable, d: string, sel: boolean): ReactNode => (
+    <g className={'cable ghost' + (sel ? ' sel' : '') + (focusId === w.id ? ' hov' : '')}
+      onPointerEnter={() => onHover(w.id)}
+      onPointerLeave={() => onHover(null)}
+      onClick={(e) => {
+        if (e.button !== 0) return;
+        e.stopPropagation();
+        const svg = e.currentTarget.ownerSVGElement;
+        const ct = svg?.getScreenCTM();
+        const pt = ct ? (() => {
+          const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(ct.inverse());
+          return { x: p.x, y: p.y };
+        })() : undefined;
+        A.clickCable(w.id, pt);
+      }}>
+      <path d={d} stroke="transparent" strokeWidth={15} fill="none" />
+      <title>{G.socketTitle(w.a)} ⇄ {G.socketTitle(w.b)}{w.güç ? ' — TTR güç' : ''}</title>
+    </g>
+  );
+
+  const visual = (w: Cable, d: string, sel: boolean, cls: string): ReactNode => (
+    <g className={'cable ' + cls + (sel ? ' sel' : '') + (focusId === w.id ? ' hov' : '')}>
+      <path className="cLine" d={d} stroke={shade(w.color, -0.55)} strokeWidth={w.güç ? 8.6 : 6.6} fill="none" strokeLinecap="round" />
+      <path className="cCore" d={d} stroke={w.color} strokeWidth={w.güç ? 6.0 : 4.4} fill="none" strokeLinecap="round" />
+      {w.güç && <path className="cPwr" d={d} stroke="rgba(255,255,255,0.42)" strokeWidth={1.15} fill="none" strokeLinecap="round" strokeDasharray="8 6" />}
+      <path className="cGlint" d={d} stroke="rgba(255,255,255,0.28)" strokeWidth={1.4} fill="none" strokeLinecap="round" />
+      {sel && <path className="cSel" d={d} stroke="#8a6d1f" strokeWidth={11.5} fill="none" strokeLinecap="round" opacity={0.35} />}
+      <title>{G.socketTitle(w.a)} ⇄ {G.socketTitle(w.b)}{w.güç ? ' — TTR güç' : ''}</title>
+    </g>
+  );
+
+  // uç vurgusu (vurgula açıkken): hovered/seçili kablonun GÖRSELİ en üst
+  // katmanda çizilir; yerinde yalnız görünmez vurma kopyası kalır —
+  // böylece hover'da eleman taşınmaz, olay döngüsü oluşmaz (R7 #4)
+  const main: ReactNode[] = [];
+  let top: ReactNode = null;
+  let carryW: Cable | undefined;
   cables.forEach((w) => {
     const ia = counts.get(w.a) ?? 0; counts.set(w.a, ia + 1);
     const ib = counts.get(w.b) ?? 0; counts.set(w.b, ib + 1);
-    const d = cablePath(w.a, w.b, ia, ib, pathStil);
+    // taşınan kablo ana katmanda ÇİZİLMEZ (uç elde) — üst katmanda imleci
+    // imperative izler. İstif sayacı yine de artar: diğer kablolar kaymasın.
+    if (carry && w.id === carry.cableId) {
+      carryW = w;
+      carryGeo.current = carry.end === 'a'
+        ? (p) => cablePath('', w.b, 0, ib, sag, p, undefined)
+        : (p) => cablePath(w.a, '', ia, 0, sag, undefined, p);
+      return;
+    }
+    const d = cablePath(w.a, w.b, ia, ib, sag);
     const sel = selId === w.id;
-    nodes.push(
-      <g key={w.id} className={'cable' + (sel ? ' sel' : '') + (focusId === w.id ? ' hov' : '')}
-        onPointerEnter={() => onHover(w.id)}
-        onPointerLeave={() => onHover(null)}
-        onClick={(e) => { e.stopPropagation(); A.clickCable(w.id); }}>
-        <path d={d} stroke="transparent" strokeWidth={15} fill="none" />
-        <path className="cLine" d={d} stroke={shade(w.color, -0.55)} strokeWidth={w.güç ? 8.6 : 6.6} fill="none" strokeLinecap="round" />
-        <path className="cCore" d={d} stroke={w.color} strokeWidth={w.güç ? 6.0 : 4.4} fill="none" strokeLinecap="round" />
-        {w.güç && <path className="cPwr" d={d} stroke="rgba(255,255,255,0.42)" strokeWidth={1.15} fill="none" strokeLinecap="round" strokeDasharray="8 6" />}
-        <path className="cGlint" d={d} stroke="rgba(255,255,255,0.28)" strokeWidth={1.4} fill="none" strokeLinecap="round" />
-        {sel && <path className="cSel" d={d} stroke="#8a6d1f" strokeWidth={11.5} fill="none" strokeLinecap="round" opacity={0.35} />}
-        <title>{G.socketTitle(w.a)} ⇄ {G.socketTitle(w.b)}{w.güç ? ' — TTR güç' : ''}</title>
-      </g>,
-    );
+    if (focusId && w.id === focusId) {
+      main.push(<Fragment key={`g${w.id}`}>{ghost(w, d, sel)}</Fragment>);
+      top = visual(w, d, sel, 'topCable');
+    } else {
+      main.push(
+        <g key={w.id} className={'cable' + (sel ? ' sel' : '')}
+          onPointerEnter={() => onHover(w.id)}
+          onPointerLeave={() => onHover(null)}
+          onClick={(e) => {
+            if (e.button !== 0) return;
+            e.stopPropagation();
+            const svg = e.currentTarget.ownerSVGElement;
+            const ct = svg?.getScreenCTM();
+            const pt = ct ? (() => {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(ct.inverse());
+              return { x: p.x, y: p.y };
+            })() : undefined;
+            A.clickCable(w.id, pt);
+          }}>
+          <path d={d} stroke="transparent" strokeWidth={15} fill="none" />
+          <path className="cLine" d={d} stroke={shade(w.color, -0.55)} strokeWidth={w.güç ? 8.6 : 6.6} fill="none" strokeLinecap="round" />
+          <path className="cCore" d={d} stroke={w.color} strokeWidth={w.güç ? 6.0 : 4.4} fill="none" strokeLinecap="round" />
+          {w.güç && <path className="cPwr" d={d} stroke="rgba(255,255,255,0.42)" strokeWidth={1.15} fill="none" strokeLinecap="round" strokeDasharray="8 6" />}
+          <path className="cGlint" d={d} stroke="rgba(255,255,255,0.28)" strokeWidth={1.4} fill="none" strokeLinecap="round" />
+          {sel && <path className="cSel" d={d} stroke="#8a6d1f" strokeWidth={11.5} fill="none" strokeLinecap="round" opacity={0.35} />}
+          <title>{G.socketTitle(w.a)} ⇄ {G.socketTitle(w.b)}{w.güç ? ' — TTR güç' : ''}</title>
+        </g>,
+      );
+    }
   });
-  return <g className={'cables' + (focusId ? ' focus' : '')}>{nodes}</g>;
+  if (!carry) carryGeo.current = null;
+
+  // pointermove'da çağrılır: yolları imperative yazar, React render tetiklemez
+  useEffect(() => {
+    apiRef.current = {
+      update(p) {
+        const cg = carryGRef.current;
+        if (cg) {
+          const d = carryGeo.current ? carryGeo.current(p) : '';
+          for (let i = 0; i < cg.children.length; i++) {
+            const el = cg.children[i];
+            if (el instanceof SVGPathElement) el.setAttribute('d', d);
+          }
+        }
+        const dg = draftGRef.current;
+        if (dg) {
+          const kids = dg.children;
+          if (kids[0] instanceof SVGPathElement && draftGhost.current) kids[0].setAttribute('d', draftGhost.current(p));
+          if (kids[1] instanceof SVGPathElement) kids[1].setAttribute('d', draftReal.current);
+        }
+      },
+    };
+  });
+
+  return (
+    <>
+      <g className={'cables' + (focusId ? ' focus' : '')}>{main}</g>
+      <g className="cablesTop" pointerEvents="none">
+        {top}
+        {/* taşıma görseli: uç eldeyken sabit soketten imlece (imperative) */}
+        <g ref={carryGRef} className="cable topCable" style={{ display: carryW ? undefined : 'none' }}>
+          <path className="cLine" d="" stroke={carryW ? shade(carryW.color, -0.55) : '#000'} strokeWidth={carryW?.güç ? 8.6 : 6.6} fill="none" strokeLinecap="round" />
+          <path className="cCore" d="" stroke={carryW?.color ?? '#000'} strokeWidth={carryW?.güç ? 6.0 : 4.4} fill="none" strokeLinecap="round" />
+          {carryW?.güç && <path className="cPwr" d="" stroke="rgba(255,255,255,0.42)" strokeWidth={1.15} fill="none" strokeLinecap="round" strokeDasharray="8 6" />}
+          <path className="cGlint" d="" stroke="rgba(255,255,255,0.28)" strokeWidth={1.4} fill="none" strokeLinecap="round" />
+        </g>
+        {/* taslak önizleme: seçili soketten imlece kılavuz + çekim yolu */}
+        <g ref={draftGRef} style={{ display: draft ? undefined : 'none' }}>
+          <path d="" stroke={draft?.color ?? '#000'} strokeWidth={2} strokeDasharray="4 6" fill="none" strokeLinecap="round" opacity={0.3} />
+          <path d="" stroke={draft?.color ?? '#000'} strokeWidth={draft?.güç ? 5.6 : 4} strokeDasharray="9 7" fill="none" strokeLinecap="round" opacity={0.9} />
+        </g>
+      </g>
+    </>
+  );
 }
 
 /* ================================================================
@@ -297,11 +436,11 @@ function BreakerArt({ breakers }: { breakers: BreakerState }) {
       <rect x={168} y={623} width={112} height={6} fill="#cfcfca" />
       <g className="clickable" onClick={(e) => { e.stopPropagation(); sfx.breaker(!breakers.motor); A.toggleBreaker('motor'); }}>
         <rect x={B.colX[0]} y={B.colY} width={76} height={B.colH} fill="transparent" />
-        <title>F3 — motor kesicisi (3P)</title>
+        <title>F3 — motor sigortası (3P)</title>
       </g>
       <g className="clickable" onClick={(e) => { e.stopPropagation(); sfx.breaker(!breakers.control); A.toggleBreaker('control'); }}>
         <rect x={B.colX[3]} y={B.colY} width={B.colW} height={B.colH} fill="transparent" />
-        <title>F1 — kumanda kesicisi (1P)</title>
+        <title>F1 — kumanda sigortası (1P)</title>
       </g>
     </g>
   );
@@ -641,11 +780,18 @@ const VB0: Vb = { x: 30, y: 378, w: 1240, h: 1180 };
 export function Board() {
   const st = useStore();
   const sim = st.sim;
+  const paket = st.paket;
+  const estop = st.estop;
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [vb, setVb] = useState<Vb>(VB0);
-  const [draft, setDraft] = useState<{ x: number; y: number; snap: string | null } | null>(null);
+  const [snapTgt, setSnapTgt] = useState<string | null>(null);
+  const snapRef = useRef<string | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
+  const cablesApi = useRef<CablesApi | null>(null);
   const drag = useRef<{ on: boolean; moved: boolean; px: number; py: number; vb: Vb } | null>(null);
+
+  // seçim/çizim tipi değişince çekim hedefi bayatlar
+  useEffect(() => { snapRef.current = null; setSnapTgt(null); }, [st.selTerminal, st.mode, st.settings.cableType]);
 
   /** TTR (güç) modunda: imlecin yakalayacağı en yakın güç uçu (snap hedefi) */
   const nearestPower = (p: { x: number; y: number }): string | null => {
@@ -695,15 +841,29 @@ export function Board() {
   const ringFocus = new Set<string>();
   if (focusCable) { ringFocus.add(focusCable.a); ringFocus.add(focusCable.b); }
   const pwDraft = st.settings.cableType === 'güç' && st.selTerminal !== null;
-  const snapId = pwDraft && draft?.snap ? draft.snap : null;
+  const snapId = pwDraft ? snapTgt : null;
 
   return (
     <svg
       ref={svgRef}
-      className={`boardSvg mode-${st.mode}`}
+      className={`boardSvg mode-${st.mode}${st.carry ? ' carrying' : ''}`}
       viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
       preserveAspectRatio="xMidYMid meet"
       onPointerDown={(e) => {
+        // orta tuş (buton 1): her yerden pan — hedef kablo/soket olsa da (R7 #9)
+        if (e.button === 1) {
+          e.preventDefault();
+          drag.current = { on: true, moved: false, px: e.clientX, py: e.clientY, vb };
+          try { (e.target as Element).setPointerCapture(e.pointerId); } catch { /* sentetik olay */ }
+          return;
+        }
+        // uç eldeyken boş zemine sol tık = ucu geri koy (R7 #5). İnteraktif
+        // sanatlara (soket/kablo/estop/şalter/kesici/buton) denk gelmeyen
+        // her tık boş zemin sayılır; düşme sürükleme başlamadan olur
+        if (st.carry && e.button === 0
+          && !(e.target as Element).closest('.term, .cable, .clickable, .estop, .paketSel, .btn')) {
+          A.dropCarry(null);
+        }
         if (e.target !== svgRef.current) return;
         drag.current = { on: true, moved: false, px: e.clientX, py: e.clientY, vb };
         (e.target as Element).setPointerCapture(e.pointerId);
@@ -717,16 +877,28 @@ export function Board() {
           if (Math.abs(dx) + Math.abs(dy) > 3) d.moved = true;
           if (d.moved) setVb({ x: d.vb.x - dx, y: d.vb.y - dy, w: d.vb.w, h: d.vb.h });
         }
-        if (st.selTerminal) {
+        if (st.carry || st.selTerminal) {
           const p = toLocal(e);
-          if (p) setDraft({ x: p.x, y: p.y, snap: nearestPower(p) });
+          if (p) {
+            // sürekli konum imperative yazılır — her hareket için React
+            // render YOK (N4: kablolama fare hareketini takip eder)
+            cablesApi.current?.update(p);
+            // güç çekimi: yalnız çekim HEDEFİ değişince render edilir
+            if (st.selTerminal && st.settings.cableType === 'güç') {
+              const np = nearestPower(p);
+              if (np !== snapRef.current) { snapRef.current = np; setSnapTgt(np); }
+            }
+          }
         }
       }}
-      onPointerUp={() => {
+      onPointerUp={(e) => {
         const d = drag.current;
         drag.current = null;
-        if (d && !d.moved) A.cancelSel();
+        // orta tuş panı tık sayılmaz; sol tık boşlukta seçimi bırakır
+        // (uç bırakma pointerDown'da boş zemin tıkından gelir)
+        if (d && !d.moved && e.button === 0) A.cancelSel();
       }}
+      onAuxClick={(e) => e.preventDefault()}
     >
       <ArtDefs />
 
@@ -755,29 +927,55 @@ export function Board() {
       <rect x={845} y={432} width={130} height={102} rx={6} fill="#aaa9a4" stroke="#8d8d89" />
       <text x={910} y={483} textAnchor="middle" dominantBaseline="central" fontFamily="'Arial Black',Arial,sans-serif" fontSize={19} fontWeight={900} letterSpacing={2} fill="#5c5c58">SIEMENS</text>
 
-      {/* acil stop */}
-      <circle cx={222} cy={499} r={47} fill="#f1c40f" stroke="#c9a008" strokeWidth={2} />
-      <circle cx={222} cy={499} r={33.5} fill="#1a1a1a" />
-      <circle cx={222} cy={499} r={31} fill="#d4151c" />
-      <circle cx={222} cy={499} r={25} fill="#da1a21" />
-      <path id="eb" d="M178 499A44 44 0 0 0 266 499" fill="none" />
-      <path id="et" d="M185.5 499A36.5 36.5 0 0 1 258.5 499" fill="none" />
-      <text fontFamily="Arial" fontSize={10.5} fontWeight={900} letterSpacing={1.4} fill="#111" textAnchor="middle">
-        <textPath href="#eb" startOffset="50%">EMERGENCY</textPath>
-      </text>
-      <text fontFamily="Arial" fontSize={11} fontWeight={900} letterSpacing={3} fill="#111" textAnchor="middle">
-        <textPath href="#et" startOffset="50%">STOP</textPath>
-      </text>
+      {/* acil stop — tıklanır: basılıyken TÜM besleme kaynakları kesilir (R7 #6) */}
+      <g
+        className={'estop' + (estop ? ' on' : '')}
+        onClick={(e) => {
+          if (e.button !== 0) return;
+          e.stopPropagation();
+          sfx.breaker(estop);
+          A.setEstop(!estop);
+        }}
+      >
+        <circle cx={222} cy={499} r={47} fill="#f1c40f" stroke="#c9a008" strokeWidth={2} />
+        <circle cx={222} cy={499} r={33.5} fill="#1a1a1a" />
+        <circle cx={222} cy={499} r={estop ? 28.5 : 31} fill="#d4151c" />
+        <circle cx={222} cy={499} r={estop ? 21.5 : 25} fill="#da1a21" />
+        {estop && <circle cx={222} cy={499} r={35} fill="none" stroke="#d4151c" strokeWidth={2.4} opacity={0.65} />}
+        <path id="eb" d="M178 499A44 44 0 0 0 266 499" fill="none" />
+        <path id="et" d="M185.5 499A36.5 36.5 0 0 1 258.5 499" fill="none" />
+        <text fontFamily="Arial" fontSize={10.5} fontWeight={900} letterSpacing={1.4} fill="#111" textAnchor="middle">
+          <textPath href="#eb" startOffset="50%">EMERGENCY</textPath>
+        </text>
+        <text fontFamily="Arial" fontSize={11} fontWeight={900} letterSpacing={3} fill="#111" textAnchor="middle">
+          <textPath href="#et" startOffset="50%">STOP</textPath>
+        </text>
+        <title>{estop ? 'Acil Stop BASILI — tüm besleme kesildi · tıkla: bırak' : 'Acil Stop — tıkla: bas (tüm besleme kesilir)'}</title>
+      </g>
 
-      {/* seçme şalteri */}
-      <rect x={293.5} y={459.5} width={76} height={79} fill="#d7d9d9" stroke="#999" />
-      <text x={331.5} y={476} textAnchor="middle" fontFamily="Arial" fontSize={11} fontWeight={900}>0</text>
-      <text x={353.5} y={485} textAnchor="middle" fontFamily="Arial" fontSize={11} fontWeight={900}>1</text>
-      <circle cx={331.5} cy={503} r={23} fill="#8c8c8c" />
-      <circle cx={331.5} cy={503} r={19.5} fill="#131313" />
-      <rect x={324.5} y={487} width={14} height={32} rx={6} fill="#2a2a2a" />
-      <rect x={330} y={489} width={3} height={8} rx={1} fill="#c9c9c6" />
-      <text x={331.5} y={535.5} textAnchor="middle" fontFamily="Arial" fontSize={6.5} fontWeight={900} fill="#555">SIEMENS</text>
+      {/* seçme şalteri (paket şalter 0/1) — tıklanır: kapıda tüm besleme yok (R7 #3) */}
+      <g
+        className="paketSel"
+        onClick={(e) => {
+          if (e.button !== 0) return;
+          e.stopPropagation();
+          sfx.breaker(!paket);
+          A.setPaket(!paket);
+        }}
+      >
+        <rect x={293.5} y={459.5} width={76} height={79} fill="#d7d9d9" stroke="#999" />
+        <text x={331.5} y={476} textAnchor="middle" fontFamily="Arial" fontSize={11} fontWeight={900}>0</text>
+        <text x={353.5} y={485} textAnchor="middle" fontFamily="Arial" fontSize={11} fontWeight={900}>1</text>
+        <circle cx={331.5} cy={503} r={23} fill="#8c8c8c" />
+        <circle cx={331.5} cy={503} r={19.5} fill="#131313" />
+        {/* kol: 0 → düz yukarı ("0" etiketi), 1 → sağa yatık ("1" etiketi) */}
+        <g transform={`rotate(${paket ? 38 : 0} 331.5 503)`}>
+          <rect x={324.5} y={487} width={14} height={32} rx={6} fill={paket ? '#3a7d44' : '#2a2a2a'} />
+          <rect x={330} y={489} width={3} height={8} rx={1} fill="#c9c9c6" />
+        </g>
+        <text x={331.5} y={535.5} textAnchor="middle" fontFamily="Arial" fontSize={6.5} fontWeight={900} fill="#555">SIEMENS</text>
+        <title>{paket ? 'Paket Şalter: 1 (açık) — pano beslemeli · tıkla: kapat' : 'Paket Şalter: 0 (kapalı) — pano beslemesiz · tıkla: aç'}</title>
+      </g>
 
       {/* lambalar (durumlu) */}
       <LampsArt sim={sim} />
@@ -827,10 +1025,18 @@ export function Board() {
       {/* kablolar */}
       <Cables
         cables={st.cables}
-        pathStil={st.settings.pathStyle}
+        sag={st.settings.sag}
         focusId={st.settings.vurgula ? (hoverId ?? st.selCable) : null}
         selId={st.selCable}
+        carry={st.carry}
+        draft={st.selTerminal ? {
+          from: st.selTerminal,
+          snap: pwDraft ? snapTgt : null,
+          color: st.cableColor,
+          güç: st.settings.cableType === 'güç',
+        } : null}
         onHover={setHoverId}
+        apiRef={cablesApi}
       />
 
       {/* soketler (kabloların ucunu örter) */}
@@ -844,28 +1050,8 @@ export function Board() {
         ))}
       </g>
 
-      {/* seçili soketten imlece kablo önizlemesi — yakalama varsa gerçek yolda gösterilir */}
-      {st.selTerminal && draft && (
-        <g pointerEvents="none">
-          {(() => {
-            const A0 = G.socketPos(st.selTerminal);
-            const stok = st.settings.cableType === 'güç' ? 5.6 : 4;
-            if (draft.snap) {
-              const p = G.socketPos(draft.snap);
-              const gerçek = cablePath(st.selTerminal, draft.snap, 0, 0, st.settings.pathStyle, undefined, p);
-              const hayalet = `M ${A0.x} ${A0.y} Q ${(A0.x + draft.x) / 2} ${Math.max(A0.y, draft.y) + 40} ${draft.x} ${draft.y}`;
-              return (
-                <>
-                  <path d={hayalet} stroke={st.cableColor} strokeWidth={2} strokeDasharray="4 6" fill="none" strokeLinecap="round" opacity={0.3} />
-                  <path d={gerçek} stroke={st.cableColor} strokeWidth={stok} strokeDasharray="9 7" fill="none" strokeLinecap="round" opacity={0.9} />
-                </>
-              );
-            }
-            const d = `M ${A0.x} ${A0.y} Q ${(A0.x + draft.x) / 2} ${Math.max(A0.y, draft.y) + 40} ${draft.x} ${draft.y}`;
-            return <path d={d} stroke={st.cableColor} strokeWidth={stok} strokeDasharray="9 7" fill="none" strokeLinecap="round" opacity={0.85} />;
-          })()}
-        </g>
-      )}
+      {/* taslak önizleme artık Cables'ın imperative üst katmanında çizilir
+          (pointermove'da render yok — N4) */}
     </svg>
   );
 }
