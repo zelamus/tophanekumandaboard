@@ -45,6 +45,13 @@ function ArtDefs(): ReactNode {
       <linearGradient id="fn" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stopColor="#dcdcd7" /><stop offset="1" stopColor="#9c9c97" />
       </linearGradient>
+      {/* silindirik şaft gölgesi — yatay çubuk yuvarlak okunsun */}
+      <linearGradient id="shaft" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#4e4b44" />
+        <stop offset=".3" stopColor="#b9b6ac" />
+        <stop offset=".55" stopColor="#8d8a80" />
+        <stop offset="1" stopColor="#3f3c36" />
+      </linearGradient>
 
       {/* yuvarlak terminal düğü — interaktif katmandan ÖNCE görünmez (strip) */}
       <g id="j">
@@ -999,15 +1006,16 @@ export function Board() {
           <rect x={706} y={507} width={62} height={19} rx={3} />
         </clipPath>
       </defs>
-      <rect x={706} y={507} width={62} height={19} rx={3} fill="#8f8c82" />
+      <rect x={706} y={507} width={62} height={19} rx={3} fill="url(#shaft)" />
       <g clipPath="url(#shaftClip)">
         <g className={'shaftSpin' + (sim?.motor.running ? ' running' : '') + (sim?.motor.dir === -1 ? ' reverse' : '')}>
           {Array.from({ length: 7 }, (_, i) => (
-            <rect key={i} x={706} y={500 + i * 6} width={62} height={3} fill="#6b685f" opacity={0.6} />
+            <rect key={i} x={706} y={500 + i * 6} width={62} height={3} fill="#2f2c26" opacity={0.45} />
           ))}
         </g>
       </g>
-      <rect x={712} y={512} width={22} height={9} fill="#6b685f" />
+      {/* kavrama yuvası — sabit referans; bantların kayması böylece daha okunur */}
+      <rect x={712} y={512} width={22} height={9} fill="#4a473f" opacity={0.85} />
       <path d="M790 418H1020Q1082 418 1082 480V552Q1082 614 1020 614H790Z" fill="url(#mt)" />
       <rect x={832} y={418} width={206} height={196} fill="#74746f" />
       <g fill="url(#fn)" stroke="#8a8a85" strokeWidth={0.5}>

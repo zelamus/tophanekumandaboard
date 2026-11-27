@@ -4,7 +4,7 @@
    Clean, translucent Liquid Glass, SF Pro typography, refined controls.
 
    Board SVG dependencies (STRICTLY PRESERVED):
-   .boardZone / .boardSvg / .term / .cable / .t .s .w .aw .bw / .clickable / .spin
+   .boardZone / .boardSvg / .term / .cable / .t .s .w .aw .bw / .clickable / .shaftSpin
    ================================================================ */
 
 :root {
@@ -1889,8 +1889,6 @@ body {
   *, *::before, *::after {
     animation-iteration-count: 1 !important;
   }
-  .spin.running,
-  .spin.running.reverse,
   .shaftSpin.running,
   .shaftSpin.running.reverse {
     animation: none !important;
@@ -2039,23 +2037,9 @@ body {
   filter: brightness(1.15);
 }
 
-.spin.running {
-  animation: rot 1.1s linear infinite;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-.spin.running.reverse {
-  animation-direction: reverse;
-}
-
-@keyframes rot {
-  to { transform: rotate(360deg); }
-}
-
 /* Yatay şaft: kendi ekseninde yuvarlanma — yüzey bantları dikey kayar */
 .shaftSpin.running {
-  animation: shaftRoll 0.42s linear infinite;
+  animation: shaftRoll 0.3s linear infinite;
 }
 
 .shaftSpin.running.reverse {
