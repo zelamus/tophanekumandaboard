@@ -100,6 +100,8 @@ export interface AppState {
   stallEpoch: number;
   /** Geri alma yığını derinliği (0 = geri alınacak kablo işlemi yok) */
   undoDepth: number;
+  /** Yineleme yığını derinliği (0 = yinelenecek geri alınmış işlem yok) */
+  redoDepth: number;
 }
 
 /* ---------------- ayarlar — kalıcılık ---------------- */
@@ -190,9 +192,11 @@ interface BoardSnap {
 }
 
 let undoStack: BoardSnap[] = [];
+let redoStack: BoardSnap[] = [];
 
-function pushHistory(): void {
-  undoStack.push({
+/** Anlık pano dilimini geri/yinele yığını için tek anlık görüntü olarak yakalar */
+function captureSnap(): BoardSnap {
+  return {
     cables: state.cables.slice(),
     breakers: { ...state.breakers },
     paket: state.paket,
@@ -200,8 +204,38 @@ function pushHistory(): void {
     zr: { ...state.zr },
     termikArmed: state.termikArmed,
     mode: state.mode,
-  });
+  };
+}
+
+/** Snapshot'ı durum yamasına çevirir (sim motoru topoloji değişince yeniden başlar) */
+function snapPatch(snap: BoardSnap): Partial<AppState> {
+  return {
+    cables: snap.cables,
+    breakers: snap.breakers,
+    paket: snap.paket,
+    estop: snap.estop,
+    zr: snap.zr,
+    termikArmed: snap.termikArmed,
+    mode: snap.mode,
+    pressed: { b1: false, b2: false, b3: false, b4: false },
+    selTerminal: null,
+    selCable: null,
+    carry: null,
+    simEpoch: state.simEpoch + 1,
+  };
+}
+
+function pushHistory(): void {
+  undoStack.push(captureSnap());
   if (undoStack.length > MAX_UNDO) undoStack.shift();
+  // Yeni bir eylem, yinelenebilir geçmişi geçersiz kılar
+  redoStack = [];
+}
+
+/** Yinelenebilir geçmişi geçersiz kılar — geri alınmış bir işlemi izleyen
+ *  yeni bir durum değişikliği (mod, şalter, termik, ZR) yinelemeyi düşürür */
+function clearRedo(): void {
+  redoStack = [];
 }
 
 /** Kayıt/preset şema doğrulaması — doğrulama onay SORUSUNDAN önce gelir (R2 DeepSeek #12) */
@@ -233,6 +267,7 @@ let state: AppState = {
   simEpoch: 0,
   stallEpoch: 0,
   undoDepth: 0,
+  redoDepth: 0,
 };
 
 function notify(): void { listeners.forEach((f) => f()); }
@@ -258,7 +293,7 @@ export function useStore(): AppState {
 /* ---------------- eylemler ---------------- */
 
 export const A = {
-  setMode(mode: Mode): void { patch({ mode, selCable: null, carry: null }); },
+  setMode(mode: Mode): void { clearRedo(); patch({ mode, selCable: null, carry: null, redoDepth: 0 }); },
 
   setCableColor(cableColor: string): void { patch({ cableColor }); },
 
@@ -297,6 +332,7 @@ export const A = {
       cables: [...state.cables, cable],
       selTerminal: zincir ? id : null,
       undoDepth: undoStack.length,
+      redoDepth: redoStack.length,
     });
   },
 
@@ -317,7 +353,7 @@ export const A = {
 
   delCable(id: string): void {
     pushHistory();
-    patch({ cables: state.cables.filter((c) => c.id !== id), selCable: null, undoDepth: undoStack.length });
+    patch({ cables: state.cables.filter((c) => c.id !== id), selCable: null, undoDepth: undoStack.length, redoDepth: redoStack.length });
   },
 
   delSelected(): void {
@@ -328,21 +364,26 @@ export const A = {
   undo(): void {
     const snap = undoStack.pop();
     if (!snap) return;
+    // Geri alınan anlık görüntü, yineleme yığınına yazılır
+    redoStack.push(captureSnap());
+    if (redoStack.length > MAX_UNDO) redoStack.shift();
     patch({
-      cables: snap.cables,
-      breakers: snap.breakers,
-      paket: snap.paket,
-      estop: snap.estop,
-      zr: snap.zr,
-      termikArmed: snap.termikArmed,
-      mode: snap.mode,
-      pressed: { b1: false, b2: false, b3: false, b4: false },
-      selTerminal: null,
-      selCable: null,
-      carry: null,
-      // clearWires epoch'u geri sarılır → sim motoru eski topolojiyle yeniden başlar
-      simEpoch: state.simEpoch + 1,
+      ...snapPatch(snap),
       undoDepth: undoStack.length,
+      redoDepth: redoStack.length,
+    });
+  },
+
+  /** Geri alınmış son işlemi yinele — kablo + kesici + ZR + termik birlikte döner */
+  redo(): void {
+    const snap = redoStack.pop();
+    if (!snap) return;
+    undoStack.push(captureSnap());
+    if (undoStack.length > MAX_UNDO) undoStack.shift();
+    patch({
+      ...snapPatch(snap),
+      undoDepth: undoStack.length,
+      redoDepth: redoStack.length,
     });
   },
 
@@ -350,16 +391,17 @@ export const A = {
 
   clearWires(): void {
     pushHistory();
-    patch({ cables: [], selTerminal: null, selCable: null, carry: null, simEpoch: state.simEpoch + 1, undoDepth: undoStack.length });
+    patch({ cables: [], selTerminal: null, selCable: null, carry: null, simEpoch: state.simEpoch + 1, undoDepth: undoStack.length, redoDepth: redoStack.length });
   },
 
   /* ---- paket şalter (ana 0/1 seçici) + acil stop ---- */
 
-  setPaket(paket: boolean): void { patch({ paket }); },
+  setPaket(paket: boolean): void { clearRedo(); patch({ paket, redoDepth: 0 }); },
 
   /** Acil stop basılıyken TÜM besleme kaynakları kesilir; taşınan uç da geri konur */
   setEstop(estop: boolean): void {
-    patch(estop ? { estop: true, carry: null, selTerminal: null } : { estop: false });
+    clearRedo();
+    patch(estop ? { estop: true, carry: null, selTerminal: null, redoDepth: 0 } : { estop: false, redoDepth: 0 });
   },
 
   /* ---- hareket modu: uç taşıma ----
@@ -423,6 +465,7 @@ export const A = {
       selTerminal: null,
       selCable: null,
       undoDepth: undoStack.length,
+      redoDepth: redoStack.length,
     });
   },
 
@@ -437,16 +480,18 @@ export const A = {
   },
 
   toggleBreaker(k: keyof BreakerState): void {
-    patch({ breakers: { ...state.breakers, [k]: !state.breakers[k] } });
+    clearRedo();
+    patch({ breakers: { ...state.breakers, [k]: !state.breakers[k] }, redoDepth: 0 });
   },
 
   // Termik sıfırlama: bobin/ZR durumuna DOKUNMAZ (fizikte termik reseti ZR'yi
   // etkilemez); yalnız uğuldama sayacına yeni pencere açar (stallEpoch).
-  termikArm(): void { patch({ termikArmed: true, stallEpoch: state.stallEpoch + 1 }); },
-  termikTrip(): void { patch({ termikArmed: false }); },
+  termikArm(): void { clearRedo(); patch({ termikArmed: true, stallEpoch: state.stallEpoch + 1, redoDepth: 0 }); },
+  termikTrip(): void { clearRedo(); patch({ termikArmed: false, redoDepth: 0 }); },
 
   setZr(zr: Partial<ZrConf>): void {
-    patch({ zr: { ...state.zr, ...zr } });
+    clearRedo();
+    patch({ zr: { ...state.zr, ...zr }, redoDepth: 0 });
   },
 
   setSim(sim: SimOutput): void { patch({ sim }); },
@@ -511,6 +556,7 @@ export const A = {
       mode: 'kablo',
       simEpoch: state.simEpoch + 1,
       undoDepth: undoStack.length,
+      redoDepth: redoStack.length,
     });
     saveAyar(state.settings);
   },

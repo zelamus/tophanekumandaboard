@@ -72,7 +72,15 @@ function ensureCtx(): Ctx | null {
       engine.ctx = new AC();
       engine.master = engine.ctx!.createGain();
       engine.master.gain.value = engine.on ? engine.vol : 0;
-      engine.master.connect(engine.ctx!.destination);
+      // Limitör: yüksek ses seviyesinde motor hum'u kırpışmasın (F4)
+      const limiter = engine.ctx!.createDynamicsCompressor();
+      limiter.threshold.value = -6;
+      limiter.knee.value = 0;
+      limiter.ratio.value = 20;
+      limiter.attack.value = 0.003;
+      limiter.release.value = 0.25;
+      engine.master.connect(limiter);
+      limiter.connect(engine.ctx!.destination);
     }
     if (engine.ctx!.state === 'suspended') void engine.ctx!.resume();
     return engine.ctx;
@@ -244,7 +252,7 @@ export const sfx = {
       if (ms) {
         const g = ctx.createGain();
         g.gain.setValueAtTime(0.0001, t0);
-        g.gain.exponentialRampToValueAtTime(0.16, t0 + 0.9);
+        g.gain.exponentialRampToValueAtTime(0.30, t0 + 0.9);
         g.connect(engine.master);
         const src = ctx.createBufferSource();
         src.buffer = ms;
@@ -257,7 +265,7 @@ export const sfx = {
       // taşıyıcı: osc → lowpass → gain → master
       const g = ctx.createGain();
       g.gain.setValueAtTime(0.0001, t0);
-      g.gain.exponentialRampToValueAtTime(0.24, t0 + 0.9);
+      g.gain.exponentialRampToValueAtTime(0.46, t0 + 0.9);
       g.connect(engine.master);
       const lp = ctx.createBiquadFilter();
       lp.type = 'lowpass';
@@ -291,7 +299,7 @@ export const sfx = {
       nbp.Q.value = 0.7;
       const ng = ctx.createGain();
       ng.gain.setValueAtTime(0.0001, t0);
-      ng.gain.exponentialRampToValueAtTime(0.05, t0 + 1.1);
+      ng.gain.exponentialRampToValueAtTime(0.10, t0 + 1.1);
       nz.connect(nbp);
       nbp.connect(ng);
       ng.connect(engine.master);
@@ -301,7 +309,7 @@ export const sfx = {
       lfo.type = 'sine';
       lfo.frequency.value = 7;
       const lfoG = ctx.createGain();
-      lfoG.gain.value = 0.045;
+      lfoG.gain.value = 0.05;
       lfo.connect(lfoG);
       lfoG.connect(g.gain);
       lfo.start();

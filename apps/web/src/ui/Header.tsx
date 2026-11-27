@@ -7,13 +7,14 @@ import {
   IconPan,
   IconCut,
   IconUndo,
+  IconRedo,
   IconTrash,
   IconSidebar,
   IconSun,
   IconMoon,
   IconAlert,
 } from './Icons';
-import { confirmAction } from './confirm';
+import { clearWiresWithConfirm } from './clearWires';
 import { sfx } from '../audio/sfx';
 
 const COLORS: { c: string; name: string }[] = [
@@ -51,19 +52,7 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
   // ≤640'ta şerit gerçekten taşınca sağ-kenar fade ipucu verir (R5 GLM #2)
   const headerCenterRef = useScrollFade<HTMLDivElement>();
 
-  const handleClearWires = async () => {
-    if (st.cables.length === 0) return;
-    const ok = await confirmAction({
-      title: 'Tüm kablolar temizlensin mi?',
-      body: `Panodaki ${st.cables.length} kablo silinecek. Son işlemi Ctrl+Z ile geri alabilirsiniz.`,
-      confirmLabel: 'Temizle',
-      cancelLabel: 'İptal',
-    });
-    if (ok) {
-      sfx.breaker(false);
-      A.clearWires();
-    }
-  };
+  const handleClearWires = () => clearWiresWithConfirm();
 
   const toggleMotorBreaker = () => {
     sfx.breaker(!st.breakers.motor);
@@ -154,7 +143,7 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
 
         <div className="headerDivider" aria-hidden="true" />
 
-        {/* Hızlı Eylemler: Geri Al, Temizle */}
+        {/* Hızlı Eylemler: Geri Al, Yinele, Temizle */}
         <div className="quickActions">
           <button
             type="button"
@@ -165,6 +154,16 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
             onClick={() => A.undo()}
           >
             <IconUndo />
+          </button>
+          <button
+            type="button"
+            className="appleButton iconOnly"
+            disabled={st.redoDepth === 0}
+            title="Geri alınmış işlemi yinele (Ctrl+Shift+Z / ⌘⇧Z veya Ctrl+Y)"
+            aria-label="Geri alınmış işlemi yinele"
+            onClick={() => A.redo()}
+          >
+            <IconRedo />
           </button>
           <button
             type="button"

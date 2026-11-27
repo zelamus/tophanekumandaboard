@@ -166,6 +166,10 @@ export function SettingsPanel() {
             <span className="shortcutKey"><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>⌘</kbd><kbd>Z</kbd></span>
           </div>
           <div className="shortcutRow">
+            <span className="shortcutName">Geri Alınan İşlemi Yinele</span>
+            <span className="shortcutKey"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> / <kbd>⌘</kbd><kbd>⇧</kbd><kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></span>
+          </div>
+          <div className="shortcutRow">
             <span className="shortcutName">Seçimi İptal Et</span>
             <span className="shortcutKey"><kbd>Esc</kbd></span>
           </div>

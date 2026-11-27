@@ -486,6 +486,11 @@ body {
   gap: 6px;
 }
 
+/* Mobil sabit eylem çubuğu — masaüstünde gizli, ≤820px'te görünür */
+.mobileActionBar {
+  display: none;
+}
+
 /* Breaker Fast Pills */
 .breakerFastGroup {
   display: flex;
@@ -1637,6 +1642,28 @@ body {
   .sidebarBackdrop {
     display: block;
   }
+  /* Sabit mobil eylem çubuğu (≤820): üst çubuk yatay kaydırılsa da görünür.
+     Tek mobil eylem kümesi: üst çubuktaki hızlı eylemler gizlenir. */
+  .quickActions {
+    display: none;
+  }
+  .mobileActionBar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 56px;
+    min-height: 56px;
+    padding: 6px 12px;
+    background: var(--apple-surface);
+    backdrop-filter: blur(25px) saturate(190%);
+    -webkit-backdrop-filter: blur(25px) saturate(190%);
+    border-top: 1px solid var(--apple-border);
+  }
+  .mobileActionBar .appleButton.iconOnly {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 /* Telefon künyesi (≤640): başlık kısalır, orta küme yatay kayar, sağ düğmeler
@@ -1687,9 +1714,6 @@ body {
   }
   .headerDivider {
     display: none;
-  }
-  .quickActions {
-    gap: 4px;
   }
   .appStatusBar {
     height: auto;

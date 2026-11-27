@@ -7,6 +7,7 @@ import { sfx } from './audio/sfx';
 import { Header } from './ui/Header';
 import { Sidebar } from './ui/Sidebar';
 import { StatusBar } from './ui/StatusBar';
+import { MobileActionBar } from './ui/MobileActionBar';
 import { CanvasOverlay } from './ui/CanvasOverlay';
 import { ConfirmDialogHost, isConfirmActive } from './ui/confirm';
 
@@ -89,6 +90,14 @@ export function App() {
       if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         A.undo();
+        return;
+      }
+      // Yinele: ⌘⇧Z / Ctrl+Shift+Z veya Ctrl+Y
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && (
+        (e.shiftKey && e.key.toLowerCase() === 'z') || (!e.shiftKey && e.key.toLowerCase() === 'y')
+      )) {
+        e.preventDefault();
+        A.redo();
       }
     };
 
@@ -150,6 +159,7 @@ export function App() {
       </div>
 
       {/* 3. Alt Apple Donanım Teşhis & Durum Çubuğu */}
+      <MobileActionBar />
       <StatusBar />
 
       {/* Tehlikeli eylem onayları tüm app için tek noktada */}
