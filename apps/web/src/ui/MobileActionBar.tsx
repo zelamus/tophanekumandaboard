@@ -1,4 +1,4 @@
-// Mobil ( dar görünüm) sabit eylem çubuğu — üst çubuk yatay kaydığında da
+// Mobil (dar görünüm) sabit eylem çubuğu — üst çubuk yatay kaydığında da
 // görünür kalan Geri Al / Yinele / Temizle düğmeleri. Masaüstünde gizlidir;
 // stil `styles.css` içindeki `.mobileActionBar` ile ≤820px'te açılır.
 

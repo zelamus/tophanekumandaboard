@@ -98,6 +98,7 @@ export function App() {
       )) {
         e.preventDefault();
         A.redo();
+        return;
       }
     };
 

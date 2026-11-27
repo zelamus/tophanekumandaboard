@@ -52,8 +52,6 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
   // ≤640'ta şerit gerçekten taşınca sağ-kenar fade ipucu verir (R5 GLM #2)
   const headerCenterRef = useScrollFade<HTMLDivElement>();
 
-  const handleClearWires = () => clearWiresWithConfirm();
-
   const toggleMotorBreaker = () => {
     sfx.breaker(!st.breakers.motor);
     A.toggleBreaker('motor');
@@ -149,7 +147,7 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
             type="button"
             className="appleButton iconOnly"
             disabled={st.undoDepth === 0}
-            title="Son pano işlemini geri al — kablo, sigorta, ZR ve termik birlikte (Ctrl+Z / ⌘Z)"
+            title="Son kablo işlemini geri al (Ctrl+Z / ⌘Z)"
             aria-label="Son pano işlemini geri al"
             onClick={() => A.undo()}
           >
@@ -171,7 +169,7 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
             disabled={st.cables.length === 0}
             title="Panodaki tüm kabloları temizle"
             aria-label="Tüm kabloları temizle"
-            onClick={() => void handleClearWires()}
+            onClick={() => void clearWiresWithConfirm()}
           >
             <IconTrash />
           </button>

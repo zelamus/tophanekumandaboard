@@ -86,7 +86,7 @@ export function SavePanel() {
     if (getState().cables.length === 0) return true;
     return confirmAction({
       title: `${what} mevcut panoyu değiştirir`,
-      body: `Panodaki ${getState().cables.length} kablo kalkacak. Panoyu ve motora ait sigorta/ZR/termik durumunu Ctrl+Z ile geri alabilirsiniz.`,
+      body: `Panodaki ${getState().cables.length} kablo kalkacak. Kablo işlemlerini Ctrl+Z ile geri alabilirsiniz.`,
       confirmLabel: 'Devreyi Yükle',
       cancelLabel: 'İptal',
     });

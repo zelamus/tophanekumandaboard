@@ -1002,16 +1002,8 @@ export function Board() {
           <rect key={i} x={832} y={424 + i * 12} width={204} height={7.5} rx={3.75} />
         ))}
       </g>
-      <path d="M762 436Q762 412 785 412H832V596Q832 620 802 620H785Q762 620 762 596Z" fill="#b6b6b1" />
-      {/* motor şaft ucu (sol end-bell) — motor çalışırken döner, yöne göre ters */}
-      <g className={'spin' + (sim?.motor.running ? ' running' : '') + (sim?.motor.dir === -1 ? ' reverse' : '')}>
-        <circle cx={797} cy={516} r={30} fill="#8f8f8a" stroke="#6a6a65" strokeWidth={1.5} />
-        {[0, 60, 120, 180, 240, 300].map((a) => (
-          <path key={a} d="M797 516C788 508 786 494 793 486C801 492 805 506 797 516Z"
-            fill="#c2c2bc" stroke="#6a6a65" strokeWidth={0.8} transform={`rotate(${a} 797 516)`} />
-        ))}
-        <circle cx={797} cy={516} r={7} fill="#4a4a46" stroke="#2e2e2b" strokeWidth={1.5} />
-      </g>
+      <path className={'spin' + (sim?.motor.running ? ' running' : '') + (sim?.motor.dir === -1 ? ' reverse' : '')}
+        d="M762 436Q762 412 785 412H832V596Q832 620 802 620H785Q762 620 762 596Z" fill="#b6b6b1" />
       <rect x={845} y={432} width={130} height={102} rx={6} fill="#aaa9a4" stroke="#8d8d89" />
       <text x={910} y={483} textAnchor="middle" dominantBaseline="central" fontFamily="'Arial Black',Arial,sans-serif" fontSize={19} fontWeight={900} letterSpacing={2} fill="#5c5c58">SIEMENS</text>
 

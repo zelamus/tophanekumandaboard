@@ -149,7 +149,7 @@ export function PresetPanel() {
     if (getState().cables.length > 0) {
       const ok = await confirmAction({
         title: `"${p.name}" panoya kurulacak`,
-        body: `Mevcut ${getState().cables.length} kablo kalkacak. Panoyu ve motora ait sigorta/ZR/termik durumunu Ctrl+Z ile geri alabilirsiniz.`,
+        body: `Mevcut ${getState().cables.length} kablo kalkacak. Kablo işlemlerini Ctrl+Z ile geri alabilirsiniz.`,
         confirmLabel: 'Devreyi Kur',
         cancelLabel: 'İptal',
       });

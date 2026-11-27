@@ -176,47 +176,28 @@ function nextCableId(): string {
   }
 }
 
-/* Geri alma yığını — kablo ekleme/silme/temizleme/yüklemeden önceki TÜM PANO
-   dilimini tutar (R2 GLM #7 / DeepSeek #4: kablo-dışı durum kablosuz kalmasın).
+/* Geri alma yığını — kablo ekleme/silme/temizleme/yüklemeden önceki KABLO
+   dilimini tutar. Yalnız kablolar geri/yineletenir; acil stop, kesici, paket,
+   ZR ve termik durumuna DOKUNULMAZ (güvenlik: geri alma acil stopu bırakmaz).
    Kullanıcı tercihi (tema/ses) bilinçli olarak YOK — o ayarlar geri sarmaz. */
 const MAX_UNDO = 40;
 
 interface BoardSnap {
   cables: Cable[];
-  breakers: BreakerState;
-  paket: boolean;
-  estop: boolean;
-  zr: ZrConf;
-  termikArmed: boolean;
-  mode: Mode;
 }
 
 let undoStack: BoardSnap[] = [];
 let redoStack: BoardSnap[] = [];
 
-/** Anlık pano dilimini geri/yinele yığını için tek anlık görüntü olarak yakalar */
+/** Anlık kablo dilimini geri/yinele yığını için tek anlık görüntü olarak yakalar */
 function captureSnap(): BoardSnap {
-  return {
-    cables: state.cables.slice(),
-    breakers: { ...state.breakers },
-    paket: state.paket,
-    estop: state.estop,
-    zr: { ...state.zr },
-    termikArmed: state.termikArmed,
-    mode: state.mode,
-  };
+  return { cables: state.cables.slice() };
 }
 
 /** Snapshot'ı durum yamasına çevirir (sim motoru topoloji değişince yeniden başlar) */
 function snapPatch(snap: BoardSnap): Partial<AppState> {
   return {
     cables: snap.cables,
-    breakers: snap.breakers,
-    paket: snap.paket,
-    estop: snap.estop,
-    zr: snap.zr,
-    termikArmed: snap.termikArmed,
-    mode: snap.mode,
     pressed: { b1: false, b2: false, b3: false, b4: false },
     selTerminal: null,
     selCable: null,
@@ -293,7 +274,7 @@ export function useStore(): AppState {
 /* ---------------- eylemler ---------------- */
 
 export const A = {
-  setMode(mode: Mode): void { clearRedo(); patch({ mode, selCable: null, carry: null, redoDepth: 0 }); },
+  setMode(mode: Mode): void { patch({ mode, selCable: null, carry: null }); },
 
   setCableColor(cableColor: string): void { patch({ cableColor }); },
 
@@ -396,12 +377,11 @@ export const A = {
 
   /* ---- paket şalter (ana 0/1 seçici) + acil stop ---- */
 
-  setPaket(paket: boolean): void { clearRedo(); patch({ paket, redoDepth: 0 }); },
+  setPaket(paket: boolean): void { patch({ paket }); },
 
   /** Acil stop basılıyken TÜM besleme kaynakları kesilir; taşınan uç da geri konur */
   setEstop(estop: boolean): void {
-    clearRedo();
-    patch(estop ? { estop: true, carry: null, selTerminal: null, redoDepth: 0 } : { estop: false, redoDepth: 0 });
+    patch(estop ? { estop: true, carry: null, selTerminal: null } : { estop: false });
   },
 
   /* ---- hareket modu: uç taşıma ----
@@ -480,18 +460,16 @@ export const A = {
   },
 
   toggleBreaker(k: keyof BreakerState): void {
-    clearRedo();
-    patch({ breakers: { ...state.breakers, [k]: !state.breakers[k] }, redoDepth: 0 });
+    patch({ breakers: { ...state.breakers, [k]: !state.breakers[k] } });
   },
 
   // Termik sıfırlama: bobin/ZR durumuna DOKUNMAZ (fizikte termik reseti ZR'yi
   // etkilemez); yalnız uğuldama sayacına yeni pencere açar (stallEpoch).
-  termikArm(): void { clearRedo(); patch({ termikArmed: true, stallEpoch: state.stallEpoch + 1, redoDepth: 0 }); },
-  termikTrip(): void { clearRedo(); patch({ termikArmed: false, redoDepth: 0 }); },
+  termikArm(): void { patch({ termikArmed: true, stallEpoch: state.stallEpoch + 1 }); },
+  termikTrip(): void { patch({ termikArmed: false }); },
 
   setZr(zr: Partial<ZrConf>): void {
-    clearRedo();
-    patch({ zr: { ...state.zr, ...zr }, redoDepth: 0 });
+    patch({ zr: { ...state.zr, ...zr } });
   },
 
   setSim(sim: SimOutput): void { patch({ sim }); },
@@ -516,6 +494,8 @@ export const A = {
   /** loadDoc iç skeci — snapshot zaten alınmış olmalı */
   applyDoc(doc: DocShape): void {
     if (doc.v !== 1) return;
+    // Doğrudan çağrı (window.__kka) da dahil: yeni pano eski yinelemeyi düşürür
+    clearRedo();
     const ayar: Partial<SettingsShape> = doc.ayar ?? {};
     // Güven küresi: bilinmeyen/arsız değerleri varsayılana geri döndür — aksi
     // durumda bir radyo grubunda hiçbir öge gezinti taşıyamaz (R3 DeepSeek #9)
