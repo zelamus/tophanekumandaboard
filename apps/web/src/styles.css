@@ -2037,9 +2037,11 @@ body {
   filter: brightness(1.15);
 }
 
-/* Yatay şaft: kendi ekseninde yuvarlanma — yüzey bantları dikey kayar */
+/* Yatay şaft: kendi ekseninde yuvarlanma — yüzey bantları dikey kayar.
+   Toplam kayma 36px = 6 bant periyodu, bu yüzden döngü dikişsiz.
+   Ara adımlar sabit hız yerine hızlanma/yavaşlama ritmi verir. */
 .shaftSpin.running {
-  animation: shaftRoll 0.3s linear infinite;
+  animation: shaftRoll 0.75s linear infinite;
 }
 
 .shaftSpin.running.reverse {
@@ -2047,7 +2049,11 @@ body {
 }
 
 @keyframes shaftRoll {
-  to { transform: translateY(6px); }
+  0% { transform: translateY(0); }
+  40% { transform: translateY(12px); }
+  60% { transform: translateY(24px); }
+  85% { transform: translateY(30px); }
+  100% { transform: translateY(36px); }
 }
 
 .boardSvg .t {

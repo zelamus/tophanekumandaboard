@@ -1009,13 +1009,11 @@ export function Board() {
       <rect x={706} y={507} width={62} height={19} rx={3} fill="url(#shaft)" />
       <g clipPath="url(#shaftClip)">
         <g className={'shaftSpin' + (sim?.motor.running ? ' running' : '') + (sim?.motor.dir === -1 ? ' reverse' : '')}>
-          {Array.from({ length: 7 }, (_, i) => (
-            <rect key={i} x={706} y={500 + i * 6} width={62} height={3} fill="#2f2c26" opacity={0.45} />
+          {Array.from({ length: 11 }, (_, i) => (
+            <rect key={i} x={706} y={471 + i * 6} width={62} height={3} fill="#2f2c26" opacity={0.45} />
           ))}
         </g>
       </g>
-      {/* kavrama yuvası — sabit referans; bantların kayması böylece daha okunur */}
-      <rect x={712} y={512} width={22} height={9} fill="#4a473f" opacity={0.85} />
       <path d="M790 418H1020Q1082 418 1082 480V552Q1082 614 1020 614H790Z" fill="url(#mt)" />
       <rect x={832} y={418} width={206} height={196} fill="#74746f" />
       <g fill="url(#fn)" stroke="#8a8a85" strokeWidth={0.5}>
