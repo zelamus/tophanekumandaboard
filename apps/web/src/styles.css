@@ -1890,7 +1890,9 @@ body {
     animation-iteration-count: 1 !important;
   }
   .spin.running,
-  .spin.running.reverse {
+  .spin.running.reverse,
+  .shaftSpin.running,
+  .shaftSpin.running.reverse {
     animation: none !important;
   }
 }
@@ -2049,6 +2051,19 @@ body {
 
 @keyframes rot {
   to { transform: rotate(360deg); }
+}
+
+/* Yatay şaft: kendi ekseninde yuvarlanma — yüzey bantları dikey kayar */
+.shaftSpin.running {
+  animation: shaftRoll 0.42s linear infinite;
+}
+
+.shaftSpin.running.reverse {
+  animation-direction: reverse;
+}
+
+@keyframes shaftRoll {
+  to { transform: translateY(6px); }
 }
 
 .boardSvg .t {

@@ -993,7 +993,20 @@ export function Board() {
       <rect x={150} y={1500} width={850} height={11} fill="#1f1d1a" />
 
       {/* motor */}
+      {/* motor şaftı (soldaki çubuk) — kendi YATAY ekseninde döner (kayar bantlar) */}
+      <defs>
+        <clipPath id="shaftClip">
+          <rect x={706} y={507} width={62} height={19} rx={3} />
+        </clipPath>
+      </defs>
       <rect x={706} y={507} width={62} height={19} rx={3} fill="#8f8c82" />
+      <g clipPath="url(#shaftClip)">
+        <g className={'shaftSpin' + (sim?.motor.running ? ' running' : '') + (sim?.motor.dir === -1 ? ' reverse' : '')}>
+          {Array.from({ length: 7 }, (_, i) => (
+            <rect key={i} x={706} y={500 + i * 6} width={62} height={3} fill="#6b685f" opacity={0.6} />
+          ))}
+        </g>
+      </g>
       <rect x={712} y={512} width={22} height={9} fill="#6b685f" />
       <path d="M790 418H1020Q1082 418 1082 480V552Q1082 614 1020 614H790Z" fill="url(#mt)" />
       <rect x={832} y={418} width={206} height={196} fill="#74746f" />
@@ -1002,8 +1015,7 @@ export function Board() {
           <rect key={i} x={832} y={424 + i * 12} width={204} height={7.5} rx={3.75} />
         ))}
       </g>
-      <path className={'spin' + (sim?.motor.running ? ' running' : '') + (sim?.motor.dir === -1 ? ' reverse' : '')}
-        d="M762 436Q762 412 785 412H832V596Q832 620 802 620H785Q762 620 762 596Z" fill="#b6b6b1" />
+      <path d="M762 436Q762 412 785 412H832V596Q832 620 802 620H785Q762 620 762 596Z" fill="#b6b6b1" />
       <rect x={845} y={432} width={130} height={102} rx={6} fill="#aaa9a4" stroke="#8d8d89" />
       <text x={910} y={483} textAnchor="middle" dominantBaseline="central" fontFamily="'Arial Black',Arial,sans-serif" fontSize={19} fontWeight={900} letterSpacing={2} fill="#5c5c58">SIEMENS</text>
 
